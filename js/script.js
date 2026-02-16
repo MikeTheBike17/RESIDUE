@@ -168,21 +168,34 @@
   if (gateForm) {
     const codeInput = gateForm.querySelector('#access-code');
     const statusEl = gateForm.querySelector('.gate-status');
+    const gateButton = gateForm.querySelector('button[type="submit"]');
     gateForm.addEventListener('submit', evt => {
       evt.preventDefault();
       const code = (codeInput.value || '').trim().toUpperCase();
-      const unlocked = validCodes.includes(code);
-      if (unlocked) {
-        localStorage.setItem('residue-access', 'granted');
-        if (statusEl) statusEl.hidden = true;
-        window.location.href = 'residue-private.html';
-      } else {
-        localStorage.removeItem('residue-access');
-        if (statusEl) {
+      if (!statusEl) return;
+      statusEl.hidden = false;
+      statusEl.textContent = 'Checking code';
+      statusEl.className = 'status loading-dots';
+      gateButton && (gateButton.disabled = true);
+      codeInput && (codeInput.disabled = true);
+
+      setTimeout(() => {
+        const unlocked = validCodes.includes(code);
+        if (unlocked) {
+          localStorage.setItem('residue-access', 'granted');
+          statusEl.hidden = false;
+          statusEl.textContent = 'Access granted.';
+          statusEl.className = 'status success';
+          setTimeout(() => { window.location.href = 'residue-private.html'; }, 1000);
+        } else {
+          localStorage.removeItem('residue-access');
           statusEl.hidden = false;
           statusEl.textContent = 'Access not recognised.';
+          statusEl.className = 'status error';
         }
-      }
+        gateButton && (gateButton.disabled = false);
+        codeInput && (codeInput.disabled = false);
+      }, 4000);
     });
   }
 

@@ -2,15 +2,17 @@
   const STORAGE_KEY = 'residueAccessUnlocked';
   const USED_CODES_KEY = 'usedCodes';
 
+  const MASTER_CODES = ['FOUNDER-001'];
+
   const accessConfig = {
-    validCodes: ['FOUNDER-001'],
+    validCodes: MASTER_CODES,
     productLinks: {
       core: '#', // replace with live link
       pair: '#', // replace with live link
       set:  '#', // replace with live link
     },
     brandCopy: {
-      checking: 'Checking…',
+      checking: 'Checking code',
       granted: 'Access granted.',
       invalid: 'Code not recognised. Request access if needed.',
       reused: 'This code was used on this device. Request access if needed.',
@@ -43,6 +45,7 @@
     el.textContent = message;
     el.className = 'status';
     if (type) el.classList.add(type);
+    if (type === 'loading') el.classList.add('loading-dots');
   };
 
   // Local-only one-time-use simulation. Real enforcement requires server-side validation.
@@ -60,16 +63,16 @@
     window.location.href = 'residue-private.html';
   };
 
-  const setUnlocked = (code, { redirect = true, showStatus = true, showOptions = true } = {}) => {
+  const setUnlocked = (code, { redirect = true, showStatusMessage = true, showOptions = true, redirectDelay = 1000 } = {}) => {
     if (showOptions) purchaseOptions?.classList.add('show');
-    if (showStatus) showStatus(codeStatus, accessConfig.brandCopy.granted, 'success');
+    if (showStatusMessage) showStatus(codeStatus, accessConfig.brandCopy.granted, 'success');
     localStorage.setItem(STORAGE_KEY, 'true');
     if (code) {
       const used = new Set(getUsedCodes());
       used.add(code.toUpperCase());
       setUsedCodes([...used]);
     }
-    if (redirect) setTimeout(redirectToPrivate, 200);
+    if (redirect) setTimeout(redirectToPrivate, redirectDelay);
   };
 
   // Replace this with a real API call when backend exists.
@@ -78,7 +81,7 @@
   // Restore access state
   if (localStorage.getItem(STORAGE_KEY) === 'true') {
     // Restore silently; keep access state but don't show success UI.
-    setUnlocked(null, { redirect: false, showStatus: false, showOptions: false });
+    setUnlocked(null, { redirect: false, showStatusMessage: false, showOptions: false });
   }
 
   codeForm?.addEventListener('submit', evt => {
@@ -95,26 +98,27 @@
       return;
     }
     const upper = value.toUpperCase();
-    if (getUsedCodes().includes(upper)) {
+    const isMaster = MASTER_CODES.includes(upper);
+    if (!isMaster && getUsedCodes().includes(upper)) {
       showStatus(codeStatus, accessConfig.brandCopy.reused, 'error');
       purchaseOptions?.classList.remove('show');
       return;
     }
 
-    showStatus(codeStatus, accessConfig.brandCopy.checking);
+    showStatus(codeStatus, accessConfig.brandCopy.checking, 'loading');
     codeSubmit.disabled = true;
 
     setTimeout(() => {
       const valid = validateCode(value);
       if (valid) {
-        setUnlocked(upper);
+        setUnlocked(isMaster ? null : upper, { redirectDelay: 1000 });
       } else {
         showStatus(codeStatus, accessConfig.brandCopy.invalid, 'error');
         purchaseOptions?.classList.remove('show');
         localStorage.removeItem(STORAGE_KEY);
       }
       codeSubmit.disabled = false;
-    }, 600);
+    }, 4000);
   });
 
   // Skip custom handling if an external action is set (e.g., Formspree)

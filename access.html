@@ -11,8 +11,9 @@
     <nav class="nav" aria-label="Main navigation">
       <a class="brand" href="index.html">Residue</a>
       <div class="nav-links" aria-label="Primary">
-        <a href="access.html">Access</a>
         <a href="about.html">About</a>
+        <a href="access.html">Access</a>
+        <a href="how-it-works.html">How it works</a>
         <a href="drop.html">Circulation</a>
       </div>
       <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
@@ -20,8 +21,9 @@
       </button>
     </nav>
     <div class="mobile-nav" aria-label="Mobile navigation">
-      <a href="access.html">Access</a>
       <a href="about.html">About</a>
+      <a href="access.html">Access</a>
+      <a href="how-it-works.html">How it works</a>
       <a href="drop.html">Circulation</a>
     </div>
   </header>
@@ -31,23 +33,14 @@
       <div class="stack" style="align-items:center; text-align:center;">
         <div class="brandmark">Residue</div>
         <h1 class="h2" style="margin: 0;">Access</h1>
-        <p class="muted">Controlled circulation. Single code unlocks the welcome page.</p>
+        <p class="muted gate-intro">ENTER YOUR CODE.</p>
       </div>
-    </section>
-
-    <section class="panel reveal section-tight">
-      <details class="accordion">
-        <summary>Open circulation window</summary>
-        <div class="muted small">When the window is open, no code is needed. Supply stays limited.</div>
-        <div id="drop-state" class="circulation-state"></div>
-        <p class="muted small" style="margin-top:12px;">If the window is closed, request access below.</p>
-      </details>
     </section>
 
     <section class="panel reveal center" style="margin-top: 28px;">
         <h3 style="margin-top: 0;">Access code</h3>
         <form id="code-form" class="gate-form" method="post" style="max-width: 420px; margin: 0 auto;">
-          <label for="code-input" class="muted">Enter code</label>
+          <label for="code-input" class="muted">Code</label>
           <div class="code-row" style="justify-content:center;">
             <input id="code-input" name="code" type="password" placeholder="•••••••••" autocomplete="one-time-code" required>
             <button type="submit" class="btn" id="code-submit">Unlock</button>
@@ -90,7 +83,6 @@
   </footer>
 
   <script src="js/script.js"></script>
-  <script src="js/drop.js"></script>
   <script src="js/access.js"></script>
 </body>
 </html>
