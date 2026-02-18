@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residue Link | Admin</title>
+  <link rel="stylesheet" href="css/linktree.css">
+  <script src="js/env.js"></script>
+</head>
+<body class="lt-page" data-theme="dark">
+  <div class="page-wrapper">
+    <div class="lt-header">
+      <div class="lt-brand"><span class="lt-bar"></span> Residue Links</div>
+      <div class="lt-note">Create & manage your card link</div>
+    </div>
+
+    <div class="admin-card" id="lt-auth-card">
+      <div class="form-group">
+        <div class="lt-label">Email</div>
+        <input class="lt-input" type="email" id="lt-auth-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <div class="lt-label">Password</div>
+        <input class="lt-input" type="password" id="lt-auth-pass" placeholder="••••••••">
+      </div>
+      <div class="form-group" style="gap:12px;">
+        <button class="lt-btn" id="lt-login">Log in</button>
+        <button class="lt-btn secondary" id="lt-signup">Create account</button>
+      </div>
+      <div class="lt-status" id="lt-auth-status"></div>
+    </div>
+
+    <div class="admin-card lt-admin" id="lt-editor" hidden>
+      <div class="lt-row lt-center">
+        <div class="lt-label">Profile</div>
+        <p class="lt-note">Public link: <span id="lt-public-url"></span></p>
+      </div>
+
+      <div class="form-group">
+        <div class="lt-label">Avatar</div>
+        <div class="lt-avatar-upload">
+          <input class="lt-input" id="lt-avatar-url" placeholder="https://...">
+          <input class="lt-file" type="file" id="lt-avatar-file" accept="image/*">
+          <p class="lt-note">Paste a URL or upload an image (will be embedded).</p>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <div class="lt-label">Name *</div>
+          <input class="lt-input" id="lt-name" required>
+        </div>
+        <div class="form-group">
+          <div class="lt-label">Title</div>
+          <input class="lt-input" id="lt-title" placeholder="Founder">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="lt-label">Bio (≤ 50 words)</div>
+        <textarea class="lt-textarea" id="lt-bio" maxlength="320" placeholder="Short description"></textarea>
+      </div>
+
+      <div class="form-group">
+        <div class="lt-label">Theme</div>
+        <div class="lt-theme-toggle">
+          <label><input type="radio" name="lt-theme" value="dark" checked> Dark</label>
+          <label><input type="radio" name="lt-theme" value="light"> Light</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="lt-label">Slug / URL</div>
+        <input class="lt-input" id="lt-slug" placeholder="your-handle">
+        <p class="lt-note">Your public link will be /link-profile.html?u=your-handle</p>
+      </div>
+
+      <div class="form-group">
+        <div class="lt-label">Links (max 5)</div>
+        <div class="lt-links-editor" id="lt-links-editor"></div>
+        <button class="lt-btn secondary" id="lt-add-link">Add link</button>
+      </div>
+
+      <div class="form-group">
+        <button class="lt-btn" id="lt-save">Save</button>
+        <div class="lt-status" id="lt-save-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/link-app.js"></script>
+  <script type="module">
+    window.linktree?.renderAdmin();
+  </script>
+</body>
+</html>

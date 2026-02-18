@@ -1,0 +1,11 @@
+# Local secrets
+js/env.js
+env.js
+
+# macOS metadata
+.DS_Store
+
+# Node / tooling noise (future-proof)
+node_modules
+dist
+.vercel

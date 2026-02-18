@@ -209,10 +209,14 @@ section + section {
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .narrow {
   max-width: 760px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 /* Navigation */
@@ -493,18 +497,46 @@ header.scrolled {
 
 @media (max-width: 768px) {
   .hero {
-    padding: 18vh 18px 14vh;
+    padding: 16vh 14px 12vh;
   }
   .hero-content {
-    padding: 12px 18px;
-    gap: 18px;
+    padding: 10px 14px;
+    gap: 14px;
+    max-width: 380px;
   }
   .hero h1 {
-    font-size: clamp(2.6rem, 9vw, 4.2rem);
-    line-height: 1.08;
+    font-size: clamp(2.2rem, 7vw, 3.4rem);
+    line-height: 1.06;
   }
   .hero-lines {
     gap: 6px;
+    font-size: 1rem;
+  }
+  .subhead {
+    font-size: 1.05rem;
+  }
+  .hero .final-line {
+    font-size: 1rem;
+  }
+
+  section {
+    padding: 120px 16px;
+  }
+  .container,
+  .narrow {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .nav {
+    padding: 16px;
+  }
+  main, .panel {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  p, .muted, .subhead, .h2, h1, h2, h3 {
+    word-break: normal;
+    hyphens: auto;
   }
 }
 

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residue Link | Profile</title>
+  <link rel="stylesheet" href="css/linktree.css">
+  <script src="js/env.js"></script>
+</head>
+<body class="lt-page" data-theme="dark">
+  <div class="lt-header">
+    <div class="lt-brand"><span class="lt-bar"></span> Residue</div>
+    <div class="lt-note">Presence, one tap</div>
+  </div>
+  <div class="lt-card lt-hero-card">
+    <div class="lt-profile">
+      <img class="lt-avatar" id="lt-avatar" alt="Profile avatar">
+      <h1 class="lt-name" id="lt-name">Loading…</h1>
+      <p class="lt-title" id="lt-title"></p>
+      <p class="lt-bio" id="lt-bio"></p>
+    </div>
+    <div class="lt-links" id="lt-links"></div>
+    <div class="lt-footer">
+      <div class="lt-made">Residue — leave your mark.</div>
+      <a class="lt-manage" href="link-admin.html">Manage / add links</a>
+    </div>
+  </div>
+
+  <div class="lt-status lt-center" id="lt-status"></div>
+
+  <script type="module" src="js/link-app.js"></script>
+  <script type="module">
+    window.linktree?.renderPublicProfile();
+  </script>
+</body>
+</html>
