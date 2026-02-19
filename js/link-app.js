@@ -20,6 +20,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
   /* Public profile rendering */
   async function renderPublicProfile() {
     const slug = qs.get('u');
+    const overlay = document.getElementById('lt-overlay');
+    if (overlay) {
+      overlay.classList.add('active');
+      setTimeout(() => overlay.classList.remove('active'), 1000);
+    }
     if (isFileProtocol) {
       showPlaceholder('Run via http:// (not file://) so Supabase works.');
       return;
@@ -238,29 +243,31 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
     const saveBtn = document.getElementById('lt-save');
     const statusEl = document.getElementById('lt-save-status');
-    const overlay = document.getElementById('lt-overlay');
     saveBtn?.addEventListener('click', async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return showStatusEl(statusEl, 'Not signed in.', 'error');
-      const profile = collectProfilePayload(session.user.id);
-      if (!profile.name) return showStatusEl(statusEl, 'Name is required.', 'error');
-      if (!profile.slug) return showStatusEl(statusEl, 'Slug / URL is required.', 'error');
-      const links = collectLinks();
-      showStatusEl(statusEl, 'Saving…', 'loading');
-      if (overlay) overlay.hidden = false;
-      const { error: pErr } = await supabase.from('profiles').upsert(profile);
-      if (pErr) {
-        showStatusEl(statusEl, pErr.message, 'error');
-        if (overlay) overlay.hidden = true;
-        return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return showStatusEl(statusEl, 'Not signed in.', 'error');
+        const profile = collectProfilePayload(session.user.id);
+        if (!profile.name) return showStatusEl(statusEl, 'Name is required.', 'error');
+        if (!profile.slug) return showStatusEl(statusEl, 'Slug / URL is required.', 'error');
+        const links = collectLinks();
+        showStatusEl(statusEl, 'Saving…', 'loading');
+        const { error: pErr } = await supabase.from('profiles').upsert(profile);
+        if (pErr) {
+          showStatusEl(statusEl, pErr.message, 'error');
+          return;
+        }
+        await supabase.from('links').delete().eq('profile_id', session.user.id);
+        if (links.length) {
+          await supabase.from('links').insert(links.map(l => ({ ...l, profile_id: session.user.id })));
+        }
+        showStatusEl(statusEl, 'Saved. Redirecting…', 'success');
+        const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
+        setTimeout(() => { window.location.href = target; }, 500);
+      } catch (err) {
+        console.error(err);
+        showStatusEl(statusEl, err.message || 'Save failed.', 'error');
       }
-      await supabase.from('links').delete().eq('profile_id', session.user.id);
-      if (links.length) {
-        await supabase.from('links').insert(links.map(l => ({ ...l, profile_id: session.user.id })));
-      }
-      showStatusEl(statusEl, 'Saved. Redirecting…', 'success');
-      const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
-      setTimeout(() => { window.location.href = target; }, 500);
     });
   }
 
