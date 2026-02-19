@@ -56,6 +56,7 @@
 
     <section class="access-gate reveal" id="access-gate" aria-labelledby="access-gate-title">
       <div class="container narrow center">
+        <div class="access-card">
         <div class="eyebrow">Access</div>
         <h2 id="access-gate-title" class="h2" style="margin-bottom:4px;">Access code</h2>
         <p class="muted gate-intro" style="margin-bottom:16px;">ENTER YOUR CODE.</p>
@@ -63,10 +64,14 @@
           <label for="access-code" class="muted">Code</label>
           <div class="code-row" style="justify-content:center;">
             <input id="access-code" name="access-code" type="password" autocomplete="one-time-code" placeholder="•••••••••" required>
-            <button class="btn btn-outline" type="submit">Unlock</button>
+          <button class="btn btn-outline" type="submit">Unlock</button>
           </div>
           <div class="status gate-status" aria-live="polite" hidden>Access not recognised.</div>
         </form>
+        <div style="margin-top: 16px;">
+          <a href="access.html#request-access" class="muted" style="text-decoration: underline;">Request access instead</a>
+        </div>
+        </div>
       </div>
     </section>
 

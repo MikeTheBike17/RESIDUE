@@ -497,16 +497,18 @@ header.scrolled {
 
 @media (max-width: 768px) {
   .hero {
-    padding: 16vh 14px 12vh;
+    padding: 14vh 16px 12vh;
   }
   .hero-content {
-    padding: 10px 14px;
-    gap: 14px;
-    max-width: 380px;
+    padding: 12px 16px;
+    gap: 12px;
+    max-width: 320px;
+    text-align: center;
   }
   .hero h1 {
-    font-size: clamp(2.2rem, 7vw, 3.4rem);
-    line-height: 1.06;
+    font-size: clamp(2rem, 6.8vw, 3rem);
+    line-height: 1.05;
+    margin: 0 auto;
   }
   .hero-lines {
     gap: 6px;
@@ -517,6 +519,7 @@ header.scrolled {
   }
   .hero .final-line {
     font-size: 1rem;
+    margin-top: 8px;
   }
 
   section {
@@ -713,6 +716,21 @@ input:focus, textarea:focus {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.9rem;
+}
+
+.access-card {
+  margin: 0 auto;
+  max-width: 640px;
+  padding: 36px 28px 32px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 30px 90px -48px rgba(0,0,0,0.65);
+}
+
+[data-theme="light"] .access-card {
+  background: rgba(255,255,255,0.56);
+  border-color: rgba(16,18,24,0.08);
 }
 
 /* Structural bands */
