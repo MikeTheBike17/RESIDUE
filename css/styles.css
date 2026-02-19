@@ -500,25 +500,29 @@ header.scrolled {
     padding: 14vh 16px 12vh;
   }
   .hero-content {
-    padding: 12px 16px;
-    gap: 12px;
-    max-width: 320px;
+    padding: 14px 16px;
+    gap: 10px;
+    max-width: 280px;
     text-align: center;
-  }
-  .hero h1 {
-    font-size: clamp(2rem, 6.8vw, 3rem);
-    line-height: 1.05;
     margin: 0 auto;
   }
+  .hero h1 {
+    font-size: clamp(1.8rem, 5.6vw, 2.45rem);
+    line-height: 1.02;
+    margin: 0 auto;
+  }
+  .hero h1 .nowrap {
+    white-space: normal;
+  }
   .hero-lines {
-    gap: 6px;
-    font-size: 1rem;
+    gap: 5px;
+    font-size: 0.95rem;
   }
   .subhead {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
   .hero .final-line {
-    font-size: 1rem;
+    font-size: 0.92rem;
     margin-top: 8px;
   }
 
@@ -537,10 +541,10 @@ header.scrolled {
     padding-left: 0;
     padding-right: 0;
   }
-  p, .muted, .subhead, .h2, h1, h2, h3 {
-    word-break: normal;
-    hyphens: auto;
-  }
+p, .muted, .subhead, .h2, h1, h2, h3 {
+  word-break: normal;
+  hyphens: none;
+}
 }
 
 .hero-actions {
