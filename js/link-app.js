@@ -12,6 +12,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     : createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 
   const setTheme = theme => document.body.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+  const setAuthOnly = flag => {
+    if (flag) document.body.classList.add('auth-only');
+    else document.body.classList.remove('auth-only');
+  };
 
   /* Public profile rendering */
   async function renderPublicProfile() {
@@ -120,16 +124,20 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toggleEditor(false);
+      setAuthOnly(true);
     } else if (forceLoad || session) {
       toggleEditor(true);
       loadProfile(session.user);
+      setAuthOnly(false);
     }
     supabase.auth.onAuthStateChange((event, sessionNow) => {
       if (sessionNow) {
         toggleEditor(true);
         loadProfile(sessionNow.user);
+        setAuthOnly(false);
       } else {
         toggleEditor(false);
+        setAuthOnly(true);
       }
     });
   }
@@ -195,7 +203,26 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
       grouped[idx][field] = input.value.trim();
     });
     return Object.values(grouped)
-      .filter(l => l.label && l.url)
+      .filter(l => l.label || l.url)
+      .map(link => {
+        let url = link.url || '';
+        if (url && !/^https?:\/\//i.test(url)) {
+          url = 'https://' + url;
+        }
+        let label = link.label;
+        if (!label && url) {
+          try {
+            const u = new URL(url);
+            const host = u.hostname.replace('www.', '');
+            const base = host.split('.')[0] || 'Link';
+            label = base.charAt(0).toUpperCase() + base.slice(1);
+          } catch {
+            label = 'Link';
+          }
+        }
+        return { label: label || 'Link', url };
+      })
+      .filter(l => l.url)
       .slice(0, MAX_LINKS)
       .map((l, i) => ({ ...l, sort: i }));
   }
@@ -211,6 +238,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
     const saveBtn = document.getElementById('lt-save');
     const statusEl = document.getElementById('lt-save-status');
+    const overlay = document.getElementById('lt-overlay');
     saveBtn?.addEventListener('click', async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return showStatusEl(statusEl, 'Not signed in.', 'error');
@@ -219,15 +247,20 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
       if (!profile.slug) return showStatusEl(statusEl, 'Slug / URL is required.', 'error');
       const links = collectLinks();
       showStatusEl(statusEl, 'Saving…', 'loading');
+      if (overlay) overlay.hidden = false;
       const { error: pErr } = await supabase.from('profiles').upsert(profile);
-      if (pErr) return showStatusEl(statusEl, pErr.message, 'error');
+      if (pErr) {
+        showStatusEl(statusEl, pErr.message, 'error');
+        if (overlay) overlay.hidden = true;
+        return;
+      }
       await supabase.from('links').delete().eq('profile_id', session.user.id);
       if (links.length) {
         await supabase.from('links').insert(links.map(l => ({ ...l, profile_id: session.user.id })));
       }
       showStatusEl(statusEl, 'Saved. Redirecting…', 'success');
       const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
-      setTimeout(() => { window.location.href = target; }, 800);
+      setTimeout(() => { window.location.href = target; }, 500);
     });
   }
 
@@ -285,20 +318,54 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
   /* Avatar file handling */
   const avatarFile = document.getElementById('lt-avatar-file');
   const avatarUrlInput = document.getElementById('lt-avatar-url');
-  avatarFile?.addEventListener('change', () => {
+  avatarFile?.addEventListener('change', async () => {
     const file = avatarFile.files?.[0];
     if (!file) return;
-    if (file.size > 1.2 * 1024 * 1024) {
-      showStatusEl(document.getElementById('lt-save-status'), 'Image too large (>1.2MB).', 'error');
+    try {
+      const dataUrl = await compressImage(file, 900 * 1024, 900);
+      avatarUrlInput.value = dataUrl;
+      showStatusEl(document.getElementById('lt-save-status'), 'Image optimized.', 'success');
+    } catch (err) {
+      showStatusEl(document.getElementById('lt-save-status'), err.message || 'Image failed.', 'error');
       avatarFile.value = '';
-      return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      avatarUrlInput.value = reader.result;
-    };
-    reader.readAsDataURL(file);
   });
+
+  async function compressImage(file, maxBytes, maxSize) {
+    const blob = await fileToDataURL(file);
+    const img = await loadImage(blob);
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+    canvas.width = Math.floor(img.width * scale);
+    canvas.height = Math.floor(img.height * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    let quality = 0.85;
+    let dataUrl = canvas.toDataURL('image/jpeg', quality);
+    while (dataUrl.length * 0.75 > maxBytes && quality > 0.4) {
+      quality -= 0.05;
+      dataUrl = canvas.toDataURL('image/jpeg', quality);
+    }
+    return dataUrl;
+  }
+
+  function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = dataUrl;
+    });
+  }
 
   // Expose
   window.linktree = {
@@ -312,6 +379,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
         showStatusEl(document.getElementById('lt-auth-status'), 'Missing Supabase config', 'error');
         return;
       }
+      setAuthOnly(true);
       bindAuth();
       bindEditorActions();
       initSession();

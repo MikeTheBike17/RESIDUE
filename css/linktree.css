@@ -33,6 +33,20 @@
   font-family: 'Space Grotesk', 'Sora', system-ui, -apple-system, sans-serif;
 }
 
+.auth-only .lt-header,
+.auth-only .lt-admin {
+  display: none;
+}
+
+.auth-only .page-wrapper {
+  padding-top: 80px;
+}
+
+.auth-only .lt-auth-card {
+  display: grid;
+  margin: 0 auto;
+}
+
 .page-wrapper {
   display: flex;
   flex-direction: column;
@@ -303,6 +317,7 @@
 .lt-made {
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: #ffffff;
 }
 
 .lt-manage {
@@ -343,6 +358,29 @@
 
 .lt-center {
   text-align: center;
+}
+
+.lt-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.lt-overlay-box {
+  background: rgba(20,20,24,0.9);
+  color: #f6f7fb;
+  padding: 18px 28px;
+  border-radius: 12px;
+  border: 1px solid var(--lt-border);
+  box-shadow: var(--lt-shadow);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 768px) {
