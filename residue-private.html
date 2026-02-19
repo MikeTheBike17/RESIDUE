@@ -117,10 +117,8 @@
           <input id="mark" name="mark" type="file" accept="image/svg+xml,image/png">
 
           <fieldset class="finish">
-            <legend>Finish Selection</legend>
-            <label><input type="radio" name="finish" value="Matte Black" checked> Matte Black</label>
-            <label><input type="radio" name="finish" value="Brushed Steel"> Brushed Steel</label>
-            <label><input type="radio" name="finish" value="Graphite"> Graphite</label>
+            <legend>Finish</legend>
+            <label><input type="radio" name="finish" value="Matte Black" checked> Matte Black (stainless steel)</label>
           </fieldset>
 
           <label for="quantity">Quantity</label>
@@ -132,33 +130,23 @@
           </div>
           <p class="muted small">2–4 cards → R649 each · 5+ cards → R599 each</p>
 
+          <div class="stack" style="gap:10px; margin-top:12px;">
+            <div class="eyebrow premium">Payment (EFT)</div>
+            <p class="muted small">Pay via EFT and upload proof. Reference must match what you enter below.</p>
+            <div class="price-line" style="align-items:flex-start; flex-direction:column; gap:4px;">
+              <span class="label">Account name: <strong>Residue</strong></span>
+              <span class="label">Account / IBAN: <strong>2505127022</strong></span>
+              <span class="label">SWIFT / BIC: <strong>CABLZAJJ</strong></span>
+            </div>
+            <label for="payment-ref">Your payment reference</label>
+            <input id="payment-ref" name="payment-ref" type="text" placeholder="e.g. FOUNDER-001 + your name" required>
+
+            <label for="proof">Upload proof of payment</label>
+            <input id="proof" name="proof" type="file" accept="image/*,.pdf" required>
+          </div>
+
           <button class="btn btn-outline premium-btn" type="submit">Deploy Card</button>
           <div class="status configure-status" aria-live="polite" hidden>Deployment initiated.</div>
-        </form>
-      </div>
-    </section>
-
-    <section class="enterprise reveal" id="enterprise" aria-label="Enterprise deployment">
-      <div class="container">
-        <div class="eyebrow premium">Enterprise</div>
-        <h2 class="h2">Enterprise Deployment</h2>
-        <p class="muted">Batch configuration. Team distribution. Controlled circulation.</p>
-        <form class="enterprise-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">
-          <input type="hidden" name="_subject" value="Residue Enterprise Request">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_next" value="/thank-you.html">
-          <input type="text" name="_honey" style="display:none">
-          <label for="ent-company">Company</label>
-          <input id="ent-company" name="ent-company" type="text" autocomplete="organization">
-
-          <label for="ent-size">Estimated team size</label>
-          <input id="ent-size" name="ent-size" type="number" min="1" placeholder="10">
-
-          <label for="ent-email">Contact email</label>
-          <input id="ent-email" name="ent-email" type="email" autocomplete="email" required>
-
-          <button class="btn btn-outline premium-btn" type="submit">Request Enterprise Access</button>
-          <div class="status enterprise-status" aria-live="polite" hidden>Request received.</div>
         </form>
       </div>
     </section>
