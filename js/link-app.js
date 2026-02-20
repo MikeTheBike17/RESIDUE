@@ -17,34 +17,82 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     else document.body.classList.remove('auth-only');
   };
 
+  /* Invite code helpers */
+  const makeCode = () => {
+    const n = Math.floor(Math.random() * 9000) + 1000;
+    return `R-${n}`;
+  };
+
+  async function fetchOrCreateCode(userId) {
+    if (!supabase || !userId) return null;
+    // try existing
+    const { data: existing } = await supabase.from('codes').select('*').eq('owner_profile', userId).limit(1).maybeSingle();
+    if (existing) return existing;
+    // create new code server-side via RPC for atomicity
+    const { data, error } = await supabase.rpc('create_code_for_user', { p_owner: userId });
+    if (!error && data) return data;
+    console.warn('RPC create_code_for_user missing; falling back to client insert', error);
+    const code = makeCode();
+    const { data: inserted, error: insErr } = await supabase.from('codes').insert({ code, owner_profile: userId, max_uses: 5, used_count: 0, active: true }).select('*').single();
+    if (insErr) {
+      console.error('insert code failed', insErr);
+      return null;
+    }
+    return inserted;
+  }
+
+  function renderCodePanel(codeRow) {
+    const block = document.getElementById('lt-code-block');
+    if (!block) return;
+    if (!codeRow) {
+      block.hidden = true;
+      return;
+    }
+    block.hidden = false;
+    const usesEl = document.getElementById('lt-code-uses');
+    const valEl = document.getElementById('lt-code-value');
+    if (valEl) valEl.textContent = codeRow.code;
+    if (usesEl) usesEl.textContent = `${codeRow.used_count || 0} / ${codeRow.max_uses || 5} uses`;
+  }
+
   /* Public profile rendering */
   async function renderPublicProfile() {
     const slug = qs.get('u');
     const overlay = document.getElementById('lt-overlay');
-    if (overlay) {
-      overlay.classList.add('active');
-      setTimeout(() => overlay.classList.remove('active'), 1000);
-    }
+    const overlayMin = 3000;
+    const start = performance.now();
+    const finishOverlay = () => {
+      if (!overlay) return;
+      const elapsed = performance.now() - start;
+      const remaining = Math.max(0, overlayMin - elapsed);
+      setTimeout(() => overlay.classList.remove('active'), remaining);
+    };
+    if (overlay) overlay.classList.add('active');
     if (isFileProtocol) {
       showPlaceholder('Run via http:// (not file://) so Supabase works.');
+      finishOverlay();
       return;
     }
     if (!supabase) {
       showPlaceholder('Missing Supabase configuration.');
+      finishOverlay();
       return;
     }
     if (!slug) {
       showPlaceholder('No profile yet. Tap manage to add yours.');
+      finishOverlay();
       return;
     }
     const { data, error } = await supabase.from('profiles').select('*').eq('slug', slug).single();
     if (error || !data) {
       showPlaceholder('Profile not found. Tap manage to create it.');
+      finishOverlay();
       return;
     }
     fillPublic(data);
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', data.id).order('sort', { ascending: true });
     renderLinks('lt-links', links || []);
+    finishOverlay();
   }
 
   function fillPublic(profile) {
@@ -154,6 +202,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     }
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', user.id).order('sort', { ascending: true });
     fillEditor(profile || {}, links || []);
+    const codeRow = await fetchOrCreateCode(user.id);
+    renderCodePanel(codeRow);
   }
 
   function toggleEditor(show) {
@@ -373,6 +423,25 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
       img.src = dataUrl;
     });
   }
+
+  /* Pricing calculator on configure page */
+  const qtyInput = document.getElementById('quantity');
+  const totalDue = document.getElementById('total-due');
+  const formatRand = n => 'R' + n.toLocaleString('en-ZA');
+  const getUnitPrice = qty => {
+    if (qty >= 5) return 499;
+    if (qty >= 2) return 549;
+    return 599;
+  };
+  const updateTotal = () => {
+    if (!qtyInput || !totalDue) return;
+    const qty = Math.max(1, parseInt(qtyInput.value || '1', 10));
+    const unit = getUnitPrice(qty);
+    const total = qty * unit;
+    totalDue.textContent = formatRand(total);
+  };
+  qtyInput?.addEventListener('input', updateTotal);
+  updateTotal();
 
   // Expose
   window.linktree = {

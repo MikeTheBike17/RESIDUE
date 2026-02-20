@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Residue — Access Granted</title>
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/env.js"></script>
 </head>
 <body data-theme="dark" class="page-fade-in">
   <header>
@@ -89,28 +90,28 @@
           <input type="hidden" name="_template" value="table">
           <input type="hidden" name="_next" value="/thank-you.html">
           <input type="text" name="_honey" style="display:none">
-          <label for="full-name">Full Name</label>
-          <input id="full-name" name="full-name" type="text" autocomplete="name" required>
+          <label for="full-name">Full name (as engraved)</label>
+          <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="First Last" required>
 
           <label for="role">Title / Role</label>
-          <input id="role" name="role" type="text" autocomplete="organization-title">
+          <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
 
-          <label for="website">Website URL</label>
-          <input id="website" name="website" type="url" placeholder="https://">
+          <label for="website">Website URL (include https://)</label>
+          <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
 
-          <label for="phone">Phone Number</label>
-          <input id="phone" name="phone" type="tel" autocomplete="tel">
+          <label for="phone">Phone number (international format)</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+1 555 123 4567">
 
           <label for="email-config">Email</label>
-          <input id="email-config" name="email-config" type="email" autocomplete="email">
+          <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com">
 
-          <label for="social">Social Links</label>
+          <label for="social">Social links (include https://)</label>
           <div class="stack" style="gap:10px;">
-            <input id="social" name="social" type="url" placeholder="https://">
-            <input name="social-2" type="url" placeholder="https:// (optional)">
+            <input id="social" name="social" type="url" placeholder="https://linkedin.com/in/you" data-auto-url>
+            <input name="social-2" type="url" placeholder="https://instagram.com/you (optional)" data-auto-url>
           </div>
 
-          <label for="logo">Upload Logo</label>
+          <label for="logo">Upload logo</label>
           <input id="logo" name="logo" type="file" accept="image/svg+xml,image/png,application/pdf">
 
           <label for="mark">Upload additional design (optional)</label>
@@ -121,9 +122,13 @@
 
           <div class="stack" style="gap:6px; margin-top:12px; align-items:flex-start;">
             <div class="eyebrow premium">Pricing</div>
-            <div class="muted small">R699 per card</div>
-            <div class="muted small">2–4 cards: R649 each</div>
-            <div class="muted small">5+ cards: R599 each</div>
+            <div class="muted small">R599 per card</div>
+            <div class="muted small">2–4 cards: R549 each</div>
+            <div class="muted small">5+ cards: R499 each</div>
+            <div class="price-line" style="margin-top:6px;">
+              <span class="label">Total due</span>
+              <span class="value" id="total-due">R599</span>
+            </div>
           </div>
 
           <div class="stack" style="gap:10px; margin-top:12px;">
@@ -135,7 +140,7 @@
               <span class="label">Account number: <strong>2505127022</strong></span>
             </div>
             <label for="payment-ref">Payment reference</label>
-            <input id="payment-ref" name="payment-ref" type="text" placeholder="Your name" required>
+          <input id="payment-ref" name="payment-ref" type="text" placeholder="Your name (this becomes your payment reference)" required>
 
             <label for="proof">Upload proof of payment</label>
             <input id="proof" name="proof" type="file" accept="image/*,.pdf" required>
@@ -153,5 +158,27 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script type="module" src="js/order.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const qtyInput = document.getElementById('quantity');
+      const totalDue = document.getElementById('total-due');
+      const unitPrice = (qty) => {
+        if (qty >= 5) return 499;
+        if (qty >= 2) return 549;
+        return 599;
+      };
+      const refreshTotal = () => {
+        if (!qtyInput || !totalDue) return;
+        const qty = Math.max(1, parseInt(qtyInput.value || '1', 10));
+        qtyInput.value = qty;
+        const total = qty * unitPrice(qty);
+        totalDue.textContent = 'R' + total.toLocaleString('en-ZA');
+      };
+      qtyInput?.addEventListener('input', refreshTotal);
+      qtyInput?.addEventListener('change', refreshTotal);
+      refreshTotal();
+    });
+  </script>
 </body>
 </html>
