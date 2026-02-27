@@ -210,6 +210,7 @@
     const CURRENT_USER_KEY = "residue_current_user";
     const TEMP_MOCK_USERNAME = "Mike@17";
     const TEMP_MOCK_PASSWORD = "123456";
+    const PRIVATE_PAGE = "residue-private.html";
 
     function getUsers() {
       try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
@@ -325,6 +326,7 @@
         setTimeout(() => {
           closeAuthModal();
           signinForm.reset();
+          window.location.href = PRIVATE_PAGE;
         }, 500);
         return;
       }
@@ -345,8 +347,7 @@
       setTimeout(() => {
         closeAuthModal();
         signinForm.reset();
-        // OPTIONAL redirect:
-        // window.location.href = "residue-private.html";
+        window.location.href = PRIVATE_PAGE;
       }, 500);
     });
 
