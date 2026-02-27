@@ -1,0 +1,7 @@
+{
+  "name": "residue",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "node write-env.js && node copy-static.js"
+  }
+}

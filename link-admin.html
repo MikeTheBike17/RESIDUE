@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residue Link | Admin</title>
+  <link rel="stylesheet" href="css/linktree.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/env.js"></script>
+</head>
+<body class="lt-page" data-theme="dark">
+  <div class="page-wrapper">
+    <div class="lt-header">
+      <div class="lt-brand"><span class="lt-bar"></span> Residue Links</div>
+      <div class="lt-note">Create & manage your card link</div>
+    </div>
+
+    <!--SIGN IN SECTION-->
+    <div class="admin-card" id="lt-auth-card">
+      <div class="form-group">
+        <div class="lt-label">Email</div>
+        <input class="lt-input" type="email" id="lt-auth-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <div class="lt-label">Password</div>
+        <input class="lt-input" type="password" id="lt-auth-pass" placeholder="••••••••">
+      </div>
+      <div class="form-group" style="gap:12px;">
+        <button class="lt-btn" id="lt-login">Log in</button>
+      </div>
+      <div class="lt-status" id="lt-auth-status"></div>
+
+      <div class="form-group" style="margin-top:8px;">
+        <a class="lt-inline-link" id="lt-forgot-toggle" href="#" role="button">Reset password</a>
+      </div>
+    </div>
+
+    <div class="reset-password-modal" id="lt-reset-modal" hidden>
+      <div class="reset-password-modal__backdrop" data-reset-close></div>
+      <div class="reset-password-modal__panel admin-card" role="dialog" aria-modal="true" aria-labelledby="lt-reset-title">
+        <button class="reset-password-modal__close" type="button" aria-label="Close reset password" data-reset-close>x</button>
+        <div class="form-group" id="lt-forgot-panel">
+          <div class="lt-label" id="lt-reset-title">Reset password</div>
+          <input class="lt-input" type="email" id="lt-reset-email" placeholder="Account email">
+          <button class="lt-btn secondary" id="lt-send-otp" type="button">Send OTP</button>
+          <input class="lt-input" type="text" id="lt-reset-otp" placeholder="6-digit OTP" inputmode="numeric" maxlength="6">
+          <input class="lt-input" type="password" id="lt-reset-pass" placeholder="New password (min 6)">
+          <input class="lt-input" type="password" id="lt-reset-confirm" placeholder="Confirm new password">
+          <button class="lt-btn" id="lt-reset-submit" type="button">Reset password</button>
+          <div class="lt-status" id="lt-reset-status"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!--CONFIGURE CARD-->
+    <div class="admin-card lt-admin" id="lt-editor" hidden>
+      <div class="lt-row lt-center">
+        <div class="lt-label">Profile</div>
+        <p class="lt-note">Public link: <span id="lt-public-url"></span></p>
+      </div>
+
+      <form class="configure-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">
+        <input type="hidden" name="_subject" value="Residue Configure Submission">
+        <input type="hidden" name="_template" value="table">
+        <input type="hidden" name="_next" value="/thank-you.html">
+        <input type="text" name="_honey" style="display:none">
+
+        <label for="full-name">Full name</label>
+        <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
+
+        <label for="role">Title / Role</label>
+        <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
+
+        <label for="website">Website URL (optional, include https://)</label>
+        <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
+
+        <label for="phone">Phone number</label>
+        <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" required>
+
+        <label for="email-config">Email</label>
+        <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
+
+        <label for="logo">Upload Company or Personal logo</label>
+        <input id="logo" name="logo" type="file" accept="image/svg+xml,image/png,application/pdf" required>
+
+        <div class="form-group">
+          <div class="lt-label">Bio (optional, ≤ 50 words)</div>
+          <textarea class="lt-textarea" id="lt-bio" maxlength="320" placeholder="Short description"></textarea>
+        </div>
+
+        <label for="social">Social links (optional, include https://)</label>
+        <div class="stack" style="gap:10px;">
+          <input id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you (optional)" data-auto-url>
+          <input id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you (optional)" data-auto-url>
+          <input id="social-3" name="whatsapp" type="url" placeholder="https://whatsapp.com/in/you (optional)" data-auto-url>
+          <input id="social-4" name="youtube" type="url" placeholder="https://youtube.com/in/you (optional)" data-auto-url>
+          <input id="social-5" name="facebook" type="url" placeholder="https://facebook.com/in/you (optional)" data-auto-url>
+          <input id="social-6" name="x" type="url" placeholder="https://x.com/in/you (optional)" data-auto-url>
+        </div>
+
+
+        <label for="mark">Upload Gallery Images (up to 50 photos) (optional)</label>
+        <input id="mark" name="mark" type="file" accept="image/*" multiple>
+
+        <label for="music-files">Upload MP3 files (up to 20 songs) (optional)</label>
+        <input id="music-files" name="music-files" type="file" accept="audio/mpeg,audio/mp3" multiple>
+
+        <!--remove?-->
+        <div class="form-group">
+          <div class="lt-label">Slug / URL</div>
+          <input class="lt-input" id="lt-slug" placeholder="your-handle">
+          <p class="lt-note">Your public link will be /link-profile.html?u=your-handle</p>
+        </div>
+
+        <div class="form-group">
+          <button class="lt-btn" id="lt-preview" type="button">Preview Card</button>
+          <div class="lt-status" id="lt-preview-status"></div>
+        </div>
+
+        <div class="form-group">
+          <button class="lt-btn" id="lt-save" type="button">Save</button>
+          <div class="lt-status" id="lt-save-status"></div>
+        </div>
+      </form>
+    </div>
+
+    <div class="lt-preview-modal" id="lt-preview-modal" hidden>
+      <div class="lt-preview-backdrop" data-preview-close></div>
+      <div class="lt-preview-panel" role="dialog" aria-modal="true" aria-labelledby="lt-preview-title">
+        <div class="lt-preview-head">
+          <h2 id="lt-preview-title">Card Preview</h2>
+          <button class="lt-btn secondary" type="button" data-preview-close>Back to Configure</button>
+        </div>
+        <iframe
+          id="lt-preview-frame"
+          class="lt-preview-frame"
+          title="Profile card preview"
+          src="about:blank"
+          scrolling="yes">
+        </iframe>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/link-app.js"></script>
+  <script type="module">
+    window.linktree?.renderAdmin();
+  </script>
+</body>
+</html>
+
+

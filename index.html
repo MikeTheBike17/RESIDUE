@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Residue — Minimal Identity Layer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/scipt.js"></script>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="index.html">Residue</a>
+      <div class="nav-links" aria-label="Primary">
+        <a href="about.html">About</a>
+        <a href="access.html">Access</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="drop.html">Circulation</a>
+      </div>
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
+          <span class="dot" aria-hidden="true"></span>
+          <span class="theme-label">Dark</span>
+        </button>
+        <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+          <span></span>
+        </button>
+      </div>
+    </nav>
+    <div class="mobile-nav" aria-label="Mobile navigation">
+      <a href="about.html">About</a>
+      <a href="access.html">Access</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="drop.html">Circulation</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme (mobile)">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="theme-label">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero full-bleed reveal" id="top">
+      <div class="hero-overlay" aria-hidden="true"></div>
+      <div class="hero-content">
+        <h1 id="rotating-quote">
+          <span class="nowrap">You don’t need to be the</span> 
+          <span class="nowrap">loudest in the room.</span><br>
+        </h1>
+
+        <div class="subhead hero-lines">
+          <span>You never did.</span>
+          <span>But you do care about what remains after the introduction.</span>
+        </div>
+
+        <div class="final-line">
+          That’s where <span class="wordmark">Residue</span> begins.
+        </div>
+      </div>
+    </section>
+
+
+    <!--ACCESS CODE - SIGN IN-->
+    <section class="access-gate reveal" id="access-gate" aria-labelledby="access-gate-title">
+      <div class="container narrow center">
+        <div class="access-card">
+        <div class="eyebrow">Access</div>
+        <h2 id="access-gate-title" class="h2" style="margin-bottom:4px;">Access code</h2>
+        <p class="muted gate-intro" style="margin-bottom:16px;">ENTER YOUR CODE.</p>
+        <form class="gate-form" action="#" method="post" style="max-width: 420px; margin: 0 auto;">
+          <label for="access-code" class="muted">Code</label>
+          <div class="code-row" style="justify-content:center;">
+            <input id="access-code" name="access-code" type="password" autocomplete="one-time-code" placeholder="•••••••••" required>
+          <button class="btn btn-outline" type="submit">Unlock</button>
+          </div>
+          <div class="status gate-status" aria-live="polite" hidden>Access not recognised.</div>
+        </form>
+        <div style="margin-top: 16px;">
+          <a href="access.html#request-access" class="muted" style="text-decoration: underline;">Request access instead</a>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTH MODAL (Sign in / Create account) -->
+    <div class="modal" id="authModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="modal-backdrop" data-close></div>
+
+      <div class="modal-panel" role="document">
+        <button class="modal-close" type="button" aria-label="Close" data-close>✕</button>
+
+        <div class="eyebrow">Access</div>
+
+        <!-- Toggle -->
+        <div class="auth-toggle" role="tablist" aria-label="Authentication mode" style="margin-left: 5rem;">
+          <button class="auth-tab is-active" type="button" id="tab-signin" role="tab" aria-selected="true" aria-controls="panel-signin">
+            Sign in
+          </button>
+          <button class="auth-tab" type="button" id="tab-create" role="tab" aria-selected="false" aria-controls="panel-create">
+            Create account
+          </button>
+        </div>
+
+        <h2 class="h2" id="authTitle" style="margin:10px 0 6px;">Sign in</h2>
+        <p class="muted" id="authSubtitle" style="margin-bottom:18px;">Enter your credentials to continue.</p>
+
+        <!-- SIGN IN -->
+        <form class="modal-form" id="signinForm" autocomplete="off" aria-labelledby="tab-signin" role="tabpanel" aria-hidden="false" tabindex="0">
+          <label class="muted" for="signin-email">Email</label>
+          <input id="signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+          <label class="muted" for="signin-password" style="margin-top:12px;">Password</label>
+          <input id="signin-password" name="password" type="password" placeholder="••••••••" minlength="6" required>
+
+          <div class="status modal-status" id="signinStatus" aria-live="polite" hidden></div>
+
+          <div class="modal-actions">
+            <button class="btn btn-outline" type="button" data-close>Cancel</button>
+            <button class="btn" type="submit">Sign in</button>
+          </div>
+        </form>
+
+        <!-- CREATE ACCOUNT -->
+        <form class="modal-form" id="createForm" autocomplete="off" aria-labelledby="tab-create" role="tabpanel" aria-hidden="true" tabindex="-1" style="display:none;">
+          <label class="muted" for="create-username">Username</label>
+          <input id="create-username" name="username" type="text" placeholder="" minlength="3" required>
+
+          <label class="muted" for="create-email" style="margin-top:12px;">Email</label>
+          <input id="create-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+          <label class="muted" for="create-password" style="margin-top:12px;">Password</label>
+          <input id="create-password" name="password" type="password" placeholder="••••••••" minlength="6" required>
+
+          <label class="muted" for="create-confirm" style="margin-top:12px;">Confirm password</label>
+          <input id="create-confirm" name="confirm" type="password" placeholder="••••••••" minlength="6" required>
+
+          <div class="status modal-status" id="createStatus" aria-live="polite" hidden></div>
+
+          <div class="modal-actions">
+            <button class="btn btn-outline" type="button" data-close>Cancel</button>
+            <button class="btn" type="submit">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <section class="lifestyle full-bleed fade-edges reveal">
+      <div class="lifestyle-grid">
+        <div class="lifestyle-image">
+          <img src="images/02Business-Casual-promo-videoSixteenByNineJumbo1600.png" alt="Business motion">
+        </div>
+        <div class="lifestyle-copy">
+          <div class="eyebrow">Presence in motion</div>
+          <h2 class="h2">Carried.<br>Not Broadcast.</h2>
+          <p class="muted">A physical layer of identity for people who prefer presence over noise.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="proof reveal" aria-label="Industrial proof points">
+      <div class="container">
+        <div class="proof-grid">
+          <div class="proof-item">
+            <div class="label">Ultra-durable</div>
+            <p>Machined metal for daily carry.</p>
+          </div>
+          <div class="proof-item">
+            <div class="label">Brand-perfect</div>
+            <p>Finish keeps your mark clear.</p>
+          </div>
+          <div class="proof-item">
+            <div class="label">Ready to deploy</div>
+            <p>Program once, share in seconds.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="materiality full-bleed fade-edges reveal" aria-label="Material emphasis">
+      <div class="materiality-overlay" aria-hidden="true"></div>
+      <div class="word-stack" aria-label="Material qualities">
+        <span>Material that endures.</span>
+        <span>Presence that holds.</span>
+        <span>Silence that speaks.</span>
+        <span>Control that remains.</span>
+      </div>
+    </section>
+
+    <section class="panel reveal center" aria-label="How it works teaser" style="padding: 72px 0;">
+      <div class="container narrow center">
+        <div class="eyebrow">How it works</div>
+        <h2 class="h2">One tap, clear handoff.</h2>
+        <p class="muted">See the flow and where a tap can take someone.</p>
+        <a class="btn btn-outline" href="how-it-works.html" style="margin-top:18px;">View the path</a>
+      </div>
+    </section>
+
+    <section class="quiet-cta">
+      <div class="container narrow center">
+        <h2 class="quiet-head">You don’t need to be louder.</h2>
+        <p class="quiet-sub">You need to be clearer.<br>Residue is for those who understand the difference.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">Residue remains.</div>
+  </footer>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
+
+
