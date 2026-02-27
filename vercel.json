@@ -1,4 +1,16 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/about.html", "destination": "/about", "permanent": true },
+    { "source": "/access.html", "destination": "/access", "permanent": true },
+    { "source": "/how-it-works.html", "destination": "/how-it-works", "permanent": true },
+    { "source": "/drop.html", "destination": "/drop", "permanent": true },
+    { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/residue-private.html", "destination": "/", "permanent": true },
+    { "source": "/link-admin.html", "destination": "/", "permanent": true },
+    { "source": "/link-profile.html", "destination": "/", "permanent": true }
+  ]
 }
