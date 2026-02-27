@@ -78,7 +78,7 @@
       </div>
     </section>
 
-    <!--CONFIGURE CARD SECTION-->
+    <!--PURCHASE SECTION-->
     <section class="configure reveal" id="configure" aria-label="Configure your card">
       <div class="container">
         <div class="eyebrow premium">Purchase details</div>
@@ -154,14 +154,14 @@
       </div>
     </div>
 
-    <!--BANKING (modal)-->
+    <!--PAYFAST CHECKOUT (modal)-->
     <div id="payment-modal" class="pay-modal hidden" aria-hidden="true">
       <div class="modal-content">
         <button class="close-btn" aria-label="Close payment form">×</button>
         <section class="banking-form">
           <div class="stack" style="gap:10px;">
-            <div class="eyebrow premium">Payment Details</div>
-            <p class="muted small">Enter your payment information below.</p>
+            <div class="eyebrow premium">PayFast Checkout</div>
+            <p class="muted small">Secure bank payment powered by PayFast.</p>
 
             <!-- Order Summary -->
             <div class="order-summary">
@@ -192,26 +192,27 @@
             <label for="shipping-postal">Postal Code</label>
             <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
 
-            <!-- Payment Details -->
-            <label for="card-name">Cardholder Name</label>
-            <input id="card-name" name="card-name" type="text" placeholder="Name on Card" required>
+            <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
+            <button id="pay-btn" class="btn btn-outline premium-btn" type="button">Continue to PayFast</button>
 
-            <label for="card-number">Card Number</label>
-            <input id="card-number" name="card-number" type="text" placeholder="1234 5678 9012 3456" inputmode="numeric" required>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-              <div>
-                <label for="card-expiry">Expiry (MM/YY)</label>
-                <input id="card-expiry" name="card-expiry" type="text" placeholder="MM/YY" inputmode="numeric" required>
-              </div>
-              <div>
-                <label for="card-cvv">CVV</label>
-                <input id="card-cvv" name="card-cvv" type="text" placeholder="123" inputmode="numeric" required>
-              </div>
-            </div>
-
-            <button id="pay-btn" class="btn btn-outline premium-btn" type="button">Pay Now</button>
-            <div class="status configure-status" aria-live="polite" hidden>Processing...</div>
+            <form id="payfast-form" action="https://www.payfast.co.za/eng/process" method="post" style="display:none;">
+              <input type="hidden" name="merchant_id" id="pf-merchant-id">
+              <input type="hidden" name="merchant_key" id="pf-merchant-key">
+              <input type="hidden" name="return_url" id="pf-return-url">
+              <input type="hidden" name="cancel_url" id="pf-cancel-url">
+              <input type="hidden" name="notify_url" id="pf-notify-url">
+              <input type="hidden" name="name_first" id="pf-name-first">
+              <input type="hidden" name="name_last" id="pf-name-last">
+              <input type="hidden" name="email_address" id="pf-email">
+              <input type="hidden" name="m_payment_id" id="pf-payment-id">
+              <input type="hidden" name="amount" id="pf-amount">
+              <input type="hidden" name="item_name" id="pf-item-name">
+              <input type="hidden" name="item_description" id="pf-item-description">
+              <input type="hidden" name="custom_str1" id="pf-custom-invoice">
+              <input type="hidden" name="custom_str2" id="pf-custom-email">
+              <input type="hidden" name="custom_str3" id="pf-custom-product">
+              <input type="hidden" name="custom_str4" id="pf-custom-qty">
+            </form>
           </div>
         </section>
       </div>
@@ -224,7 +225,8 @@
           <div class="eyebrow premium">Thank You!</div>
           <h2 style="margin:0; color:var(--accent-premium);">Your order is confirmed</h2>
           <p class="muted">We'll deliver your Residue cards to you within <strong>5-7 business days</strong>.</p>
-          <p class="muted small">A confirmation email has been sent to you with order details.</p>
+          <p class="muted small">Invoice: <strong id="thank-you-invoice">Pending</strong></p>
+          <p class="muted small" id="thank-you-payment-status">Waiting for payment confirmation.</p>
           <button id="redirect-btn" class="btn btn-outline premium-btn">Return to Home</button>
         </div>
       </div>
@@ -236,9 +238,11 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script type="module" src="js/private-payment.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      return;
       const qtyInput = document.getElementById('quantity');
       const totalDue = document.getElementById('total-due');
 
