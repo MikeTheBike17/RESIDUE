@@ -222,6 +222,129 @@
 .lt-btn.secondary { border-color: var(--lt-border); color: var(--lt-text); }
 .lt-btn.secondary:hover { border-color: var(--lt-accent); }
 
+.lt-inline-link {
+  display: inline-block;
+  color: var(--lt-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-size: 0.95rem;
+}
+
+.lt-inline-link:hover {
+  color: #f2d4a9;
+}
+
+.reset-password-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.reset-password-modal[hidden] {
+  display: none !important;
+}
+
+.reset-password-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.reset-password-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 92vw);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.reset-password-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--lt-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lt-text);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.lt-preview-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.lt-preview-modal[hidden] {
+  display: none !important;
+}
+
+.lt-preview-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lt-preview-panel {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 96vw);
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  border-radius: 16px;
+  padding: 18px;
+  background: linear-gradient(180deg, var(--lt-card-strong), var(--lt-card));
+  border: 1px solid var(--lt-border);
+}
+
+.lt-preview-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.lt-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.lt-preview-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lt-preview-frame {
+  width: 100%;
+  height: min(78vh, 820px);
+  border: 0;
+  border-radius: 12px;
+  background: #000;
+  display: block;
+}
+
 .lt-links-editor {
   display: grid;
   gap: 12px;
