@@ -413,6 +413,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const urlEl = document.getElementById('lt-public-url');
     if (urlEl) urlEl.textContent = publicUrl;
     renderLinkEditor(links);
+    // Derive contact inputs from links if present
+    if (Array.isArray(links)) {
+      const websiteLink = links.find(l => (l.label || '').toLowerCase() === 'website');
+      const callLink = links.find(l => (l.label || '').toLowerCase() === 'call');
+      const emailLink = links.find(l => (l.label || '').toLowerCase() === 'email');
+      if (websiteLink?.url) setValue('website', websiteLink.url);
+      if (callLink?.url) setValue('phone', callLink.url.replace(/^tel:/i, ''));
+      if (emailLink?.url) setValue('email-config', emailLink.url.replace(/^mailto:/i, ''));
+      const sw = document.getElementById('show-website');
+      const sp = document.getElementById('show-phone');
+      const se = document.getElementById('show-email');
+      if (sw) sw.checked = !(websiteLink?.hidden);
+      if (sp) sp.checked = !(callLink?.hidden);
+      if (se) se.checked = !(emailLink?.hidden);
+    }
   }
 
   function renderLinkEditor(links) {
@@ -761,11 +776,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const title = getValue('role') || getValue('lt-title');
     const bio = getValue('lt-bio');
     const avatar_url = getValue('lt-avatar-url');
-    const website = getValue('website');
-    const phone = getValue('phone');
-    const email = getValue('email-config');
     const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'dark';
-    return { id: userId, name, slug, title, bio, avatar_url, theme, website, phone, email };
+    return { id: userId, name, slug, title, bio, avatar_url, theme };
   }
 
   /* Helpers */
