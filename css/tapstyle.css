@@ -16,7 +16,7 @@ body.lt-page {
   color: #fff;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  overflow: hidden;
+  overflow: auto;
 
   /* soften the wallpaper but keep it visible */
   background-image:
@@ -63,9 +63,11 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 
   position: relative;
-  height: calc(100vh - 24px);
+  min-height: 80vh;
   max-height: calc(100vh - 24px);
-  overflow: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* =========================
@@ -176,7 +178,7 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 18px;
+  bottom: 12px;
   padding: 0 24px;
   display: flex;
   justify-content: space-between;
