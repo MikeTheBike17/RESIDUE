@@ -360,9 +360,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     if (!profile) {
       await ensureProfileRow(user);
     }
-    // Fetch contact links first
+    // Fetch links; add hidden default false so toggles work locally
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', user.id).order('sort', { ascending: true });
-    fillEditor(profile || {}, links || []);
+    const hydratedLinks = (links || []).map(l => ({ ...l, hidden: l.hidden ?? false }));
+    fillEditor(profile || {}, hydratedLinks);
     const codeRow = await fetchOrCreateCode(user.id);
     renderCodePanel(codeRow);
   }
@@ -728,7 +729,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
           }
           await supabase.from('links').delete().eq('profile_id', session.user.id);
           if (links.length) {
-            await supabase.from('links').insert(links.map(l => ({ ...l, profile_id: session.user.id })));
+            const supaLinks = links.map(l => ({
+              label: l.label,
+              url: l.url,
+              sort: l.sort,
+              profile_id: session.user.id
+            }));
+            await supabase.from('links').insert(supaLinks);
           }
         }
 
