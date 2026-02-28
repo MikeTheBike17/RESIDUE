@@ -27,7 +27,7 @@
     </nav>
     <div class="mobile-nav" aria-label="Mobile navigation">
       <a href="index.html">Home</a>
-      <a href="#configure">Configure</a>
+      <a href="index.html#configure">Configure</a>
       <button class="theme-toggle" type="button" aria-pressed="true" aria-label="Toggle theme (mobile)">
         <span class="dot" aria-hidden="true"></span>
         <span class="theme-label">Dark</span>
@@ -78,163 +78,159 @@
       </div>
     </section>
 
-
-    <!--CONFIGURE CARD SECTION-->
+    <!--PURCHASE SECTION-->
     <section class="configure reveal" id="configure" aria-label="Configure your card">
       <div class="container">
-        <div class="eyebrow premium">purchase</div>
+        <div class="eyebrow premium">Purchase details</div>
         <h2 class="h2">Purchase a Card</h2>
         <p class="muted">Set the signal. We handle the deployment.</p>
-        <form class="configure-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">
-          <input type="hidden" name="_subject" value="Residue Configure Submission">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_next" value="/thank-you.html">
-          <input type="text" name="_honey" style="display:none">
 
+        <!-- NOTE: you had a closing </form> later, but no opening <form>.
+             If you already have one in your real file, keep yours and remove this.
+             Otherwise, this fixes the markup. -->
+        <form class="configure-form" action="#" method="post">
           <label for="full-name">Full name</label>
           <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
 
           <label for="email-config">Email</label>
           <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
 
-          <label for="phone">Phone number (international format)</label>
-          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" >
+          <label for="phone">Phone number</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
 
-          <label for="quantity">Quantity</label>     
+          <label for="quantity">Quantity</label>
           <input id="quantity" name="quantity" type="number" min="0" step="1" placeholder="0">
+
 
           <!--PRICES-->
           <section class="prices" style="margin: 16px 0 8px 0; padding:0;">
             <div class="eyebrow premium" style="text-align:left;">Pricing</div>
             <div class="price-align" style="margin-top: 1rem;">
               <!-- product 1-->
-              <div class="product-box">
+              <div class="product-box" data-product="standard">
                 <div class="stack price-stack" style="margin-top: 2rem;">
-                  <!-- selectable product options -->
                   <div class="price-option">
                     <span class="price-amount"><b>Standard Cards</b></span>
                   </div>
                   <div class="price-amount">R399</div>
                   <div class="price-amount">2–4 cards: R349 each</div>
                   <div class="price-amount">5+ cards: R299 each</div>
-                  <div class="price-line" style="margin-top:4px;">
-                  </div>
+                  <div class="price-line" style="margin-top:4px;"></div>
                 </div>
               </div>
 
               <!--product 2-->
-              <div class="product-box">
+              <div class="product-box" data-product="premium">
                 <div class="stack price-stack" style="margin-top: 2rem;">
-                  <!-- selectable product options -->
                   <div class="price-option">
                     <span class="price-amount"><b>Premium Cards</b></span>
                   </div>
                   <div class="price-amount">R599</div>
                   <div class="price-amount">2–4 cards: R549 each</div>
                   <div class="price-amount">5+ cards: R499 each</div>
-                  <div class="price-line" style="margin-top:4px;">
-                  </div>
+                  <div class="price-line" style="margin-top:4px;"></div>
                 </div>
               </div>
             </div>
           </section>
 
           <button id="purchase-btn" type="button" class="btn btn-outline premium-btn">Purchase Now</button>
-
         </form>
       </div>
     </section>
 
-        <!-- Validation Error Modal -->
-        <div id="validation-modal" class="modal hidden" aria-hidden="true">
-          <div class="modal-content" style="text-align:center;">
-            <button class="close-btn" aria-label="Close" style="position:relative; margin-bottom:12px;">×</button>
-            <div class="stack" style="gap:16px;">
-              <h3 style="margin:0; color:var(--text);">Missing Required Fields</h3>
-              <p class="muted small">Please fill in the following fields before proceeding:</p>
-              <div id="missing-fields-list" style="text-align:left; padding:12px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: rgba(255,255,255,0.02);">
-                <!-- Fields will be populated by JS -->
+    <!-- Validation Error Modal -->
+    <div id="validation-modal" class="pay-modal hidden" aria-hidden="true">
+      <div class="modal-content" style="text-align:center;">
+        <button class="close-btn" aria-label="Close" style="position:relative; margin-bottom:12px;">×</button>
+        <div class="stack" style="gap:16px;">
+          <h3 style="margin:0; color:var(--text);">Missing Required Fields</h3>
+          <p class="muted small">Please fill in the following fields before proceeding:</p>
+          <div id="missing-fields-list" style="text-align:left; padding:12px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: rgba(255,255,255,0.02);">
+            <!-- Fields will be populated by JS -->
+          </div>
+          <button id="validation-close-btn" class="btn btn-outline premium-btn" type="button">Understood</button>
+        </div>
+      </div>
+    </div>
+
+    <!--PAYFAST CHECKOUT (modal)-->
+    <div id="payment-modal" class="pay-modal hidden" aria-hidden="true">
+      <div class="modal-content">
+        <button class="close-btn" aria-label="Close payment form">×</button>
+        <section class="banking-form">
+          <div class="stack" style="gap:10px;">
+            <div class="eyebrow premium">PayFast Checkout</div>
+            <p class="muted small">Secure bank payment powered by PayFast.</p>
+
+            <!-- Order Summary -->
+            <div class="order-summary">
+              <div class="summary-line">
+                <span>Subtotal</span>
+                <span id="modal-subtotal">R0</span>
               </div>
-              <button id="validation-close-btn" class="btn btn-outline premium-btn" type="button">Understood</button>
-            </div>
-          </div>
-        </div>
-        
-        <!--BANKING (modal)-->        
-        <div id="payment-modal" class="modal hidden" aria-hidden="true">
-          <div class="modal-content">
-            <button class="close-btn" aria-label="Close payment form">×</button>
-            <section class="banking-form">
-              <div class="stack" style="gap:10px;">
-                <div class="eyebrow premium">Payment Details</div>
-                <p class="muted small">Enter your payment information below.</p>
-                
-                <!-- Order Summary -->
-                <div class="order-summary">
-                  <div class="summary-line">
-                    <span>Subtotal</span>
-                    <span id="modal-subtotal">R0</span>
-                  </div>
-                  <div class="summary-line">
-                    <span>Shipping</span>
-                    <span id="modal-shipping">R99</span>
-                  </div>
-                  <div class="summary-line total">
-                    <span>Total Due</span>
-                    <span id="modal-total">R99</span>
-                  </div>
-                </div>
-                
-                <!-- Shipping Address -->
-                <label for="shipping-name">Full Name</label>
-                <input id="shipping-name" name="shipping-name" type="text" placeholder="Full Name" required>
-                
-                <label for="shipping-street">Street Address</label>
-                <input id="shipping-street" name="shipping-street" type="text" placeholder="Street Address" required>
-                
-                <label for="shipping-city">City</label>
-                <input id="shipping-city" name="shipping-city" type="text" placeholder="City" required>
-                
-                <label for="shipping-postal">Postal Code</label>
-                <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
-                
-                <!-- Payment Details -->
-                <label for="card-name">Cardholder Name</label>
-                <input id="card-name" name="card-name" type="text" placeholder="Name on Card" required>
-                
-                <label for="card-number">Card Number</label>
-                <input id="card-number" name="card-number" type="text" placeholder="1234 5678 9012 3456" inputmode="numeric" required>
-                
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                  <div>
-                    <label for="card-expiry">Expiry (MM/YY)</label>
-                    <input id="card-expiry" name="card-expiry" type="text" placeholder="MM/YY" inputmode="numeric" required>
-                  </div>
-                  <div>
-                    <label for="card-cvv">CVV</label>
-                    <input id="card-cvv" name="card-cvv" type="text" placeholder="123" inputmode="numeric" required>
-                  </div>
-                </div>
-                
-                <button id="pay-btn" class="btn btn-outline premium-btn" type="button">Pay Now</button>
-                <div class="status configure-status" aria-live="polite" hidden>Processing...</div>
+              <div class="summary-line">
+                <span>Shipping</span>
+                <span id="modal-shipping">R99</span>
               </div>
-            </section>
-          </div>
-        </div>
-        
-        <!-- Thank You Modal -->
-        <div id="thank-you-modal" class="modal hidden" aria-hidden="true">
-          <div class="modal-content" style="text-align:center;">
-            <div class="stack" style="gap:20px;">
-              <div class="eyebrow premium">Thank You!</div>
-              <h2 style="margin:0; color:var(--accent-premium);">Your order is confirmed</h2>
-              <p class="muted">We'll deliver your Residue cards to you within <strong>5-7 business days</strong>.</p>
-              <p class="muted small">A confirmation email has been sent to you with order details.</p>
-              <button id="redirect-btn" class="btn btn-outline premium-btn">Return to Home</button>
+              <div class="summary-line total">
+                <span>Total Due</span>
+                <span id="modal-total">R99</span>
+              </div>
             </div>
+
+            <!-- Shipping Address -->
+            <label for="shipping-name">Full Name</label>
+            <input id="shipping-name" name="shipping-name" type="text" placeholder="Full Name" required>
+
+            <label for="shipping-street">Street Address</label>
+            <input id="shipping-street" name="shipping-street" type="text" placeholder="Street Address" required>
+
+            <label for="shipping-city">City</label>
+            <input id="shipping-city" name="shipping-city" type="text" placeholder="City" required>
+
+            <label for="shipping-postal">Postal Code</label>
+            <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
+
+            <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
+            <button id="pay-btn" class="btn btn-outline premium-btn" type="button">Continue to PayFast</button>
+
+            <form id="payfast-form" action="https://www.payfast.co.za/eng/process" method="post" style="display:none;">
+              <input type="hidden" name="merchant_id" id="pf-merchant-id">
+              <input type="hidden" name="merchant_key" id="pf-merchant-key">
+              <input type="hidden" name="return_url" id="pf-return-url">
+              <input type="hidden" name="cancel_url" id="pf-cancel-url">
+              <input type="hidden" name="notify_url" id="pf-notify-url">
+              <input type="hidden" name="name_first" id="pf-name-first">
+              <input type="hidden" name="name_last" id="pf-name-last">
+              <input type="hidden" name="email_address" id="pf-email">
+              <input type="hidden" name="m_payment_id" id="pf-payment-id">
+              <input type="hidden" name="amount" id="pf-amount">
+              <input type="hidden" name="item_name" id="pf-item-name">
+              <input type="hidden" name="item_description" id="pf-item-description">
+              <input type="hidden" name="custom_str1" id="pf-custom-invoice">
+              <input type="hidden" name="custom_str2" id="pf-custom-email">
+              <input type="hidden" name="custom_str3" id="pf-custom-product">
+              <input type="hidden" name="custom_str4" id="pf-custom-qty">
+            </form>
           </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Thank You Modal -->
+    <div id="thank-you-modal" class="pay-modal hidden" aria-hidden="true">
+      <div class="modal-content" style="text-align:center;">
+        <div class="stack" style="gap:20px;">
+          <div class="eyebrow premium">Thank You!</div>
+          <h2 style="margin:0; color:var(--accent-premium);">Your order is confirmed</h2>
+          <p class="muted">We'll deliver your Residue cards to you within <strong>5-7 business days</strong>.</p>
+          <p class="muted small">Invoice: <strong id="thank-you-invoice">Pending</strong></p>
+          <p class="muted small" id="thank-you-payment-status">Waiting for payment confirmation.</p>
+          <button id="redirect-btn" class="btn btn-outline premium-btn">Return to Home</button>
         </div>
+      </div>
+    </div>
   </main>
 
   <footer>
@@ -242,42 +238,46 @@
   </footer>
 
   <script src="js/script.js"></script>
+  <script type="module" src="js/private-payment.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      return;
       const qtyInput = document.getElementById('quantity');
       const totalDue = document.getElementById('total-due');
+
       const unitPrice = (qty) => {
         if (qty >= 5) return 499;
         if (qty >= 2) return 549;
         return 599;
       };
+
       const refreshTotal = () => {
         if (!qtyInput || !totalDue) return;
-        // allow blank or zero, enforce non-negative integer
+
         let qty = parseInt(qtyInput.value, 10);
         if (isNaN(qty) || qty < 0) qty = 0;
-        // don't override blank input while typing
+
         if (qtyInput.value !== '' && qtyInput.value !== String(qty)) {
           qtyInput.value = qty;
         }
+
         const total = qty * unitPrice(qty);
         totalDue.textContent = 'R' + total.toLocaleString('en-ZA');
         updatePurchaseState();
       };
+
       qtyInput?.addEventListener('input', refreshTotal);
       qtyInput?.addEventListener('change', refreshTotal);
 
       const purchaseBtn = document.getElementById('purchase-btn');
       const configureForm = document.querySelector('.configure-form');
       const requiredInputs = Array.from(configureForm.querySelectorAll('[required]'));
-      let selectedProduct = null; // will hold DOM element or id
+      let selectedProduct = null;
 
       function updatePurchaseState() {
         if (!purchaseBtn) return;
-        const qty = parseInt(qtyInput.value, 10) || 0;
-        const allFilled = requiredInputs.every(i => i.value.trim() !== '');
-        // button is always enabled now, but we validate on click
+        // Button stays enabled; validate on click.
       }
 
       // product box selection
@@ -294,10 +294,9 @@
       updatePurchaseState();
 
       purchaseBtn?.addEventListener('click', () => {
-        // validate all required fields
         const qty = parseInt(qtyInput.value, 10) || 0;
         const missingFields = [];
-        
+
         requiredInputs.forEach(input => {
           if (input.value.trim() === '') {
             const label = document.querySelector(`label[for="${input.id}"]`);
@@ -305,70 +304,68 @@
             missingFields.push(fieldName);
           }
         });
-        
-        if (qty === 0) {
-          missingFields.push('Quantity (must be greater than 0)');
-        }
-        
-        // ensure product selected
-        if (!selectedProduct) {
-          missingFields.push('Select a product');
-        }
+
+        if (qty === 0) missingFields.push('Quantity (must be greater than 0)');
+        if (!selectedProduct) missingFields.push('Select a product');
 
         if (missingFields.length > 0) {
-          // show validation error modal
           const validationModal = document.getElementById('validation-modal');
           const fieldsList = document.getElementById('missing-fields-list');
+
           if (fieldsList) {
-            fieldsList.innerHTML = missingFields.map(field => `<div style="padding:4px 0; color:var(--muted);">• ${field}</div>`).join('');
+            fieldsList.innerHTML = missingFields
+              .map(field => `<div style="padding:4px 0; color:var(--muted);">• ${field}</div>`)
+              .join('');
           }
+
           if (validationModal) {
             validationModal.classList.remove('hidden');
-            validationModal.setAttribute('aria-hidden','false');
+            validationModal.setAttribute('aria-hidden', 'false');
           }
         } else {
-          // all fields filled, proceed to payment modal
-          const modal = document.getElementById('payment-modal');
+          const payModal = document.getElementById('payment-modal');
           const subtotal = qty * unitPrice(qty);
           const shipping = 99;
           const total = subtotal + shipping;
-          
-          // update modal with amounts
+
           const subtotalEl = document.getElementById('modal-subtotal');
           const shippingEl = document.getElementById('modal-shipping');
           const totalEl = document.getElementById('modal-total');
+
           if (subtotalEl) subtotalEl.textContent = 'R' + subtotal.toLocaleString('en-ZA');
           if (shippingEl) shippingEl.textContent = 'R' + shipping.toLocaleString('en-ZA');
           if (totalEl) totalEl.textContent = 'R' + total.toLocaleString('en-ZA');
-          
-          if (modal) {
-            modal.classList.remove('hidden');
-            modal.setAttribute('aria-hidden','false');
+
+          if (payModal) {
+            payModal.classList.remove('hidden');
+            payModal.setAttribute('aria-hidden', 'false');
           }
         }
       });
 
-      // modal close functionality
-      const modal = document.getElementById('payment-modal');
-      const closeBtn = modal?.querySelector('.close-btn');
-      closeBtn?.addEventListener('click', () => {
-        if (modal) {
-          modal.classList.add('hidden');
-          modal.setAttribute('aria-hidden','true');
+      // payment modal close functionality
+      const payModal = document.getElementById('payment-modal');
+      const payCloseBtn = payModal?.querySelector('.close-btn');
+
+      payCloseBtn?.addEventListener('click', () => {
+        if (payModal) {
+          payModal.classList.add('hidden');
+          payModal.setAttribute('aria-hidden', 'true');
         }
       });
-      modal?.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.classList.add('hidden');
-          modal.setAttribute('aria-hidden','true');
+
+      payModal?.addEventListener('click', (e) => {
+        if (e.target === payModal) {
+          payModal.classList.add('hidden');
+          payModal.setAttribute('aria-hidden', 'true');
         }
       });
-      
+
       // pay button handler
       const payBtn = document.getElementById('pay-btn');
       const thankYouModal = document.getElementById('thank-you-modal');
       const redirectBtn = document.getElementById('redirect-btn');
-      
+
       payBtn?.addEventListener('click', () => {
         const cardName = document.getElementById('card-name').value.trim();
         const cardNumber = document.getElementById('card-number').value.trim();
@@ -378,19 +375,16 @@
         const shippingStreet = document.getElementById('shipping-street').value.trim();
         const shippingCity = document.getElementById('shipping-city').value.trim();
         const shippingPostal = document.getElementById('shipping-postal').value.trim();
-        
+
         if (cardName && cardNumber && cardExpiry && cardCvv && shippingName && shippingStreet && shippingCity && shippingPostal) {
-          // close payment modal
-          if (modal) {
-            modal.classList.add('hidden');
-            modal.setAttribute('aria-hidden','true');
+          if (payModal) {
+            payModal.classList.add('hidden');
+            payModal.setAttribute('aria-hidden', 'true');
           }
-          // show thank you modal
           if (thankYouModal) {
             thankYouModal.classList.remove('hidden');
-            thankYouModal.setAttribute('aria-hidden','false');
+            thankYouModal.setAttribute('aria-hidden', 'false');
           }
-          // redirect after 3 seconds
           setTimeout(() => {
             window.location.href = 'residue-private.html';
           }, 3000);
@@ -398,28 +392,35 @@
           alert('Please fill in all payment and shipping details.');
         }
       });
-      
+
       redirectBtn?.addEventListener('click', () => {
         window.location.href = 'residue-private.html';
       });
-      
+
       // validation modal close handlers
       const validationModal = document.getElementById('validation-modal');
       const validationCloseBtn = validationModal?.querySelector('.close-btn');
       const validationConfirmBtn = document.getElementById('validation-close-btn');
-      
+
       function closeValidationModal() {
         if (validationModal) {
           validationModal.classList.add('hidden');
-          validationModal.setAttribute('aria-hidden','true');
+          validationModal.setAttribute('aria-hidden', 'true');
         }
       }
-      
+
       validationCloseBtn?.addEventListener('click', closeValidationModal);
       validationConfirmBtn?.addEventListener('click', closeValidationModal);
+
       validationModal?.addEventListener('click', (e) => {
-        if (e.target === validationModal) {
-          closeValidationModal();
+        if (e.target === validationModal) closeValidationModal();
+      });
+
+      // thank-you modal close on backdrop click (optional)
+      thankYouModal?.addEventListener('click', (e) => {
+        if (e.target === thankYouModal) {
+          thankYouModal.classList.add('hidden');
+          thankYouModal.setAttribute('aria-hidden', 'true');
         }
       });
 

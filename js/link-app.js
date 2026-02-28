@@ -129,7 +129,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
   const LOCAL_MUSIC_KEY_PREFIX = 'residue_link_music_';
   const MAX_GALLERY_IMAGES = 50;
   const MAX_MUSIC_FILES = 20;
-  const TEMP_ADMIN_USERNAME = 'Mike@17';
+  const TEMP_ADMIN_EMAIL = 'mike@residue.com';
   const TEMP_ADMIN_PASSWORD = '123456';
 
   function getLocalUsers() {
@@ -271,8 +271,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
         showStatusEl(statusEl, mode === 'login' ? 'Logging in...' : 'Creating account...', 'loading');
 
         if (mode === 'login') {
-          if (emailInput?.value?.trim() === TEMP_ADMIN_USERNAME && password === TEMP_ADMIN_PASSWORD) {
-            localStorage.setItem(CURRENT_USER_KEY, TEMP_ADMIN_USERNAME);
+          if (normalizeEmail(emailInput?.value) === normalizeEmail(TEMP_ADMIN_EMAIL) && password === TEMP_ADMIN_PASSWORD) {
+            localStorage.setItem(CURRENT_USER_KEY, TEMP_ADMIN_EMAIL);
             showStatusEl(statusEl, 'Success', 'success');
             toggleEditor(true);
             setAuthOnly(false);
@@ -286,7 +286,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
             const hash = await sha256Hex(password);
             if (hash !== localUser.passwordHash) return showStatusEl(statusEl, 'Incorrect password.', 'error');
 
-            localStorage.setItem(CURRENT_USER_KEY, localUser.username);
+            localStorage.setItem(CURRENT_USER_KEY, localUser.email);
             showStatusEl(statusEl, 'Success', 'success');
             toggleEditor(true);
             setAuthOnly(false);

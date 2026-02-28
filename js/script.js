@@ -208,7 +208,7 @@
 
     const USERS_KEY = "residue_users";
     const CURRENT_USER_KEY = "residue_current_user";
-    const TEMP_MOCK_USERNAME = "Mike@17";
+    const TEMP_MOCK_EMAIL = "mike@residue.com";
     const TEMP_MOCK_PASSWORD = "123456";
     const PRIVATE_PAGE = "residue-private.html";
 
@@ -297,14 +297,14 @@
       if (title) title.textContent = isSignin ? "Sign in" : "Create account";
       if (subtitle) subtitle.textContent = isSignin
         ? "Enter your credentials to continue."
-        : "Set a username and password to continue.";
+        : "Set your email and password to continue.";
 
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
 
       // focus first field
       setTimeout(() => {
-        const first = isSignin ? $("#signin-username") : $("#create-username");
+        const first = isSignin ? $("#signin-email") : $("#create-email");
         first?.focus();
       }, 50);
     }
@@ -316,12 +316,12 @@
     signinForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const username = ($("#signin-username")?.value || "").trim().toLowerCase();
+      const email = ($("#signin-email")?.value || "").trim().toLowerCase();
       const password = $("#signin-password")?.value || "";
-      const mockUsername = TEMP_MOCK_USERNAME.toLowerCase();
+      const mockEmail = TEMP_MOCK_EMAIL.toLowerCase();
 
-      if (username === mockUsername && password === TEMP_MOCK_PASSWORD) {
-        localStorage.setItem(CURRENT_USER_KEY, TEMP_MOCK_USERNAME);
+      if (email === mockEmail && password === TEMP_MOCK_PASSWORD) {
+        localStorage.setItem(CURRENT_USER_KEY, TEMP_MOCK_EMAIL);
         setStatus(signinStatus, "Signed in.", true);
         setTimeout(() => {
           closeAuthModal();
@@ -331,17 +331,17 @@
         return;
       }
 
-      if (username.length < 3) return setStatus(signinStatus, "Username must be at least 3 characters.", true);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setStatus(signinStatus, "Enter a valid email.", true);
       if (password.length < 6) return setStatus(signinStatus, "Password must be at least 6 characters.", true);
 
       const users = getUsers();
-      const user = users.find(u => u.username === username);
+      const user = users.find(u => (u.email || "").toLowerCase() === email);
       if (!user) return setStatus(signinStatus, "Account not found. Create one instead.", true);
 
       const hash = await sha256Hex(password);
       if (hash !== user.passwordHash) return setStatus(signinStatus, "Incorrect password.", true);
 
-      localStorage.setItem(CURRENT_USER_KEY, username);
+      localStorage.setItem(CURRENT_USER_KEY, email);
       setStatus(signinStatus, "Signed in.", true);
 
       setTimeout(() => {
@@ -355,25 +355,22 @@
     createForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const username = ($("#create-username")?.value || "").trim().toLowerCase();
       const email = ($("#create-email")?.value || "").trim().toLowerCase();
       const password = $("#create-password")?.value || "";
       const confirm = $("#create-confirm")?.value || "";
 
-      if (username.length < 3) return setStatus(createStatus, "Username must be at least 3 characters.", true);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setStatus(createStatus, "Enter a valid email.", true);
       if (password.length < 6) return setStatus(createStatus, "Password must be at least 6 characters.", true);
       if (password !== confirm) return setStatus(createStatus, "Passwords do not match.", true);
 
       const users = getUsers();
-      if (users.some(u => u.username === username)) return setStatus(createStatus, "That username is already taken.", true);
       if (users.some(u => (u.email || "").toLowerCase() === email)) return setStatus(createStatus, "That email is already in use.", true);
 
       const passwordHash = await sha256Hex(password);
-      users.push({ username, email, passwordHash, createdAt: new Date().toISOString() });
+      users.push({ email, passwordHash, createdAt: new Date().toISOString() });
       saveUsers(users);
 
-      localStorage.setItem(CURRENT_USER_KEY, username);
+      localStorage.setItem(CURRENT_USER_KEY, email);
       setStatus(createStatus, "Account created.", true);
 
       setTimeout(() => {

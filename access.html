@@ -88,8 +88,8 @@
 
         <!-- SIGN IN -->
         <form class="modal-form" id="signinForm" autocomplete="off" aria-labelledby="tab-signin" role="tabpanel" aria-hidden="false" tabindex="0">
-          <label class="muted" for="signin-username">Username</label>
-          <input id="signin-username" name="username" type="text" placeholder="" minlength="3" required>
+          <label class="muted" for="signin-email">Email</label>
+          <input id="signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
 
           <label class="muted" for="signin-password" style="margin-top:12px;">Password</label>
           <input id="signin-password" name="password" type="password" placeholder="••••••••" minlength="6" required>
@@ -104,9 +104,6 @@
 
         <!-- CREATE ACCOUNT -->
         <form class="modal-form" id="createForm" autocomplete="off" aria-labelledby="tab-create" role="tabpanel" aria-hidden="true" tabindex="-1" style="display:none;">
-          <label class="muted" for="create-username">Username</label>
-          <input id="create-username" name="username" type="text" placeholder="" minlength="3" required>
-
           <label class="muted" for="create-email" style="margin-top:12px;">Email</label>
           <input id="create-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
 
@@ -164,4 +161,5 @@
   <script src="js/script.js"></script>
 </body>
 </html>
+
 
