@@ -20,25 +20,37 @@ window.addEventListener('DOMContentLoaded', () => {
   };
 
   const profileKey = `residue_link_profile_${slug}`;
-  const galleryKey = `residue_link_gallery_${slug}`;
-  const musicKey = `residue_link_music_${slug}`;
   let profile = null;
   try { profile = JSON.parse(localStorage.getItem(profileKey) || 'null'); } catch {}
-  let gallery = [];
-  try { gallery = JSON.parse(localStorage.getItem(galleryKey) || '[]'); } catch {}
-  let music = [];
-  try { music = JSON.parse(localStorage.getItem(musicKey) || '[]'); } catch {}
+
+  const parseBool = (val, fallback = true) => {
+    if (val == null) return fallback;
+    const s = String(val).toLowerCase();
+    return !(s === '0' || s === 'false' || s === 'no' || s === 'off');
+  };
+  const meta = {};
+  const links = (profile?.links || []).filter(link => {
+    const label = (link?.label || '').trim();
+    if (label.startsWith('__meta__')) {
+      const key = label.slice('__meta__'.length);
+      const raw = String(link?.url || '');
+      meta[key] = raw.startsWith('meta:') ? decodeURIComponent(raw.slice(5)) : raw;
+      return false;
+    }
+    return true;
+  });
 
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
   setText('lt-name', profile?.name || 'Your name');
-  setText('lt-title', profile?.title || '');
-  setText('lt-bio', profile?.bio || '');
+  setText('lt-title', parseBool(meta.show_role, true) ? (profile?.title || '') : '');
+  setText('lt-bio', parseBool(meta.show_bio, true) ? (profile?.bio || '') : '');
   const avatar = document.getElementById('lt-avatar');
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';
   const linksWrap = document.getElementById('lt-links');
   if (linksWrap) {
     linksWrap.innerHTML = '';
-    (profile?.links || []).forEach(link => {
+    links.forEach(link => {
+      if (!link?.url || link.hidden) return;
       const a = document.createElement('a');
       a.href = link.url;
       a.textContent = link.label || link.url;
@@ -46,20 +58,6 @@ window.addEventListener('DOMContentLoaded', () => {
       a.rel = 'noopener noreferrer';
       linksWrap.appendChild(a);
     });
-    if (gallery?.length) {
-      const a = document.createElement('a');
-      a.href = `gallery.html?u=${encodeURIComponent(slug)}`;
-      a.textContent = 'View Gallery';
-      a.className = 'lt-gallery-btn';
-      linksWrap.appendChild(a);
-    }
-    if (music?.length) {
-      const a = document.createElement('a');
-      a.href = `music.html?u=${encodeURIComponent(slug)}`;
-      a.textContent = 'View Music';
-      a.className = 'lt-gallery-btn';
-      linksWrap.appendChild(a);
-    }
   }
 
   setTimeout(hideOverlay, 200);

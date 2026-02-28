@@ -23,7 +23,7 @@
       </div>
       <div class="form-group">
         <div class="lt-label">Password</div>
-        <input class="lt-input" type="password" id="lt-auth-pass" placeholder="••••••••">
+        <input class="lt-input" type="password" id="lt-auth-pass" placeholder="********">
       </div>
       <div class="form-group" style="gap:12px;">
         <button class="lt-btn" id="lt-login">Log in</button>
@@ -70,29 +70,34 @@
         <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
 
         <label for="role">Title / Role</label>
-        <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
+        <div class="input-toggle-row">
+          <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
+          <label class="include-toggle" for="show-role">
+            <input class="lt-include-checkbox" type="checkbox" id="show-role" checked>
+          </label>
+        </div>
 
         <label for="website">Website URL (optional, include https://)</label>
-        <div class="form-row">
+        <div class="input-toggle-row">
           <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
-          <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
-            <input type="checkbox" id="show-website" checked> Show
+          <label class="include-toggle" for="show-website">
+            <input class="lt-include-checkbox" type="checkbox" id="show-website" checked>
           </label>
         </div>
 
         <label for="phone">Phone number</label>
-        <div class="form-row">
-          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" required>
-          <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
-            <input type="checkbox" id="show-phone" checked> Show
+        <div class="input-toggle-row">
+          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
+          <label class="include-toggle" for="show-phone">
+            <input class="lt-include-checkbox" type="checkbox" id="show-phone" checked>
           </label>
         </div>
 
         <label for="email-config">Email</label>
-        <div class="form-row">
-          <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
-          <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
-            <input type="checkbox" id="show-email" checked> Show
+        <div class="input-toggle-row">
+          <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com">
+          <label class="include-toggle" for="show-email">
+            <input class="lt-include-checkbox" type="checkbox" id="show-email" checked>
           </label>
         </div>
 
@@ -101,52 +106,93 @@
         <input id="lt-avatar-url" name="lt-avatar-url" type="hidden">
 
         <div class="form-group">
-          <div class="lt-label">Bio (optional, ≤ 50 words)</div>
-          <textarea class="lt-textarea" id="lt-bio" maxlength="320" placeholder="Short description"></textarea>
+          <div class="lt-label">Bio (optional, <= 50 words)</div>
+          <div class="input-toggle-row">
+            <textarea class="lt-textarea" id="lt-bio" maxlength="320" placeholder="Short description"></textarea>
+            <label class="include-toggle" for="show-bio">
+              <input class="lt-include-checkbox" type="checkbox" id="show-bio" checked>
+            </label>
+          </div>
         </div>
 
         <label for="social">Social links (optional, include https://)</label>
         <div class="stack" style="gap:10px;">
-          <input id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you (optional)" data-auto-url>
-          <input id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you (optional)" data-auto-url>
-          <input id="social-3" name="whatsapp" type="url" placeholder="https://whatsapp.com/in/you (optional)" data-auto-url>
-          <input id="social-4" name="youtube" type="url" placeholder="https://youtube.com/in/you (optional)" data-auto-url>
-          <input id="social-5" name="facebook" type="url" placeholder="https://facebook.com/in/you (optional)" data-auto-url>
-          <input id="social-6" name="x" type="url" placeholder="https://x.com/in/you (optional)" data-auto-url>
+          <div class="input-toggle-row">
+            <input id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you (optional)" data-auto-url>
+            <label class="include-toggle" for="show-social">
+              <input class="lt-include-checkbox" type="checkbox" id="show-social" checked>
+            </label>
+          </div>
+          <div class="input-toggle-row">
+            <input id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you (optional)" data-auto-url>
+            <label class="include-toggle" for="show-social-2">
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-2" checked>
+            </label>
+          </div>
+          <div class="input-toggle-row">
+            <input id="social-3" name="whatsapp" type="url" placeholder="https://whatsapp.com/in/you (optional)" data-auto-url>
+            <label class="include-toggle" for="show-social-3">
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-3" checked>
+            </label>
+          </div>
+          <div class="input-toggle-row">
+            <input id="social-4" name="youtube" type="url" placeholder="https://youtube.com/in/you (optional)" data-auto-url>
+            <label class="include-toggle" for="show-social-4">
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-4" checked>
+            </label>
+          </div>
+          <div class="input-toggle-row">
+            <input id="social-5" name="facebook" type="url" placeholder="https://facebook.com/in/you (optional)" data-auto-url>
+            <label class="include-toggle" for="show-social-5">
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-5" checked>
+            </label>
+          </div>
+          <div class="input-toggle-row">
+            <input id="social-6" name="x" type="url" placeholder="https://x.com/in/you (optional)" data-auto-url>
+            <label class="include-toggle" for="show-social-6">
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-6" checked>
+            </label>
+          </div>
         </div>
 
         <div class="form-group" style="margin-top: 12px;">
           <div class="lt-label">WhatsApp quick link</div>
-          <p class="lt-note">Enter your mobile (country code + number). We’ll build the WhatsApp click-to-chat URL for you.</p>
-          <input class="lt-input" id="whatsapp-number" name="whatsapp-number" type="tel" placeholder="+27 82 123 4567" inputmode="tel">
+          <p class="lt-note">Enter your mobile (country code + number). We'll build the WhatsApp click-to-chat URL for you.</p>
+          <div class="input-toggle-row">
+            <input class="lt-input" id="whatsapp-number" name="whatsapp-number" type="tel" placeholder="+27 82 123 4567" inputmode="tel">
+            <label class="include-toggle" for="show-whatsapp">
+              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp" checked>
+            </label>
+          </div>
           <label class="lt-note" for="whatsapp-template" style="margin-top:10px;">Preset first message</label>
-          <select class="lt-input" id="whatsapp-template" name="whatsapp-template">
-            <option value="Hi, I’m interested in Residue. Can you share details?">Interest in Residue</option>
-            <option value="Hi, could you share your email so I can send details?">Request email</option>
-            <option value="Hi, can we book a quick call?">Book a call</option>
-            <option value="Hi, please send me your contact details.">Send contact details</option>
-            <option value="CUSTOM">Custom message…</option>
-          </select>
-          <textarea class="lt-textarea" id="whatsapp-custom" placeholder="Custom WhatsApp message (optional)"></textarea>
+          <div class="input-toggle-row">
+            <select class="lt-input" id="whatsapp-template" name="whatsapp-template">
+              <option value="Hi, I'm interested in Residue. Can you share details?">Interest in Residue</option>
+              <option value="Hi, could you share your email so I can send details?">Request email</option>
+              <option value="Hi, can we book a quick call?">Book a call</option>
+              <option value="Hi, please send me your contact details.">Send contact details</option>
+              <option value="CUSTOM">Custom message...</option>
+            </select>
+            <label class="include-toggle" for="show-whatsapp-template">
+              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-template" checked>
+            </label>
+          </div>
+          <div class="input-toggle-row">
+            <textarea class="lt-textarea" id="whatsapp-custom" placeholder="Custom WhatsApp message (optional)"></textarea>
+            <label class="include-toggle" for="show-whatsapp-custom">
+              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-custom" checked>
+            </label>
+          </div>
         </div>
-
-
-        <label for="mark">Upload Gallery Images (up to 50 photos) (optional)</label>
-        <input id="mark" name="mark" type="file" accept="image/*" multiple>
-
-        <label for="music-files">Upload MP3 files (up to 20 songs) (optional)</label>
-        <input id="music-files" name="music-files" type="file" accept="audio/mpeg,audio/mp3" multiple>
-
-        <!--remove?-->
         <div class="form-group">
           <div class="lt-label">Slug / URL</div>
-          <input class="lt-input" id="lt-slug" placeholder="your-handle">
+          <div class="input-toggle-row">
+            <input class="lt-input" id="lt-slug" placeholder="your-handle">
+            <label class="include-toggle" for="show-slug">
+              <input class="lt-include-checkbox" type="checkbox" id="show-slug" checked>
+            </label>
+          </div>
           <p class="lt-note">Your public link will be /link-profile.html?u=your-handle</p>
-        </div>
-
-        <div class="form-group">
-          <button class="lt-btn" id="lt-preview" type="button">Preview Card</button>
-          <div class="lt-status" id="lt-preview-status"></div>
         </div>
 
         <div class="form-group">
@@ -154,23 +200,6 @@
           <div class="lt-status" id="lt-save-status"></div>
         </div>
       </form>
-    </div>
-
-    <div class="lt-preview-modal" id="lt-preview-modal" hidden>
-      <div class="lt-preview-backdrop" data-preview-close></div>
-      <div class="lt-preview-panel" role="dialog" aria-modal="true" aria-labelledby="lt-preview-title">
-        <div class="lt-preview-head">
-          <h2 id="lt-preview-title">Card Preview</h2>
-          <button class="lt-btn secondary" type="button" data-preview-close>Back to Configure</button>
-        </div>
-        <iframe
-          id="lt-preview-frame"
-          class="lt-preview-frame"
-          title="Profile card preview"
-          src="about:blank"
-          scrolling="yes">
-        </iframe>
-      </div>
     </div>
   </div>
 

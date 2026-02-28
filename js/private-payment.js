@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { residueTelemetry } from "./supabase-telemetry.js";
 
 (() => {
   const cfg = window.env || {};
@@ -247,6 +248,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
   async function onPurchaseClick() {
     const missing = requiredFieldErrors();
     if (missing.length > 0) {
+      residueTelemetry.logPurchaseEvent({
+        stage: "checkout_validate",
+        outcome: "failure",
+        email: (els.email?.value || "").trim().toLowerCase(),
+        detail: "Checkout validation failed.",
+        metadata: { missing_fields: missing }
+      });
       els.missingFields.innerHTML = missing
         .map((field) => `<div style="padding:4px 0; color:var(--muted);">&bull; ${field}</div>`)
         .join("");
@@ -269,6 +277,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
     const shippingCity = (els.shippingCity?.value || "").trim();
     const shippingPostal = (els.shippingPostal?.value || "").trim();
     if (!shippingName || !shippingStreet || !shippingCity || !shippingPostal) {
+      residueTelemetry.logPurchaseEvent({
+        stage: "shipping_validate",
+        outcome: "failure",
+        email: (els.email?.value || "").trim().toLowerCase(),
+        detail: "Shipping details incomplete before payment."
+      });
       setStatus(els.payfastStatus, "Complete shipping details before payment.", "error");
       return;
     }
@@ -297,11 +311,43 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
     try {
       setStatus(els.payfastStatus, "Creating invoice and saving order...", "loading");
       await insertOrder(order);
+      residueTelemetry.logPurchaseEvent({
+        stage: "invoice_created",
+        outcome: "success",
+        email: order.customer_email,
+        invoice_no: order.invoice_no,
+        order_ref: order.invoice_no,
+        payment_provider: order.payment_provider,
+        payment_status: order.payment_status,
+        amount_total: order.total_amount,
+        product: order.product,
+        quantity: order.quantity,
+        detail: "Order inserted in Supabase orders table."
+      });
       persistPending(order);
       configurePayFastForm(order);
+      residueTelemetry.logPurchaseEvent({
+        stage: "redirect_payfast",
+        outcome: "success",
+        email: order.customer_email,
+        invoice_no: order.invoice_no,
+        order_ref: order.invoice_no,
+        payment_provider: "payfast",
+        payment_status: "PENDING",
+        amount_total: order.total_amount,
+        product: order.product,
+        quantity: order.quantity,
+        detail: "Redirecting user to PayFast."
+      });
       setStatus(els.payfastStatus, "Redirecting to PayFast...", "success");
       setTimeout(() => els.payfastForm.submit(), 250);
     } catch (err) {
+      residueTelemetry.logPurchaseEvent({
+        stage: "invoice_created",
+        outcome: "failure",
+        email: (els.email?.value || "").trim().toLowerCase(),
+        detail: err.message || "Could not create invoice/start payment."
+      });
       setStatus(els.payfastStatus, err.message || "Could not start payment.", "error");
     }
   }
@@ -322,8 +368,31 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
         payment_reference: state.payfastPaymentId || null,
         payment_updated_at: new Date().toISOString()
       });
+      residueTelemetry.logPurchaseEvent({
+        stage: "payment_return",
+        outcome: "success",
+        email: pendingOrder?.customer_email || null,
+        invoice_no: invoice || pendingOrder?.invoice_no || null,
+        order_ref: invoice || pendingOrder?.invoice_no || null,
+        payment_provider: "payfast",
+        payment_status: status || "PENDING",
+        amount_total: pendingOrder?.total_amount ?? null,
+        product: pendingOrder?.product ?? null,
+        quantity: pendingOrder?.quantity ?? null,
+        detail: "Processed PayFast return state."
+      });
     } catch (err) {
       console.error(err);
+      residueTelemetry.logPurchaseEvent({
+        stage: "payment_return",
+        outcome: "failure",
+        email: pendingOrder?.customer_email || null,
+        invoice_no: invoice || pendingOrder?.invoice_no || null,
+        order_ref: invoice || pendingOrder?.invoice_no || null,
+        payment_provider: "payfast",
+        payment_status: status || "PENDING",
+        detail: err.message || "Could not update returned payment state."
+      });
     }
 
     if (els.thankYouInvoice) {

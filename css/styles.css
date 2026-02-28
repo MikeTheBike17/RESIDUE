@@ -1405,6 +1405,73 @@ input:focus, textarea:focus {
   display: block;
 }
 
+.support-contact {
+  padding: 8px 0 30px;
+}
+
+.support-contact-card {
+  position: relative;
+  margin: 0 auto;
+  width: min(760px, 100%);
+  border: 1px solid var(--accent-premium-soft);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.32);
+  padding: 22px 20px 22px;
+  text-align: center;
+}
+
+.support-contact-eyebrow {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  text-align: left;
+  margin: 0;
+}
+
+.support-contact-copy {
+  margin: 34px 0 0;
+  font-size: 1rem;
+}
+
+.support-contact-details {
+  margin: 10px 0 0;
+  font-size: 1.22rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--accent-premium);
+}
+
+.support-contact-details a {
+  color: var(--accent-premium);
+  text-decoration: none;
+}
+
+.support-contact-details a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.support-sep {
+  margin: 0 10px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+@media (max-width: 680px) {
+  .support-contact-details {
+    font-size: 1.05rem;
+    display: grid;
+    gap: 6px;
+  }
+  .support-sep {
+    display: none;
+  }
+}
+
 .brand-immersion .h2 {
   margin-bottom: 6px;
 }
@@ -1515,6 +1582,17 @@ footer {
   border-top: 1px solid var(--border);
   color: var(--muted);
   text-align: center;
+}
+
+.footer-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+[data-footer-copyright] {
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
 }
 
 @keyframes fadeIn {

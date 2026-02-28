@@ -1,9 +1,9 @@
 // Module version of the link app
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { residueTelemetry } from './supabase-telemetry.js';
 
 (async () => {
   const cfg = window.env || {};
-  const MAX_LINKS = 5;
   const isFileProtocol = window.location.protocol === 'file:';
   const qs = new URLSearchParams(window.location.search);
 
@@ -85,18 +85,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
       finishOverlay();
       return;
     }
-    fillPublic(data);
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', data.id).order('sort', { ascending: true });
-    renderLinks('lt-links', links || []);
+    const { meta, normalLinks } = extractMetaFromLinks(links || []);
+    fillPublic(data, meta);
+    renderLinks('lt-links', normalLinks || []);
     finishOverlay();
     if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
   }
 
-  function fillPublic(profile) {
+  function fillPublic(profile, meta = {}) {
     setTheme(profile.theme || 'dark');
     setText('lt-name', profile.name || 'Your name');
-    setText('lt-title', profile.title || 'Your title');
-    setText('lt-bio', profile.bio || 'Add a short description.');
+    const includeRole = parseBool(meta.show_role, true);
+    const includeBio = parseBool(meta.show_bio, true);
+    setText('lt-title', includeRole ? (profile.title || 'Your title') : '');
+    setText('lt-bio', includeBio ? (profile.bio || 'Add a short description.') : '');
     const avatar = document.getElementById('lt-avatar');
     if (avatar) avatar.src = profile.avatar_url || 'https://placehold.co/200x200?text=Add+photo';
     const pill = document.getElementById('lt-theme-pill');
@@ -122,12 +125,47 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
   const CURRENT_USER_KEY = 'residue_current_user';
   const RESET_OTP_KEY = 'residue_reset_otp';
   const LOCAL_PROFILE_KEY_PREFIX = 'residue_link_profile_';
-  const LOCAL_GALLERY_KEY_PREFIX = 'residue_link_gallery_';
-  const LOCAL_MUSIC_KEY_PREFIX = 'residue_link_music_';
-  const MAX_GALLERY_IMAGES = 50;
-  const MAX_MUSIC_FILES = 20;
+  const META_PREFIX = '__meta__';
   const TEMP_ADMIN_EMAIL = 'mike@residue.com';
   const TEMP_ADMIN_PASSWORD = '123456';
+  const socialConfig = [
+    { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
+    { id: 'social-2', label: 'Instagram', toggle: 'show-social-2' },
+    { id: 'social-3', label: 'WhatsApp Social', toggle: 'show-social-3' },
+    { id: 'social-4', label: 'YouTube', toggle: 'show-social-4' },
+    { id: 'social-5', label: 'Facebook', toggle: 'show-social-5' },
+    { id: 'social-6', label: 'X', toggle: 'show-social-6' }
+  ];
+
+  const parseBool = (val, fallback = true) => {
+    if (val == null) return fallback;
+    const s = String(val).toLowerCase();
+    return !(s === '0' || s === 'false' || s === 'no' || s === 'off');
+  };
+
+  function extractMetaFromLinks(links) {
+    const meta = {};
+    const normalLinks = [];
+    (links || []).forEach(link => {
+      const label = (link.label || '').trim();
+      if (label.startsWith(META_PREFIX)) {
+        const key = label.slice(META_PREFIX.length);
+        const rawUrl = (link.url || '').trim();
+        const value = rawUrl.startsWith('meta:') ? decodeURIComponent(rawUrl.slice(5)) : rawUrl;
+        meta[key] = value;
+      } else {
+        normalLinks.push(link);
+      }
+    });
+    return { meta, normalLinks };
+  }
+
+  const metaLink = (key, value, sort) => ({
+    label: `${META_PREFIX}${key}`,
+    url: `meta:${encodeURIComponent(String(value))}`,
+    hidden: true,
+    sort
+  });
 
   function getLocalUsers() {
     try {
@@ -161,8 +199,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
   }
 
   const localProfileKey = slug => `${LOCAL_PROFILE_KEY_PREFIX}${(slug || '').toLowerCase()}`;
-  const localGalleryKey = slug => `${LOCAL_GALLERY_KEY_PREFIX}${(slug || '').toLowerCase()}`;
-  const localMusicKey = slug => `${LOCAL_MUSIC_KEY_PREFIX}${(slug || '').toLowerCase()}`;
 
   function bindAuth() {
     const loginBtn = document.getElementById('lt-login');
@@ -264,12 +300,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
       try {
         const email = normalizeEmail(emailInput?.value);
         const password = passInput?.value?.trim() || '';
+        residueTelemetry.logAuthEvent({
+          action: mode === 'login' ? 'signin' : 'signup',
+          outcome: 'attempt',
+          email,
+          detail: `link-admin ${mode} submitted.`
+        });
         if (!email || !password) return showStatusEl(statusEl, 'Enter email and password', 'error');
         showStatusEl(statusEl, mode === 'login' ? 'Logging in...' : 'Creating account...', 'loading');
 
         if (mode === 'login') {
           if (normalizeEmail(emailInput?.value) === normalizeEmail(TEMP_ADMIN_EMAIL) && password === TEMP_ADMIN_PASSWORD) {
             localStorage.setItem(CURRENT_USER_KEY, TEMP_ADMIN_EMAIL);
+            residueTelemetry.logAuthEvent({
+              action: 'signin',
+              outcome: 'success',
+              email,
+              detail: 'Signed in via temp admin credentials from link-admin.'
+            });
             showStatusEl(statusEl, 'Success', 'success');
             toggleEditor(true);
             setAuthOnly(false);
@@ -282,9 +330,23 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
           const localUser = users.find(u => normalizeEmail(u.email) === email);
           if (localUser) {
             const hash = await sha256Hex(password);
-            if (hash !== localUser.passwordHash) return showStatusEl(statusEl, 'Incorrect password.', 'error');
+            if (hash !== localUser.passwordHash) {
+              residueTelemetry.logAuthEvent({
+                action: 'signin',
+                outcome: 'failure',
+                email,
+                detail: 'Incorrect local password on link-admin.'
+              });
+              return showStatusEl(statusEl, 'Incorrect password.', 'error');
+            }
 
             localStorage.setItem(CURRENT_USER_KEY, localUser.email);
+            residueTelemetry.logAuthEvent({
+              action: 'signin',
+              outcome: 'success',
+              email,
+              detail: 'Signed in via local account from link-admin.'
+            });
             showStatusEl(statusEl, 'Success', 'success');
             toggleEditor(true);
             setAuthOnly(false);
@@ -308,12 +370,31 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
         }
         if (error) return showStatusEl(statusEl, error.message, 'error');
         if (mode === 'signup' && data?.user && !data.session) {
+          residueTelemetry.logAuthEvent({
+            action: 'signup',
+            outcome: 'success',
+            email,
+            detail: 'Supabase signup created; awaiting email confirmation.'
+          });
           return showStatusEl(statusEl, 'Check your email to confirm, then log in.', 'success');
         }
+        residueTelemetry.logAuthEvent({
+          action: mode === 'login' ? 'signin' : 'signup',
+          outcome: 'success',
+          email,
+          user_id: data?.user?.id || null,
+          detail: `Supabase ${mode} succeeded on link-admin.`
+        });
         showStatusEl(statusEl, 'Success', 'success');
         initSession(true);
       } catch (err) {
         console.error('Auth error', err);
+        residueTelemetry.logAuthEvent({
+          action: mode === 'login' ? 'signin' : 'signup',
+          outcome: 'failure',
+          email: normalizeEmail(emailInput?.value),
+          detail: err.message || `Unexpected ${mode} error on link-admin.`
+        });
         showStatusEl(statusEl, err.message || 'Auth failed', 'error');
       }
     };
@@ -401,74 +482,116 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
   function fillEditor(profile, links) {
     setValue('lt-avatar-url', profile.avatar_url || '');
-    setValue('lt-name', profile.name || '');
-    setValue('lt-title', profile.title || '');
+    setValue('full-name', profile.name || '');
+    setValue('role', profile.title || '');
     setValue('lt-bio', profile.bio || '');
     setValue('lt-slug', profile.slug || '');
-    if (profile.website !== undefined) setValue('website', profile.website);
-    if (profile.phone !== undefined) setValue('phone', profile.phone);
-    if (profile.email !== undefined) setValue('email-config', profile.email);
-    document.querySelectorAll('input[name="lt-theme"]').forEach(r => {
-      r.checked = (profile.theme || 'dark') === r.value;
-    });
     const publicUrl = `${window.location.origin}${window.location.pathname.replace(/link-admin\\.html$/, 'link-profile.html')}?u=${profile.slug || ''}`;
     const urlEl = document.getElementById('lt-public-url');
     if (urlEl) urlEl.textContent = publicUrl;
-    renderLinkEditor(links);
-    // Derive contact inputs from links if present
-    if (Array.isArray(links)) {
-      const websiteLink = links.find(l => (l.label || '').toLowerCase() === 'website');
-      const callLink = links.find(l => (l.label || '').toLowerCase() === 'call');
-      const emailLink = links.find(l => (l.label || '').toLowerCase() === 'email');
-      if (websiteLink?.url) setValue('website', websiteLink.url);
-      if (callLink?.url) setValue('phone', callLink.url.replace(/^tel:/i, ''));
-      if (emailLink?.url) setValue('email-config', emailLink.url.replace(/^mailto:/i, ''));
-      const sw = document.getElementById('show-website');
-      const sp = document.getElementById('show-phone');
-      const se = document.getElementById('show-email');
-      if (sw) sw.checked = !(websiteLink?.hidden);
-      if (sp) sp.checked = !(callLink?.hidden);
-      if (se) se.checked = !(emailLink?.hidden);
-    }
-  }
+    const setToggle = (id, checked = true) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!checked;
+    };
 
-  function renderLinkEditor(links) {
-    const wrap = document.getElementById('lt-links-editor');
-    if (!wrap) return;
-    wrap.innerHTML = '';
-    (links || []).slice(0, MAX_LINKS).forEach((link, i) => {
-      wrap.appendChild(linkRow(link.label, link.url, i, link.hidden));
+    socialConfig.forEach(s => setValue(s.id, ''));
+    setValue('website', '');
+    setValue('phone', '');
+    setValue('email-config', '');
+    setValue('whatsapp-number', '');
+
+    const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
+    setToggle('show-role', parseBool(meta.show_role, true));
+    setToggle('show-bio', parseBool(meta.show_bio, true));
+    setToggle('show-website', true);
+    setToggle('show-phone', true);
+    setToggle('show-email', true);
+    setToggle('show-whatsapp', true);
+    setToggle('show-slug', parseBool(meta.show_slug, true));
+    setToggle('show-whatsapp-template', parseBool(meta.show_whatsapp_template, true));
+    setToggle('show-whatsapp-custom', parseBool(meta.show_whatsapp_custom, true));
+    socialConfig.forEach(s => setToggle(s.toggle, true));
+
+    normalLinks.forEach(link => {
+      const label = (link.label || '').toLowerCase();
+      if (label === 'website') {
+        setValue('website', link.url || '');
+        setToggle('show-website', !link.hidden);
+        return;
+      }
+      if (label === 'call') {
+        setValue('phone', (link.url || '').replace(/^tel:/i, ''));
+        setToggle('show-phone', !link.hidden);
+        return;
+      }
+      if (label === 'email') {
+        setValue('email-config', (link.url || '').replace(/^mailto:/i, ''));
+        setToggle('show-email', !link.hidden);
+        return;
+      }
+      if (label === 'whatsapp') {
+        setToggle('show-whatsapp', !link.hidden);
+        const m = String(link.url || '').match(/^https:\/\/wa\.me\/(\d+)(?:\?text=(.*))?$/i);
+        if (m?.[1]) setValue('whatsapp-number', m[1]);
+        if (m?.[2]) {
+          const msg = decodeURIComponent(m[2]);
+          const tpl = document.getElementById('whatsapp-template');
+          const custom = document.getElementById('whatsapp-custom');
+          if (tpl) {
+            const hasOpt = Array.from(tpl.options).some(o => o.value === msg);
+            tpl.value = hasOpt ? msg : 'CUSTOM';
+          }
+          if (custom && (!tpl || tpl.value === 'CUSTOM')) custom.value = msg;
+        }
+        return;
+      }
+      const socialIdx = socialConfig.findIndex(s => s.label.toLowerCase() === label);
+      if (socialIdx >= 0) {
+        const social = socialConfig[socialIdx];
+        setValue(social.id, link.url || '');
+        setToggle(social.toggle, !link.hidden);
+      }
     });
-    for (let i = (links || []).length; i < MAX_LINKS; i++) {
-      wrap.appendChild(linkRow('', '', i, false));
-    }
-  }
 
-  function linkRow(label, url, index, hidden = false) {
-    const div = document.createElement('div');
-    div.className = 'lt-link-row';
-    div.innerHTML = `
-      <input class="lt-input" placeholder="Label" value="${label || ''}" data-idx="${index}" data-field="label">
-      <input class="lt-input" placeholder="https://link" value="${url || ''}" data-idx="${index}" data-field="url">
-      <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
-        <input type="checkbox" data-idx="${index}" data-field="hidden" ${hidden ? '' : 'checked'}> Show
-      </label>
-    `;
-    return div;
+    const waCustom = document.getElementById('whatsapp-custom');
+    const waTemplate = document.getElementById('whatsapp-template');
+    if (waCustom && waTemplate) {
+      const isCustom = waTemplate.value === 'CUSTOM';
+      waCustom.style.display = isCustom ? 'block' : 'none';
+      if (!isCustom) waCustom.value = '';
+    }
   }
 
   function buildWhatsappLink() {
     const numInput = document.getElementById('whatsapp-number');
     const templateSelect = document.getElementById('whatsapp-template');
     const customMsg = document.getElementById('whatsapp-custom')?.value.trim();
+    const showWhatsapp = document.getElementById('show-whatsapp');
+    const showTemplate = document.getElementById('show-whatsapp-template');
+    const showCustom = document.getElementById('show-whatsapp-custom');
     const rawNumber = (numInput?.value || '').replace(/[^\d]/g, '');
     if (!rawNumber) return null;
+    if (showWhatsapp && !showWhatsapp.checked) {
+      return {
+        label: 'WhatsApp',
+        url: `https://wa.me/${rawNumber}`,
+        hidden: true
+      };
+    }
     const selected = templateSelect?.value || '';
-    const text = (selected === 'CUSTOM' ? customMsg : selected) || '';
+    let text = '';
+    if (!showTemplate || showTemplate.checked) {
+      if (selected === 'CUSTOM') {
+        if (!showCustom || showCustom.checked) text = customMsg || '';
+      } else {
+        text = selected || '';
+      }
+    }
     const encoded = text ? `?text=${encodeURIComponent(text)}` : '';
     return {
       label: 'WhatsApp',
-      url: `https://wa.me/${rawNumber}${encoded}`
+      url: `https://wa.me/${rawNumber}${encoded}`,
+      hidden: false
     };
   }
 
@@ -490,69 +613,29 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const waLink = buildWhatsappLink();
     if (waLink?.url) linksOut.push({ ...waLink, sort: linksOut.length });
 
-    const inputs = Array.from(document.querySelectorAll('.lt-link-row input'));
-    if (!inputs.length) {
-      const socialIds = ['social', 'social-2', 'social-3', 'social-4', 'social-5', 'social-6'];
-      const socialLinks = socialIds
-        .map(id => document.getElementById(id))
-        .filter(Boolean)
-        .map(input => (input.value || '').trim())
-        .filter(Boolean)
-        .map((url, i) => {
-          const withProtocol = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-          let label = `Link ${i + 1}`;
-          try {
-            const parsed = new URL(withProtocol);
-            const base = (parsed.hostname || '').replace('www.', '').split('.')[0] || label;
-            label = base.charAt(0).toUpperCase() + base.slice(1);
-          } catch {}
-          return { label, url: withProtocol, sort: linksOut.length + i };
-        });
-      return linksOut.concat(socialLinks);
-    }
-
-    const grouped = {};
-    inputs.forEach(input => {
-      const idx = input.dataset.idx;
-      const field = input.dataset.field;
-      grouped[idx] = grouped[idx] || { label: '', url: '', hidden: false };
-      if (field === 'hidden') grouped[idx].hidden = !input.checked;
-      else grouped[idx][field] = input.value.trim();
+    socialConfig.forEach(social => {
+      const raw = getValue(social.id);
+      if (!raw) return;
+      const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      const show = document.getElementById(social.toggle);
+      linksOut.push({
+        label: social.label,
+        url,
+        hidden: show ? !show.checked : false,
+        sort: linksOut.length
+      });
     });
-    const manualLinks = Object.values(grouped)
-      .filter(l => l.label || l.url)
-      .map(link => {
-        let url = link.url || '';
-        if (url && !/^https?:\/\//i.test(url)) {
-          url = 'https://' + url;
-        }
-        let label = link.label;
-        if (!label && url) {
-          try {
-            const u = new URL(url);
-            const host = u.hostname.replace('www.', '');
-            const base = host.split('.')[0] || 'Link';
-            label = base.charAt(0).toUpperCase() + base.slice(1);
-          } catch {
-            label = 'Link';
-          }
-        }
-        return { label: label || 'Link', url, hidden: link.hidden };
-      })
-      .filter(l => l.url)
-      .slice(0, MAX_LINKS)
-      .map((l, i) => ({ ...l, sort: linksOut.length + i }));
 
-    return linksOut.concat(manualLinks);
+    linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_slug', document.getElementById('show-slug')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp_template', document.getElementById('show-whatsapp-template')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp_custom', document.getElementById('show-whatsapp-custom')?.checked ?? true, linksOut.length));
+
+    return linksOut;
   }
 
   function bindEditorActions() {
-    const previewBtn = document.getElementById('lt-preview');
-    const previewStatusEl = document.getElementById('lt-preview-status');
-    const previewModal = document.getElementById('lt-preview-modal');
-    const previewCloseEls = previewModal?.querySelectorAll('[data-preview-close]');
-    const previewFrame = document.getElementById('lt-preview-frame');
-    const PREVIEW_SLUG = 'preview-card';
     const logoInput = document.getElementById('logo');
     const avatarUrlInput = document.getElementById('lt-avatar-url');
     const saveStatusEl = document.getElementById('lt-save-status');
@@ -590,120 +673,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     waTemplate?.addEventListener('change', toggleWaCustom);
     toggleWaCustom();
 
-    const closePreviewModal = () => {
-      if (!previewModal) return;
-      previewModal.hidden = true;
-      document.body.style.overflow = '';
-      if (previewFrame) previewFrame.src = 'about:blank';
-    };
-
-    const openPreviewModal = () => {
-      if (!previewModal) return;
-      previewModal.hidden = false;
-      document.body.style.overflow = 'hidden';
-    };
-
-    const renderPreview = async () => {
-      const name = getValue('full-name') || 'Your name';
-      const role = getValue('role') || '';
-      const bio = getValue('lt-bio') || '';
-      const links = collectLinks();
-      const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'dark';
-
-      // Avatar: prefer saved value, then current file, then placeholder
-      let avatarUrl = getValue('lt-avatar-url') || '';
-      const logoInput = document.getElementById('logo');
-      const logoFile = logoInput?.files?.[0];
-      if (!avatarUrl && logoFile && (logoFile.type || '').startsWith('image/')) {
-        try {
-          avatarUrl = await fileToDataURL(logoFile);
-        } catch {
-          avatarUrl = '';
-        }
-      }
-      if (!avatarUrl) avatarUrl = 'https://placehold.co/220x220?text=Profile';
-
-      const galleryInput = document.getElementById('mark');
-      const imageFiles = galleryInput?.files
-        ? Array.from(galleryInput.files).filter(file => (file.type || '').startsWith('image/'))
-        : [];
-      const galleryImages = imageFiles.length ? await Promise.all(imageFiles.map(fileToDataURL)) : [];
-
-      const musicInput = document.getElementById('music-files');
-      const audioFiles = musicInput?.files
-        ? Array.from(musicInput.files).filter(file => (file.type || '').includes('audio') || /\.mp3$/i.test(file.name || ''))
-        : [];
-      const musicTracks = audioFiles.map(file => ({
-        name: (file.name || 'Track').replace(/\.[^/.]+$/, ''),
-        src: URL.createObjectURL(file)
-      }));
-
-      const previewProfile = {
-        name,
-        title: role,
-        bio,
-        avatar_url: avatarUrl,
-        theme,
-        slug: PREVIEW_SLUG,
-        links
-      };
-
-      localStorage.setItem(localProfileKey(PREVIEW_SLUG), JSON.stringify(previewProfile));
-      localStorage.setItem(localGalleryKey(PREVIEW_SLUG), JSON.stringify(galleryImages));
-      localStorage.setItem(localMusicKey(PREVIEW_SLUG), JSON.stringify(musicTracks));
-
-      if (previewFrame) {
-        previewFrame.src = `link-profile.html?u=${encodeURIComponent(PREVIEW_SLUG)}&preview=1&t=${Date.now()}`;
-      }
-    };
-
-    previewBtn?.addEventListener('click', async evt => {
-      evt.preventDefault();
-      try {
-        await renderPreview();
-        openPreviewModal();
-        showStatusEl(previewStatusEl, 'Preview loaded.', 'success');
-      } catch (err) {
-        showStatusEl(previewStatusEl, err.message || 'Could not build preview.', 'error');
-      }
-    });
-    previewCloseEls?.forEach(el => el.addEventListener('click', closePreviewModal));
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && !previewModal?.hidden) closePreviewModal();
-    });
-
-    const galleryInput = document.getElementById('mark');
-    const musicInput = document.getElementById('music-files');
-
-    const clampSelectedFiles = (input, max, label) => {
-      if (!input?.files || input.files.length <= max) return;
-        const limited = Array.from(input.files).slice(0, max);
-        try {
-          const dt = new DataTransfer();
-          limited.forEach(file => dt.items.add(file));
-          input.files = dt.files;
-        } catch {
-        // Fallback: keep original list in input, enforce at save-time.
-      }
-      window.alert(`${label} is limited to ${max} files. Extra files were ignored.`);
-    };
-
-    galleryInput?.addEventListener('change', () => {
-      clampSelectedFiles(galleryInput, MAX_GALLERY_IMAGES, 'Gallery');
-    });
-    musicInput?.addEventListener('change', () => {
-      clampSelectedFiles(musicInput, MAX_MUSIC_FILES, 'Music');
-    });
-
-    const addBtn = document.getElementById('lt-add-link');
-    addBtn?.addEventListener('click', () => {
-      const wrap = document.getElementById('lt-links-editor');
-      if (!wrap) return;
-      const existing = wrap.querySelectorAll('.lt-link-row').length;
-      if (existing >= MAX_LINKS) return;
-      wrap.appendChild(linkRow('', '', existing));
-    });
-
     const saveBtn = document.getElementById('lt-save');
     const statusEl = document.getElementById('lt-save-status');
     saveBtn?.addEventListener('click', async evt => {
@@ -732,48 +701,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
             const supaLinks = links.map(l => ({
               label: l.label,
               url: l.url,
+              hidden: !!l.hidden,
               sort: l.sort,
               profile_id: session.user.id
             }));
             await supabase.from('links').insert(supaLinks);
-          }
-        }
-
-        const imageFiles = galleryInput?.files
-          ? Array.from(galleryInput.files).filter(file => (file.type || '').startsWith('image/'))
-          : [];
-        const limitedImageFiles = imageFiles.slice(0, MAX_GALLERY_IMAGES);
-        let galleryImages = [];
-        if (limitedImageFiles.length) {
-          galleryImages = await Promise.all(limitedImageFiles.map(fileToDataURL));
-        } else {
-          try {
-            galleryImages = JSON.parse(localStorage.getItem(localGalleryKey(profile.slug)) || '[]');
-          } catch {
-            galleryImages = [];
-          }
-        }
-
-        const audioFiles = musicInput?.files
-          ? Array.from(musicInput.files).filter(file =>
-            (file.type || '').includes('audio') || /\.mp3$/i.test(file.name || '')
-          )
-          : [];
-        const limitedAudioFiles = audioFiles.slice(0, MAX_MUSIC_FILES);
-        let musicTracks = [];
-        if (limitedAudioFiles.length) {
-          for (const file of limitedAudioFiles) {
-            const fallbackName = (file.name || 'Track').replace(/\.[^/.]+$/, '');
-            const enteredName = window.prompt(`Enter a display name for "${file.name}"`, fallbackName);
-            const trackName = (enteredName || fallbackName).trim() || fallbackName;
-            const src = await fileToDataURL(file);
-            musicTracks.push({ name: trackName, src });
-          }
-        } else {
-          try {
-            musicTracks = JSON.parse(localStorage.getItem(localMusicKey(profile.slug)) || '[]');
-          } catch {
-            musicTracks = [];
           }
         }
 
@@ -789,8 +721,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
         const draftKey = localProfileKey(profile.slug);
         localStorage.setItem(draftKey, JSON.stringify(localProfile));
         localStorage.setItem('residue_link_last_profile_key', draftKey);
-        localStorage.setItem(localGalleryKey(profile.slug), JSON.stringify(galleryImages));
-        localStorage.setItem(localMusicKey(profile.slug), JSON.stringify(musicTracks));
 
         showStatusEl(statusEl, 'Saved. Redirecting...', 'success');
         const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;

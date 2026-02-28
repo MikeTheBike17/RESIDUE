@@ -18,17 +18,7 @@ body.lt-page {
   touch-action: pan-y;
   overflow: auto;
 
-  /* soften the wallpaper but keep it visible */
-  background-image:
-    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.12), transparent 32%),
-    radial-gradient(circle at 80% 10%, rgba(255,255,255,0.08), transparent 30%),
-    linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0.55)),
-    url("img/profile-link-background.png");
-  background-repeat: repeat;
-  background-size: 50% auto, 50% auto, cover, 50% auto;
-  background-position: center, center, center, top left;
-  background-blend-mode: normal, normal, multiply, normal;
-
+  background-color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;

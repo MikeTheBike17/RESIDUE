@@ -1,5 +1,25 @@
 (() => {
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const telemetry = () => window.residueTelemetry;
+  const logAuth = payload => telemetry()?.logAuthEvent?.(payload);
+
+  const decodeEmailLinks = () => {
+    document.querySelectorAll('a[data-email-code]').forEach(link => {
+      const code = (link.getAttribute('data-email-code') || '').trim();
+      if (!code) return;
+      try {
+        let email = atob(code);
+        if (link.getAttribute('data-email-rev') === '1') {
+          email = email.split('').reverse().join('');
+        }
+        link.href = `mailto:${email}`;
+        link.textContent = email;
+      } catch {
+        // Keep placeholder if decode fails.
+      }
+    });
+  };
+  decodeEmailLinks();
 
   // Mobile nav toggle
   const toggle = document.querySelector('.menu-toggle');
@@ -57,6 +77,16 @@
   };
   setHeaderState();
   window.addEventListener('scroll', setHeaderState, { passive: true });
+
+  // Footer copyright
+  const updateFooterCopyright = () => {
+    const year = new Date().getFullYear();
+    document.querySelectorAll('[data-footer-copyright]').forEach(el => {
+      const brand = (el.getAttribute('data-brand') || 'Residue').trim() || 'Residue';
+      el.textContent = `© ${year} ${brand}. All rights reserved.`;
+    });
+  };
+  updateFooterCopyright();
 
   // Fake page transitions
   const body = document.body;
@@ -177,6 +207,12 @@
       evt.preventDefault();
       const code = (codeInput?.value || '').trim().toUpperCase();
       if (!statusEl) return;
+      logAuth({
+        action: 'access_code_check',
+        outcome: 'attempt',
+        detail: 'Access code submitted.',
+        metadata: { code_prefix: code.slice(0, 8) }
+      });
       statusEl.hidden = false;
       statusEl.textContent = 'Checking code';
       statusEl.className = 'status loading-dots';
@@ -186,12 +222,24 @@
       setTimeout(() => {
         if (validCodes.includes(code)) {
           localStorage.setItem('residue-access', 'granted');
+          logAuth({
+            action: 'access_code_check',
+            outcome: 'success',
+            detail: 'Access code accepted.',
+            metadata: { code_prefix: code.slice(0, 8) }
+          });
           statusEl.textContent = 'Access granted.';
           statusEl.className = 'status success';
           if (typeof window.openAuthModal === 'function') {
             window.openAuthModal('signin');
           }
         } else {
+          logAuth({
+            action: 'access_code_check',
+            outcome: 'failure',
+            detail: 'Access code rejected.',
+            metadata: { code_prefix: code.slice(0, 8) }
+          });
           statusEl.textContent = 'Invalid access code.';
           statusEl.className = 'status error';
           gateButton && (gateButton.disabled = false);
@@ -323,9 +371,11 @@
       const email = ($("#signin-email")?.value || "").trim().toLowerCase();
       const password = $("#signin-password")?.value || "";
       const mockEmail = TEMP_MOCK_EMAIL.toLowerCase();
+      logAuth({ action: 'signin', outcome: 'attempt', email, detail: 'Sign in submitted.' });
 
       if (email === mockEmail && password === TEMP_MOCK_PASSWORD) {
         localStorage.setItem(CURRENT_USER_KEY, TEMP_MOCK_EMAIL);
+        logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via temp admin credentials.' });
         setStatus(signinStatus, "Signed in.", true);
         setTimeout(() => {
           closeAuthModal();
@@ -335,17 +385,30 @@
         return;
       }
 
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setStatus(signinStatus, "Enter a valid email.", true);
-      if (password.length < 6) return setStatus(signinStatus, "Password must be at least 6 characters.", true);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Invalid email format.' });
+        return setStatus(signinStatus, "Enter a valid email.", true);
+      }
+      if (password.length < 6) {
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Password too short.' });
+        return setStatus(signinStatus, "Password must be at least 6 characters.", true);
+      }
 
       const users = getUsers();
       const user = users.find(u => (u.email || "").toLowerCase() === email);
-      if (!user) return setStatus(signinStatus, "Account not found. Create one instead.", true);
+      if (!user) {
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Local account not found.' });
+        return setStatus(signinStatus, "Account not found. Create one instead.", true);
+      }
 
       const hash = await sha256Hex(password);
-      if (hash !== user.passwordHash) return setStatus(signinStatus, "Incorrect password.", true);
+      if (hash !== user.passwordHash) {
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Incorrect password.' });
+        return setStatus(signinStatus, "Incorrect password.", true);
+      }
 
       localStorage.setItem(CURRENT_USER_KEY, email);
+      logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via local account.' });
       setStatus(signinStatus, "Signed in.", true);
 
       setTimeout(() => {
@@ -362,19 +425,33 @@
       const email = ($("#create-email")?.value || "").trim().toLowerCase();
       const password = $("#create-password")?.value || "";
       const confirm = $("#create-confirm")?.value || "";
+      logAuth({ action: 'signup', outcome: 'attempt', email, detail: 'Create account submitted.' });
 
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setStatus(createStatus, "Enter a valid email.", true);
-      if (password.length < 6) return setStatus(createStatus, "Password must be at least 6 characters.", true);
-      if (password !== confirm) return setStatus(createStatus, "Passwords do not match.", true);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Invalid email format.' });
+        return setStatus(createStatus, "Enter a valid email.", true);
+      }
+      if (password.length < 6) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Password too short.' });
+        return setStatus(createStatus, "Password must be at least 6 characters.", true);
+      }
+      if (password !== confirm) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Password confirmation mismatch.' });
+        return setStatus(createStatus, "Passwords do not match.", true);
+      }
 
       const users = getUsers();
-      if (users.some(u => (u.email || "").toLowerCase() === email)) return setStatus(createStatus, "That email is already in use.", true);
+      if (users.some(u => (u.email || "").toLowerCase() === email)) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Email already exists in local users.' });
+        return setStatus(createStatus, "That email is already in use.", true);
+      }
 
       const passwordHash = await sha256Hex(password);
       users.push({ email, passwordHash, createdAt: new Date().toISOString() });
       saveUsers(users);
 
       localStorage.setItem(CURRENT_USER_KEY, email);
+      logAuth({ action: 'signup', outcome: 'success', email, detail: 'Local account created.' });
       setStatus(createStatus, "Account created.", true);
 
       setTimeout(() => {
