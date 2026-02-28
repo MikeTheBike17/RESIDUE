@@ -403,6 +403,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     setValue('lt-title', profile.title || '');
     setValue('lt-bio', profile.bio || '');
     setValue('lt-slug', profile.slug || '');
+    if (profile.website !== undefined) setValue('website', profile.website);
+    if (profile.phone !== undefined) setValue('phone', profile.phone);
+    if (profile.email !== undefined) setValue('email-config', profile.email);
     document.querySelectorAll('input[name="lt-theme"]').forEach(r => {
       r.checked = (profile.theme || 'dark') === r.value;
     });
@@ -758,8 +761,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const title = getValue('role') || getValue('lt-title');
     const bio = getValue('lt-bio');
     const avatar_url = getValue('lt-avatar-url');
+    const website = getValue('website');
+    const phone = getValue('phone');
+    const email = getValue('email-config');
     const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'dark';
-    return { id: userId, name, slug, title, bio, avatar_url, theme };
+    return { id: userId, name, slug, title, bio, avatar_url, theme, website, phone, email };
   }
 
   /* Helpers */
@@ -783,6 +789,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
       return;
     }
     links.forEach(l => {
+      if (!l.url) return;
+      if (l.hidden) return;
       const a = document.createElement('a');
       a.href = l.url;
       a.textContent = l.label || l.url;

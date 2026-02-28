@@ -173,7 +173,25 @@ body.lt-page.preview-mode::-webkit-scrollbar {
    Footer inside card
    ========================= */
 .lt-footer {
-  display: none !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.lt-footer a {
+  color: rgba(255,255,255,0.9);
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+.lt-footer a:hover {
+  color: #f2d5a3;
 }
 
 /* =========================

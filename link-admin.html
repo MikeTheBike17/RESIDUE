@@ -73,13 +73,28 @@
         <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
 
         <label for="website">Website URL (optional, include https://)</label>
-        <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
+        <div class="form-row">
+          <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
+          <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="show-website" checked> Show
+          </label>
+        </div>
 
         <label for="phone">Phone number</label>
-        <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" required>
+        <div class="form-row">
+          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" required>
+          <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="show-phone" checked> Show
+          </label>
+        </div>
 
         <label for="email-config">Email</label>
-        <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
+        <div class="form-row">
+          <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
+          <label class="lt-note" style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="show-email" checked> Show
+          </label>
+        </div>
 
         <label for="logo">Upload Company or Personal logo</label>
         <input id="logo" name="logo" type="file" accept="image/*" required>
