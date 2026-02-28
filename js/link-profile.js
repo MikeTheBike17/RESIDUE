@@ -9,7 +9,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const qs = new URLSearchParams(window.location.search);
   const slug = (qs.get('u') || '').trim().toLowerCase();
   const overlay = document.getElementById('lt-overlay');
-  const hideOverlay = () => overlay?.classList.add('hide');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    overlay.classList.add('active');
+  }
+  const hideOverlay = () => {
+    overlay?.classList.remove('active');
+    overlay?.classList.add('hide');
+    if (overlay) overlay.style.display = 'none';
+  };
 
   const profileKey = `residue_link_profile_${slug}`;
   const galleryKey = `residue_link_gallery_${slug}`;
@@ -54,5 +62,5 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  setTimeout(hideOverlay, 600);
+  setTimeout(hideOverlay, 200);
 });

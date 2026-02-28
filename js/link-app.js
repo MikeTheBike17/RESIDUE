@@ -60,7 +60,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const slug = qs.get('u');
     const overlay = document.getElementById('lt-overlay');
     const finishOverlay = () => overlay?.classList.remove('active');
-    overlay?.classList.add('active');
+    if (overlay) {
+      overlay.style.display = 'flex';
+      overlay.classList.add('active');
+    }
     if (isFileProtocol) {
       showPlaceholder('Run via http:// (not file://) so Supabase works.');
       finishOverlay();
@@ -86,6 +89,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', data.id).order('sort', { ascending: true });
     renderLinks('lt-links', links || []);
     finishOverlay();
+    if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
   }
 
   function fillPublic(profile) {
