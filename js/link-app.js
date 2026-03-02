@@ -562,11 +562,13 @@ import { residueTelemetry } from './supabase-telemetry.js';
   async function ensureProfileRow(user) {
     if (!user) return;
     const authEmail = normalizeEmail(user.email);
+    const emailPrefix = (authEmail || user.email || '').split('@')[0];
+    const fallbackSlug = resolveSlug(emailPrefix, authEmail) || `user-${String(user.id || '').replace(/-/g, '').slice(0, 8)}`;
     await supabase.from('profiles').upsert({
       id: user.id,
       auth_email: authEmail || null,
       name: user.email,
-      slug: (authEmail || user.email).split('@')[0],
+      slug: fallbackSlug,
       theme: 'dark'
     });
   }
