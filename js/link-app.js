@@ -550,35 +550,53 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setValue('phone', '');
     setValue('email-config', '');
     setValue('whatsapp-number', '');
+    setValue('whatsapp-custom', '');
 
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
+    const hasMeta = key => Object.prototype.hasOwnProperty.call(meta, key);
+    const parseToggleMeta = (key, fallback = true) => parseBool(meta[key], fallback);
+
     setToggle('show-role', parseBool(meta.show_role, true));
     setToggle('show-bio', parseBool(meta.show_bio, true));
-    setToggle('show-website', true);
-    setToggle('show-phone', true);
-    setToggle('show-email', true);
-    setToggle('show-whatsapp', true);
-    socialConfig.forEach(s => setToggle(s.toggle, true));
+    setToggle('show-slug', parseBool(meta.show_slug, true));
+    setToggle('show-website', parseToggleMeta('show_website', true));
+    setToggle('show-phone', parseToggleMeta('show_phone', true));
+    setToggle('show-email', parseToggleMeta('show_email', true));
+    setToggle('show-whatsapp', parseToggleMeta('show_whatsapp', true));
+    setToggle('show-whatsapp-template', parseToggleMeta('show_whatsapp_template', true));
+    setToggle('show-whatsapp-custom', parseToggleMeta('show_whatsapp_custom', true));
+    socialConfig.forEach(s => {
+      const toggleKey = s.toggle.replace(/-/g, '_');
+      setToggle(s.toggle, parseToggleMeta(toggleKey, true));
+    });
+    if (hasMeta('whatsapp_number')) setValue('whatsapp-number', meta.whatsapp_number || '');
+    if (hasMeta('whatsapp_custom')) setValue('whatsapp-custom', meta.whatsapp_custom || '');
+    const waTemplateEl = document.getElementById('whatsapp-template');
+    if (waTemplateEl && hasMeta('whatsapp_template')) {
+      const savedTemplate = meta.whatsapp_template || '';
+      const hasOpt = Array.from(waTemplateEl.options).some(o => o.value === savedTemplate);
+      waTemplateEl.value = hasOpt ? savedTemplate : 'CUSTOM';
+    }
 
     normalLinks.forEach(link => {
       const label = (link.label || '').toLowerCase();
       if (label === 'website') {
         setValue('website', link.url || '');
-        setToggle('show-website', !link.hidden);
+        if (!hasMeta('show_website')) setToggle('show-website', !link.hidden);
         return;
       }
       if (label === 'call') {
         setValue('phone', (link.url || '').replace(/^tel:/i, ''));
-        setToggle('show-phone', !link.hidden);
+        if (!hasMeta('show_phone')) setToggle('show-phone', !link.hidden);
         return;
       }
       if (label === 'email') {
         setValue('email-config', (link.url || '').replace(/^mailto:/i, ''));
-        setToggle('show-email', !link.hidden);
+        if (!hasMeta('show_email')) setToggle('show-email', !link.hidden);
         return;
       }
       if (label === 'whatsapp') {
-        setToggle('show-whatsapp', !link.hidden);
+        if (!hasMeta('show_whatsapp')) setToggle('show-whatsapp', !link.hidden);
         const m = String(link.url || '').match(/^https:\/\/wa\.me\/(\d+)(?:\?text=(.*))?$/i);
         if (m?.[1]) setValue('whatsapp-number', m[1]);
         if (m?.[2]) {
@@ -597,7 +615,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
       if (socialIdx >= 0) {
         const social = socialConfig[socialIdx];
         setValue(social.id, link.url || '');
-        setToggle(social.toggle, !link.hidden);
+        const toggleKey = social.toggle.replace(/-/g, '_');
+        if (!hasMeta(toggleKey)) setToggle(social.toggle, !link.hidden);
       }
     });
 
@@ -653,9 +672,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const website = getValue('website');
     const phone = getValue('phone');
     const email = getValue('email-config');
-    if (!website && sw) sw.checked = false;
-    if (!phone && sp) sp.checked = false;
-    if (!email && se) se.checked = false;
     if (website) linksOut.push({ label: 'Website', url: website.startsWith('http') ? website : `https://${website}`, hidden: sw ? !sw.checked : false, sort: linksOut.length });
     if (phone) linksOut.push({ label: 'Call', url: `tel:${phone}`, hidden: sp ? !sp.checked : false, sort: linksOut.length });
     if (email) linksOut.push({ label: 'Email', url: `mailto:${email}`, hidden: se ? !se.checked : false, sort: linksOut.length });
@@ -667,10 +683,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     socialConfig.forEach(social => {
       const raw = getValue(social.id);
       const show = document.getElementById(social.toggle);
-      if (!raw) {
-        if (show) show.checked = false;
-        return;
-      }
+      if (!raw) return;
       const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
       linksOut.push({
         label: social.label,
@@ -683,6 +696,19 @@ import { residueTelemetry } from './supabase-telemetry.js';
     linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? true, linksOut.length));
     linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? true, linksOut.length));
     linksOut.push(metaLink('show_slug', document.getElementById('show-slug')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_website', document.getElementById('show-website')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_phone', document.getElementById('show-phone')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_email', document.getElementById('show-email')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp', document.getElementById('show-whatsapp')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp_template', document.getElementById('show-whatsapp-template')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp_custom', document.getElementById('show-whatsapp-custom')?.checked ?? true, linksOut.length));
+    socialConfig.forEach(social => {
+      const toggleKey = social.toggle.replace(/-/g, '_');
+      linksOut.push(metaLink(toggleKey, document.getElementById(social.toggle)?.checked ?? true, linksOut.length));
+    });
+    linksOut.push(metaLink('whatsapp_number', getValue('whatsapp-number'), linksOut.length));
+    linksOut.push(metaLink('whatsapp_template', getValue('whatsapp-template'), linksOut.length));
+    linksOut.push(metaLink('whatsapp_custom', getValue('whatsapp-custom'), linksOut.length));
 
     return linksOut;
   }
