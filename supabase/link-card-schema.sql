@@ -307,3 +307,94 @@ end;
 $$;
 
 grant execute on function public.create_code_for_user(uuid) to authenticated;
+
+create or replace function public.ensure_profile_from_auth(
+  p_user_id uuid,
+  p_email text,
+  p_display_name text default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_email text;
+  v_base_slug text;
+  v_slug text;
+  v_suffix integer := 0;
+begin
+  if p_user_id is null then
+    return;
+  end if;
+
+  v_email := lower(coalesce(p_email, ''));
+
+  if exists (select 1 from public.profiles where id = p_user_id) then
+    update public.profiles
+    set auth_email = case when v_email <> '' then v_email else auth_email end
+    where id = p_user_id;
+    return;
+  end if;
+
+  v_base_slug := regexp_replace(split_part(v_email, '@', 1), '[^a-z0-9]+', '-', 'g');
+  v_base_slug := regexp_replace(v_base_slug, '(^-+|-+$)', '', 'g');
+  if v_base_slug = '' then
+    v_base_slug := 'user-' || left(replace(p_user_id::text, '-', ''), 8);
+  end if;
+
+  v_slug := v_base_slug;
+  while exists (select 1 from public.profiles where slug = v_slug) loop
+    v_suffix := v_suffix + 1;
+    v_slug := v_base_slug || '-' || v_suffix::text;
+  end loop;
+
+  insert into public.profiles (id, auth_email, name, slug, theme)
+  values (
+    p_user_id,
+    case when v_email <> '' then v_email else null end,
+    coalesce(nullif(p_display_name, ''), nullif(v_email, ''), 'Residue User'),
+    v_slug,
+    'dark'
+  );
+end;
+$$;
+
+create or replace function public.on_auth_user_created()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  perform public.ensure_profile_from_auth(
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', null)
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists auth_users_profile_bootstrap on auth.users;
+create trigger auth_users_profile_bootstrap
+after insert on auth.users
+for each row
+execute function public.on_auth_user_created();
+
+do $$
+declare
+  u record;
+begin
+  for u in
+    select
+      au.id,
+      au.email,
+      coalesce(au.raw_user_meta_data ->> 'full_name', au.raw_user_meta_data ->> 'name', null) as display_name
+    from auth.users au
+    left join public.profiles p on p.id = au.id
+    where p.id is null
+  loop
+    perform public.ensure_profile_from_auth(u.id, u.email, u.display_name);
+  end loop;
+end $$;
