@@ -21,12 +21,13 @@ Deno.serve(async (req) => {
   }
 
   const payload = await req.json().catch(() => null);
+  const type = String(payload?.type || "").toUpperCase();
   const record = payload?.record;
-  const oldRecord = payload?.old_record;
 
-  // Send once when user transitions to confirmed.
-  const justConfirmed = !oldRecord?.email_confirmed_at && !!record?.email_confirmed_at;
-  if (!justConfirmed || !record?.email) return json({ skipped: true });
+  // Send immediately when a new auth user row is inserted.
+  // Keep a small fallback for payloads that omit type but include a new record.
+  const isInsert = type === "INSERT" || (!payload?.old_record && !!record?.id);
+  if (!isInsert || !record?.email) return json({ skipped: true, reason: "not_insert" });
 
   const email = String(record.email).toLowerCase();
   const firstName = email.split("@")[0] || "there";
@@ -51,4 +52,3 @@ Deno.serve(async (req) => {
   if (error) return json({ error: error.message || "Email send failed" }, 500);
   return json({ ok: true });
 });
-
