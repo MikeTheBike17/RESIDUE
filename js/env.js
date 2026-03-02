@@ -1,1 +1,4 @@
-window.env = { SUPABASE_URL: '', SUPABASE_ANON_KEY: '' };
+window.env = { 
+  SUPABASE_URL: 'https://vqqcgknwobmssgfuvfyq.supabase.com', 
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxcWNna253b2Jtc3NnZnV2ZnlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNTcyMTAsImV4cCI6MjA4NjkzMzIxMH0.Ml5aPoGw5lEasxPfVLmxB0gK5mapS0UUuhQUMjmPk3E'
+};
