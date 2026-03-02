@@ -258,30 +258,29 @@
   // ===== AUTH MODAL (Sign in / Create) =====
     const $ = (sel, root = document) => root.querySelector(sel);
 
-    const USERS_KEY = "residue_users";
     const CURRENT_USER_KEY = "residue_current_user";
     const TEMP_MOCK_EMAIL = "mike@residue.com";
     const TEMP_MOCK_PASSWORD = "123456";
     const PRIVATE_PAGE = "residue-private.html";
+    const cfg = window.env || {};
+    let supabaseClientPromise = null;
 
-    function getUsers() {
-      try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); }
-      catch { return []; }
-    }
-    function saveUsers(users) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    async function getSupabaseClient() {
+      if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return null;
+      if (!supabaseClientPromise) {
+        supabaseClientPromise = import('https://esm.sh/@supabase/supabase-js@2.45.0')
+          .then(({ createClient }) => createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+          }))
+          .catch(() => null);
+      }
+      return supabaseClientPromise;
     }
 
     function setStatus(el, msg, show = true) {
       if (!el) return;
       el.textContent = msg;
       el.hidden = !show;
-    }
-
-    async function sha256Hex(text) {
-      const data = new TextEncoder().encode(text);
-      const hashBuf = await crypto.subtle.digest("SHA-256", data);
-      return [...new Uint8Array(hashBuf)].map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
     const modal = $("#authModal");
@@ -394,21 +393,20 @@
         return setStatus(signinStatus, "Password must be at least 6 characters.", true);
       }
 
-      const users = getUsers();
-      const user = users.find(u => (u.email || "").toLowerCase() === email);
-      if (!user) {
-        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Local account not found.' });
-        return setStatus(signinStatus, "Account not found. Create one instead.", true);
+      const supabase = await getSupabaseClient();
+      if (!supabase) {
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Supabase not configured on public auth page.' });
+        return setStatus(signinStatus, "Auth is not configured yet. Contact support.", true);
       }
 
-      const hash = await sha256Hex(password);
-      if (hash !== user.passwordHash) {
-        logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Incorrect password.' });
-        return setStatus(signinStatus, "Incorrect password.", true);
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: error.message || 'Supabase sign in failed.' });
+        return setStatus(signinStatus, error.message || "Could not sign in.", true);
       }
 
-      localStorage.setItem(CURRENT_USER_KEY, email);
-      logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via local account.' });
+      localStorage.setItem(CURRENT_USER_KEY, (data?.user?.email || email).toLowerCase());
+      logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via Supabase auth.' });
       setStatus(signinStatus, "Signed in.", true);
 
       setTimeout(() => {
@@ -440,18 +438,30 @@
         return setStatus(createStatus, "Passwords do not match.", true);
       }
 
-      const users = getUsers();
-      if (users.some(u => (u.email || "").toLowerCase() === email)) {
-        logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Email already exists in local users.' });
-        return setStatus(createStatus, "That email is already in use.", true);
+      const supabase = await getSupabaseClient();
+      if (!supabase) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Supabase not configured on public auth page.' });
+        return setStatus(createStatus, "Auth is not configured yet. Contact support.", true);
       }
 
-      const passwordHash = await sha256Hex(password);
-      users.push({ email, passwordHash, createdAt: new Date().toISOString() });
-      saveUsers(users);
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: redirectTo }
+      });
+      if (error) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: error.message || 'Supabase sign up failed.' });
+        return setStatus(createStatus, error.message || "Could not create account.", true);
+      }
+
+      if (data?.user && !data?.session) {
+        logAuth({ action: 'signup', outcome: 'success', email, detail: 'Supabase signup created; awaiting email confirmation.' });
+        return setStatus(createStatus, "Account created. Check your email to confirm and sign in.", true);
+      }
 
       localStorage.setItem(CURRENT_USER_KEY, email);
-      logAuth({ action: 'signup', outcome: 'success', email, detail: 'Local account created.' });
+      logAuth({ action: 'signup', outcome: 'success', email, detail: 'Account created via Supabase auth.' });
       setStatus(createStatus, "Account created.", true);
 
       setTimeout(() => {
