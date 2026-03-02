@@ -263,6 +263,10 @@
     const TEMP_MOCK_PASSWORD = "123456";
     const PRIVATE_PAGE = "residue-private.html";
     const cfg = window.env || {};
+    const profileTableFromEnv = (cfg.SUPABASE_PROFILE_TABLE || "").trim().toLowerCase();
+    const PROFILE_TABLES = [...new Set(
+      [profileTableFromEnv, "users", "profiles"].filter(Boolean)
+    )];
     let supabaseClientPromise = null;
 
     async function getSupabaseClient() {
@@ -275,6 +279,66 @@
           .catch(() => null);
       }
       return supabaseClientPromise;
+    }
+
+    function normalizeEmail(value) {
+      return (value || "").trim().toLowerCase();
+    }
+
+    function resolveSlug(...parts) {
+      for (const raw of parts) {
+        const normalized = String(raw || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        if (normalized) return normalized;
+      }
+      return "";
+    }
+
+    async function ensureProfileRow(supabase, user, fallbackEmail = "") {
+      if (!supabase || !user?.id) return { ok: false, reason: "missing_context" };
+      const authEmail = normalizeEmail(user.email || fallbackEmail);
+      const slug = resolveSlug(authEmail.split("@")[0], `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`);
+
+      const payloadFor = (table) => {
+        if (table === "users") {
+          return { id: user.id, email: authEmail || null };
+        }
+        return {
+          id: user.id,
+          auth_email: authEmail || null,
+          name: user.email || authEmail || "Residue User",
+          slug,
+          theme: "dark"
+        };
+      };
+
+      let lastError = null;
+      for (const table of PROFILE_TABLES) {
+        const { error } = await supabase.from(table).upsert(payloadFor(table), { onConflict: "id" });
+        if (!error) {
+          logAuth({
+            action: "profile_sync",
+            outcome: "success",
+            email: authEmail,
+            user_id: user.id,
+            detail: `Upserted ${table} row from auth session.`
+          });
+          return { ok: true };
+        }
+        lastError = error;
+      }
+
+      logAuth({
+        action: "user_sync",
+        outcome: "failure",
+        email: authEmail,
+        user_id: user.id,
+        detail: `User row sync failed in all targets: ${PROFILE_TABLES.join(", ")}. Last error: ${lastError?.message || "unknown error"}`
+      });
+      return { ok: false, reason: lastError?.message || "unknown_error" };
     }
 
     function setStatus(el, msg, show = true) {
@@ -367,7 +431,7 @@
     signinForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const email = ($("#signin-email")?.value || "").trim().toLowerCase();
+      const email = normalizeEmail($("#signin-email")?.value || "");
       const password = $("#signin-password")?.value || "";
       const mockEmail = TEMP_MOCK_EMAIL.toLowerCase();
       logAuth({ action: 'signin', outcome: 'attempt', email, detail: 'Sign in submitted.' });
@@ -405,6 +469,8 @@
         return setStatus(signinStatus, error.message || "Could not sign in.", true);
       }
 
+      if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);
+
       localStorage.setItem(CURRENT_USER_KEY, (data?.user?.email || email).toLowerCase());
       logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via Supabase auth.' });
       setStatus(signinStatus, "Signed in.", true);
@@ -420,7 +486,7 @@
     createForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const email = ($("#create-email")?.value || "").trim().toLowerCase();
+      const email = normalizeEmail($("#create-email")?.value || "");
       const password = $("#create-password")?.value || "";
       const confirm = $("#create-confirm")?.value || "";
       logAuth({ action: 'signup', outcome: 'attempt', email, detail: 'Create account submitted.' });
@@ -459,6 +525,8 @@
         logAuth({ action: 'signup', outcome: 'success', email, detail: 'Supabase signup created; awaiting email confirmation.' });
         return setStatus(createStatus, "Account created. Check your email to confirm and sign in.", true);
       }
+
+      if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);
 
       localStorage.setItem(CURRENT_USER_KEY, email);
       logAuth({ action: 'signup', outcome: 'success', email, detail: 'Account created via Supabase auth.' });
