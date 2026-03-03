@@ -356,6 +356,36 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   const localProfileKey = slug => `${LOCAL_PROFILE_KEY_PREFIX}${(slug || '').toLowerCase()}`;
 
+  function deriveDisplayName(profileName, user) {
+    const fromProfile = String(profileName || '').trim();
+    if (fromProfile && !fromProfile.includes('@')) return fromProfile;
+    const fromMeta = String(user?.user_metadata?.full_name || user?.user_metadata?.name || '').trim();
+    if (fromMeta) return fromMeta;
+    if (fromProfile) return fromProfile;
+    const emailPrefix = String(user?.email || '').split('@')[0] || '';
+    return emailPrefix.replace(/[._-]+/g, ' ').trim();
+  }
+
+  function buildPublicProfileUrl(slug) {
+    const normalizedSlug = resolveSlug(slug || '', '');
+    const suffix = normalizedSlug || 'full-name';
+    return `${window.location.origin}${window.location.pathname.replace(/link-admin\\.html$/, 'link-profile.html')}?u=${suffix}`;
+  }
+
+  function updatePublicUrl(slug) {
+    const urlEl = document.getElementById('lt-public-url');
+    if (!urlEl) return;
+    const publicUrl = buildPublicProfileUrl(slug);
+    urlEl.textContent = publicUrl;
+  }
+
+  function syncAutoSlug(nameValue, fallbackSource = '') {
+    const generatedSlug = resolveSlug(nameValue, fallbackSource);
+    setText('lt-slug-display', buildPublicProfileUrl(generatedSlug || ''));
+    updatePublicUrl(generatedSlug || '');
+    return generatedSlug;
+  }
+
   function bindAuth() {
     const loginBtn = document.getElementById('lt-login');
     const signupBtn = document.getElementById('lt-signup');
@@ -606,7 +636,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', user.id).order('sort', { ascending: true });
     const { meta, normalLinks } = extractMetaFromLinks(links || []);
     const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
-    fillEditor(profile || {}, hydratedLinks);
+    fillEditor(profile || {}, hydratedLinks, user);
     const codeRow = await fetchOrCreateCode(user.id);
     renderCodePanel(codeRow);
   }
@@ -642,16 +672,13 @@ import { residueTelemetry } from './supabase-telemetry.js';
     }
   }
 
-  function fillEditor(profile, links) {
+  function fillEditor(profile, links, user = null) {
+    const displayName = deriveDisplayName(profile?.name, user);
     setValue('lt-avatar-url', profile.avatar_url || '');
-    setValue('full-name', profile.name || '');
+    setValue('full-name', displayName || '');
     setValue('role', profile.title || '');
     setValue('lt-bio', profile.bio || '');
-    const resolvedProfileSlug = resolveSlug(profile.slug, profile.auth_email || profile.name || '');
-    setValue('lt-slug', resolvedProfileSlug || '');
-    const publicUrl = `${window.location.origin}${window.location.pathname.replace(/link-admin\\.html$/, 'link-profile.html')}?u=${resolvedProfileSlug || ''}`;
-    const urlEl = document.getElementById('lt-public-url');
-    if (urlEl) urlEl.textContent = publicUrl;
+    syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
     const setToggle = (id, checked = true) => {
       const el = document.getElementById(id);
       if (el) el.checked = !!checked;
@@ -837,11 +864,16 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function bindEditorActions() {
+    const fullNameInput = document.getElementById('full-name');
     const logoInput = document.getElementById('logo');
     const avatarUrlInput = document.getElementById('lt-avatar-url');
     const saveStatusEl = document.getElementById('lt-save-status');
     const waMessage = document.getElementById('whatsapp-message');
     const waMessageCount = document.getElementById('whatsapp-message-count');
+
+    fullNameInput?.addEventListener('input', () => {
+      syncAutoSlug(fullNameInput.value, getValue('email-config'));
+    });
 
     const handleLogoChange = async () => {
       const file = logoInput?.files?.[0];
@@ -963,10 +995,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
   function collectProfilePayload(user) {
     const name = getValue('full-name') || getValue('lt-name');
-    const slug = resolveSlug(
-      getValue('lt-slug'),
-      name || getValue('email-config') || normalizeEmail(user?.email)
-    );
+    const slug = resolveSlug(name, getValue('email-config') || normalizeEmail(user?.email));
     const title = getValue('role') || getValue('lt-title');
     const bio = getValue('lt-bio');
     const avatar_url = getValue('lt-avatar-url');
