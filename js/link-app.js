@@ -121,8 +121,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setText('lt-name', profile.name || 'Your name');
     const includeRole = parseBool(meta.show_role, true);
     const includeBio = parseBool(meta.show_bio, true);
-    setText('lt-title', includeRole ? (profile.title || 'Your title') : '');
-    setText('lt-bio', includeBio ? (profile.bio || 'Add a short description.') : '');
+    setText('lt-title', includeRole ? (profile.title || '') : '');
+    setText('lt-bio', includeBio ? (profile.bio || '') : '');
     const avatar = document.getElementById('lt-avatar');
     if (avatar) avatar.src = profile.avatar_url || 'https://placehold.co/200x200?text=Add+photo';
     const pill = document.getElementById('lt-theme-pill');
@@ -863,6 +863,146 @@ import { residueTelemetry } from './supabase-telemetry.js';
     };
   }
 
+  async function cropImageWithModal(file) {
+    const modal = document.getElementById('lt-cropper-modal');
+    const backdrop = document.getElementById('lt-cropper-backdrop');
+    const stage = document.getElementById('lt-cropper-stage');
+    const imageEl = document.getElementById('lt-cropper-image');
+    const boxEl = document.getElementById('lt-cropper-box');
+    const cancelBtn = document.getElementById('lt-crop-cancel');
+    const applyBtn = document.getElementById('lt-crop-apply');
+    const sourceDataUrl = await fileToDataURL(file);
+
+    if (!modal || !stage || !imageEl || !boxEl || !cancelBtn || !applyBtn) {
+      return sourceDataUrl;
+    }
+
+    const sourceImage = await loadImage(sourceDataUrl);
+    imageEl.src = sourceDataUrl;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+
+    return await new Promise(resolve => {
+      let settled = false;
+      let dragging = false;
+      let dragOffsetX = 0;
+      let dragOffsetY = 0;
+      let imageRect = { left: 0, top: 0, width: 0, height: 0 };
+      const box = { left: 0, top: 0, size: 0 };
+
+      const cleanup = result => {
+        if (settled) return;
+        settled = true;
+        modal.hidden = true;
+        document.body.style.overflow = '';
+        window.removeEventListener('resize', updateLayout);
+        document.removeEventListener('keydown', onKeyDown);
+        backdrop?.removeEventListener('click', onCancel);
+        cancelBtn.removeEventListener('click', onCancel);
+        applyBtn.removeEventListener('click', onApply);
+        boxEl.removeEventListener('pointerdown', onPointerDown);
+        stage.removeEventListener('pointermove', onPointerMove);
+        stage.removeEventListener('pointerup', onPointerUp);
+        stage.removeEventListener('pointercancel', onPointerUp);
+        resolve(result);
+      };
+
+      const clampBox = () => {
+        const maxLeft = imageRect.left + imageRect.width - box.size;
+        const maxTop = imageRect.top + imageRect.height - box.size;
+        box.left = Math.max(imageRect.left, Math.min(box.left, maxLeft));
+        box.top = Math.max(imageRect.top, Math.min(box.top, maxTop));
+      };
+
+      const renderBox = () => {
+        boxEl.style.width = `${box.size}px`;
+        boxEl.style.height = `${box.size}px`;
+        boxEl.style.left = `${box.left}px`;
+        boxEl.style.top = `${box.top}px`;
+      };
+
+      const updateLayout = () => {
+        const sw = stage.clientWidth;
+        const sh = stage.clientHeight;
+        if (!sw || !sh) return;
+        const scale = Math.min(sw / sourceImage.width, sh / sourceImage.height);
+        const width = sourceImage.width * scale;
+        const height = sourceImage.height * scale;
+        imageRect = {
+          left: (sw - width) / 2,
+          top: (sh - height) / 2,
+          width,
+          height
+        };
+
+        if (!box.size) {
+          box.size = Math.max(80, Math.floor(Math.min(width, height) * 0.7));
+          box.left = imageRect.left + (width - box.size) / 2;
+          box.top = imageRect.top + (height - box.size) / 2;
+        } else {
+          box.size = Math.min(box.size, Math.floor(Math.min(width, height)));
+          clampBox();
+        }
+        renderBox();
+      };
+
+      const onPointerDown = event => {
+        event.preventDefault();
+        dragging = true;
+        dragOffsetX = event.clientX - box.left;
+        dragOffsetY = event.clientY - box.top;
+        boxEl.setPointerCapture?.(event.pointerId);
+      };
+
+      const onPointerMove = event => {
+        if (!dragging) return;
+        const stageRect = stage.getBoundingClientRect();
+        box.left = event.clientX - stageRect.left - dragOffsetX;
+        box.top = event.clientY - stageRect.top - dragOffsetY;
+        clampBox();
+        renderBox();
+      };
+
+      const onPointerUp = event => {
+        dragging = false;
+        boxEl.releasePointerCapture?.(event.pointerId);
+      };
+
+      const onCancel = () => cleanup(null);
+
+      const onApply = () => {
+        if (!imageRect.width || !imageRect.height) return cleanup(sourceDataUrl);
+        const scaleX = sourceImage.width / imageRect.width;
+        const scaleY = sourceImage.height / imageRect.height;
+        const sx = Math.max(0, (box.left - imageRect.left) * scaleX);
+        const sy = Math.max(0, (box.top - imageRect.top) * scaleY);
+        const sWidth = Math.min(sourceImage.width - sx, box.size * scaleX);
+        const sHeight = Math.min(sourceImage.height - sy, box.size * scaleY);
+        const canvas = document.createElement('canvas');
+        canvas.width = 900;
+        canvas.height = 900;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(sourceImage, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+        cleanup(canvas.toDataURL('image/jpeg', 0.92));
+      };
+
+      const onKeyDown = event => {
+        if (event.key === 'Escape') onCancel();
+      };
+
+      window.addEventListener('resize', updateLayout);
+      document.addEventListener('keydown', onKeyDown);
+      backdrop?.addEventListener('click', onCancel);
+      cancelBtn.addEventListener('click', onCancel);
+      applyBtn.addEventListener('click', onApply);
+      boxEl.addEventListener('pointerdown', onPointerDown);
+      stage.addEventListener('pointermove', onPointerMove);
+      stage.addEventListener('pointerup', onPointerUp);
+      stage.addEventListener('pointercancel', onPointerUp);
+      updateLayout();
+    });
+  }
+
   function bindEditorActions() {
     const fullNameInput = document.getElementById('full-name');
     const logoInput = document.getElementById('logo');
@@ -887,8 +1027,13 @@ import { residueTelemetry } from './supabase-telemetry.js';
         return;
       }
       try {
-        // Compress to <=700KB and max 900px on the largest side
-        const optimized = await compressImage(file, 700 * 1024, 900);
+        const cropped = await cropImageWithModal(file);
+        if (!cropped) {
+          showStatusEl(saveStatusEl, 'Logo selection canceled.', 'error');
+          logoInput.value = '';
+          return;
+        }
+        const optimized = await compressDataUrl(cropped, 700 * 1024, 900);
         if (avatarUrlInput) avatarUrlInput.value = optimized;
         showStatusEl(saveStatusEl, 'Logo optimized.', 'success');
       } catch (err) {
@@ -1075,9 +1220,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     }
   });
 
-  async function compressImage(file, maxBytes, maxSize) {
-    const blob = await fileToDataURL(file);
-    const img = await loadImage(blob);
+  async function compressDataUrl(dataUrl, maxBytes, maxSize) {
+    const img = await loadImage(dataUrl);
     const canvas = document.createElement('canvas');
     const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
     canvas.width = Math.floor(img.width * scale);
@@ -1091,6 +1235,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
       dataUrl = canvas.toDataURL('image/jpeg', quality);
     }
     return dataUrl;
+  }
+
+  async function compressImage(file, maxBytes, maxSize) {
+    const blob = await fileToDataURL(file);
+    return compressDataUrl(blob, maxBytes, maxSize);
   }
 
   function fileToDataURL(file) {
