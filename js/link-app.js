@@ -151,8 +151,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const LOCAL_PROFILE_KEY_PREFIX = 'residue_link_profile_';
   const META_PREFIX = '__meta__';
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
-  const TEMP_ADMIN_EMAIL = 'mike@residue.com';
-  const TEMP_ADMIN_PASSWORD = '123456';
   const contactDownloadState = { name: '', phone: '' };
   let contactDownloadBound = false;
   const socialConfig = [
@@ -495,55 +493,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
         if (!email || !password) return showStatusEl(statusEl, 'Enter email and password', 'error');
         showStatusEl(statusEl, mode === 'login' ? 'Logging in...' : 'Creating account...', 'loading');
 
-        if (mode === 'login') {
-          if (normalizeEmail(emailInput?.value) === normalizeEmail(TEMP_ADMIN_EMAIL) && password === TEMP_ADMIN_PASSWORD) {
-            localStorage.setItem(CURRENT_USER_KEY, TEMP_ADMIN_EMAIL);
-            residueTelemetry.logAuthEvent({
-              action: 'signin',
-              outcome: 'success',
-              email,
-              detail: 'Signed in via temp admin credentials from link-admin.'
-            });
-            showStatusEl(statusEl, 'Success', 'success');
-            toggleEditor(true);
-            setAuthOnly(false);
-            loadLocalDraft();
-            closeResetModal();
-            return;
-          }
-
-          const users = getLocalUsers();
-          const localUser = users.find(u => normalizeEmail(u.email) === email);
-          if (localUser) {
-            const hash = await sha256Hex(password);
-            if (hash !== localUser.passwordHash) {
-              residueTelemetry.logAuthEvent({
-                action: 'signin',
-                outcome: 'failure',
-                email,
-                detail: 'Incorrect local password on link-admin.'
-              });
-              return showStatusEl(statusEl, 'Incorrect password.', 'error');
-            }
-
-            localStorage.setItem(CURRENT_USER_KEY, localUser.email);
-            residueTelemetry.logAuthEvent({
-              action: 'signin',
-              outcome: 'success',
-              email,
-              detail: 'Signed in via local account from link-admin.'
-            });
-            showStatusEl(statusEl, 'Success', 'success');
-            toggleEditor(true);
-            setAuthOnly(false);
-            loadLocalDraft();
-            closeResetModal();
-            return;
-          }
-        }
-
         if (isFileProtocol) return showStatusEl(statusEl, 'Run over http://, not file://', 'error');
-        if (!supabase) return showStatusEl(statusEl, mode === 'login' ? 'No matching local account found.' : 'Missing Supabase config', 'error');
+        if (!supabase) return showStatusEl(statusEl, 'Missing Supabase config', 'error');
         let error, data;
         if (mode === 'login') {
           ({ error, data } = await supabase.auth.signInWithPassword({ email, password }));
@@ -1287,7 +1238,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
         showStatusEl(document.getElementById('lt-auth-status'), 'Run over http://, not file://', 'error');
       }
       if (!supabase) {
-        showStatusEl(document.getElementById('lt-auth-status'), 'Supabase not configured. Local account login is still available.', 'success');
+        showStatusEl(document.getElementById('lt-auth-status'), 'Supabase not configured. Login is unavailable.', 'error');
       }
       localStorage.removeItem(CURRENT_USER_KEY);
       setAuthOnly(true);

@@ -1,4 +1,5 @@
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 :root {
   --lt-bg: radial-gradient(120% 140% at 18% 10%, rgba(216,176,122,0.12), transparent 32%),
@@ -381,6 +382,14 @@
 
 .lt-status.success { color: #8fb7a5; }
 .lt-status.error { color: #d7928b; }
+
+.lt-slug-display {
+  margin: 0;
+  color: var(--lt-text);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-break: break-all;
+}
 
 .lt-cropper-modal {
   position: fixed;
