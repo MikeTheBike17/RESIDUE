@@ -536,8 +536,19 @@ import { residueTelemetry } from './supabase-telemetry.js';
       }
     };
 
-    loginBtn?.addEventListener('click', () => doAuth('login'));
-    signupBtn?.addEventListener('click', () => doAuth('signup'));
+    loginBtn?.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      doAuth('login');
+    });
+    signupBtn?.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      doAuth('signup');
+    });
+    passInput?.addEventListener('keydown', (evt) => {
+      if (evt.key !== 'Enter') return;
+      evt.preventDefault();
+      doAuth('login');
+    });
   }
 
   async function ensureProfileRow(user) {
