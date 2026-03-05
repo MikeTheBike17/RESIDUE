@@ -367,7 +367,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
   function buildPublicProfileUrl(slug) {
     const normalizedSlug = resolveSlug(slug || '', '');
     const suffix = normalizedSlug || 'full-name';
-    return `${window.location.origin}${window.location.pathname.replace(/link-admin\\.html$/, 'link-profile.html')}?u=${suffix}`;
+    const profilePath = window.location.pathname
+      .replace(/link-admin(?:\.html)?$/i, 'link-profile.html')
+      .replace(/link-profile(?:\.html)?$/i, 'link-profile.html');
+    return `${window.location.origin}${profilePath}?u=${suffix}`;
   }
 
   function updatePublicUrl(slug) {
@@ -536,8 +539,19 @@ import { residueTelemetry } from './supabase-telemetry.js';
       }
     };
 
-    loginBtn?.addEventListener('click', () => doAuth('login'));
-    signupBtn?.addEventListener('click', () => doAuth('signup'));
+    loginBtn?.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      doAuth('login');
+    });
+    signupBtn?.addEventListener('click', (evt) => {
+      evt.preventDefault();
+      doAuth('signup');
+    });
+    passInput?.addEventListener('keydown', (evt) => {
+      if (evt.key !== 'Enter') return;
+      evt.preventDefault();
+      doAuth('login');
+    });
   }
 
   async function ensureProfileRow(user) {
