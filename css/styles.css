@@ -101,7 +101,7 @@ body.access-page {
   --nav-glass-strong: rgba(11, 8, 20, 0.9);
   --layer: rgba(15,12,24,0.78);
   background-color: #0b0814;
-  background-image: linear-gradient(180deg, rgba(15,12,24,0.62), rgba(12,10,22,0.62)), url('../images/residue-web/1C1A9269.jpg');
+  background-image: linear-gradient(180deg, rgba(15,12,24,0.62), rgba(12,10,22,0.62)), url('../images/residue-card-brand-leave-your-mark-edc-scene..jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -390,7 +390,7 @@ header.scrolled {
   text-align: center;
   padding: 20vh 24px 18vh;
   overflow: hidden;
-  background-image: url('../images/residue-web/1C1A9297.jpg');
+  background-image: url('../images/residue-cards-fanned-dark-surface-brand-visible.jpg.jpg');
   background-size: cover;
   background-position: center;
   isolation: isolate;
@@ -1042,7 +1042,7 @@ input:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url('../images/residue-web/1C1A9408.jpg');
+  background-image: url('../images/leather-wallet-multitool-overhead-residue-brand.jpg.jpg');
   background-size: cover;
   background-position: center;
   overflow: hidden;
@@ -1307,7 +1307,7 @@ input:focus, textarea:focus {
 
 /* Premium hero */
 .premium-hero {
-  background-image: url('../images/residue-web/1C1A9369.jpg');
+  background-image: url('../images/arcitecture of old greek.jpg');
   filter: saturate(0.92) brightness(0.96);
   overflow: hidden;
 }
