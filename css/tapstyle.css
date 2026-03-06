@@ -100,22 +100,16 @@ body.lt-page.preview-mode::-webkit-scrollbar {
 }
 
 .lt-avatar {
-  width: 118px;
-  height: 118px;
+  width: 150px;
+  height: 150px;
   justify-content: left;
   object-fit: cover;
   display: inline-flex;
-  margin: 0 0 22px 0;
-  border-radius: 22px;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.03)),
-    #0d0d0d;
-  border: 1px solid rgba(255,255,255,0.24);
-  box-shadow:
-    0 18px 38px rgba(0,0,0,0.46),
-    0 0 0 1px rgba(214,178,107,0.18),
-    0 0 30px rgba(214,178,107,0.18);
-  transform: translateY(-2px);
+  margin: 0 0 18px 0; 
+
+  background: #0d0d0d;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
 .lt-name {
