@@ -6,6 +6,7 @@ const sources = [
   'index.html',
   'about.html',
   'access.html',
+  'card-urls.html',
   'drop.html',
   'residue-private.html',
   'thank-you.html',

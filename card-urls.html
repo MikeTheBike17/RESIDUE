@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card URLs | Residue</title>
+  <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/env.js"></script>
+</head>
+<body class="page-fade-in">
+  <header>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="index.html">Residue</a>
+      <div class="nav-links" aria-label="Primary">
+        <a href="about.html">About</a>
+        <a href="access.html">Access</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="drop.html">Circulation</a>
+        <a href="contact.html">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="card-urls-page">
+    <section class="container" style="padding-top: 120px;">
+      <section class="panel reveal card-urls-panel">
+        <div class="stack" style="gap:14px;">
+          <div class="eyebrow">Manager Access</div>
+          <h1 class="h2" style="margin:0;">Card URLs</h1>
+          <p class="muted" style="margin:0;">Fetch user emails and their profile URLs from Supabase.</p>
+        </div>
+
+        <div class="card-urls-toolbar">
+          <button class="btn" id="card-urls-refresh" type="button">Refresh</button>
+          <div class="status" id="card-urls-status" aria-live="polite"></div>
+        </div>
+
+        <div class="card-urls-table-wrap">
+          <table class="card-urls-table">
+            <thead>
+              <tr>
+                <th scope="col">Email</th>
+                <th scope="col">URL</th>
+                <th scope="col" class="card-urls-copy-col">Copy</th>
+              </tr>
+            </thead>
+            <tbody id="card-urls-body">
+              <tr>
+                <td colspan="3" class="card-urls-empty">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="js/card-urls.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

@@ -275,9 +275,11 @@
     const $ = (sel, root = document) => root.querySelector(sel);
 
     const CURRENT_USER_KEY = "residue_current_user";
-    const TEMP_MOCK_EMAIL = "mike@residue.com";
-    const TEMP_MOCK_PASSWORD = "123456";
+    const MANAGER_ACCESS_KEY = "residue_manager_access";
+    const MANAGER_EMAIL = "check.email@residue.com";
+    const MANAGER_PASSWORD = "Mike&Lim1";
     const PRIVATE_PAGE = "residue-private.html";
+    const CARD_URLS_PAGE = "card-urls.html";
     const cfg = window.env || {};
     const profileTableFromEnv = (cfg.SUPABASE_PROFILE_TABLE || "").trim().toLowerCase();
     const PROFILE_TABLES = [...new Set(
@@ -466,17 +468,36 @@
 
       const email = normalizeEmail($("#signin-email")?.value || "");
       const password = $("#signin-password")?.value || "";
-      const mockEmail = TEMP_MOCK_EMAIL.toLowerCase();
+      const managerEmail = MANAGER_EMAIL.toLowerCase();
       logAuth({ action: 'signin', outcome: 'attempt', email, detail: 'Sign in submitted.' });
 
-      if (email === mockEmail && password === TEMP_MOCK_PASSWORD) {
-        localStorage.setItem(CURRENT_USER_KEY, TEMP_MOCK_EMAIL);
-        logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via temp admin credentials.' });
+      if (email === managerEmail && password === MANAGER_PASSWORD) {
+        const supabase = await getSupabaseClient();
+        if (!supabase) {
+          logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Supabase not configured for manager access.' });
+          return setStatus(signinStatus, "Auth is not configured yet. Contact support.", true);
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          logAuth({ action: 'signin', outcome: 'failure', email, detail: error.message || 'Manager sign in failed.' });
+          return setStatus(signinStatus, error.message || "Could not sign in.", true);
+        }
+
+        if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);
+
+        localStorage.setItem(CURRENT_USER_KEY, (data?.user?.email || email).toLowerCase());
+        localStorage.setItem(MANAGER_ACCESS_KEY, JSON.stringify({
+          email: (data?.user?.email || email).toLowerCase(),
+          granted_at: new Date().toISOString()
+        }));
+        logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via manager credentials.' });
         setStatus(signinStatus, "Signed in.", true);
+
         setTimeout(() => {
           closeAuthModal();
           signinForm.reset();
-          window.location.href = PRIVATE_PAGE;
+          window.location.href = CARD_URLS_PAGE;
         }, 500);
         return;
       }
