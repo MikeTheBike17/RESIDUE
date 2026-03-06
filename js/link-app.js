@@ -765,9 +765,21 @@ function ensureLocalDraftForUser(user) {
     updateAdminContextUrl(adminSlug);
     // Fetch links; add hidden default false so toggles work locally
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', user.id).order('sort', { ascending: true });
-    const { meta, normalLinks } = extractMetaFromLinks(links || []);
+    const { data: cardConfig } = await supabase
+      .from('card_configs')
+      .select('config_data')
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    const snapshot = cardConfig?.config_data || null;
+    const snapshotLinks = Array.isArray(snapshot?.links) ? snapshot.links : [];
+    const effectiveLinks = (links && links.length) ? links : snapshotLinks;
+    const mergedProfile = {
+      ...(snapshot?.profile || {}),
+      ...(profile || {})
+    };
+    const { meta, normalLinks } = extractMetaFromLinks(effectiveLinks || []);
     const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
-    fillEditor(profile || {}, hydratedLinks, user);
+    fillEditor(mergedProfile || {}, hydratedLinks, user, snapshot);
     const codeRow = await fetchOrCreateCode(user.id);
     renderCodePanel(codeRow);
   }
@@ -803,12 +815,15 @@ function ensureLocalDraftForUser(user) {
     }
   }
 
-  function fillEditor(profile, links, user = null) {
+  function fillEditor(profile, links, user = null, snapshot = null) {
+    const snapshotFields = snapshot?.fields || {};
     const displayName = deriveDisplayName(profile?.name, user);
+    const savedTitle = typeof snapshotFields.role === 'string' ? snapshotFields.role : '';
+    const savedBio = typeof snapshotFields['lt-bio'] === 'string' ? snapshotFields['lt-bio'] : '';
     setValue('lt-avatar-url', profile.avatar_url || '');
     setValue('full-name', displayName || '');
-    setValue('role', profile.title || '');
-    setValue('lt-bio', profile.bio || '');
+    setValue('role', savedTitle || profile.title || '');
+    setValue('lt-bio', savedBio || profile.bio || '');
     syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
     const setToggle = (id, checked = true) => {
       const el = document.getElementById(id);
@@ -826,8 +841,10 @@ function ensureLocalDraftForUser(user) {
     const hasMeta = key => Object.prototype.hasOwnProperty.call(meta, key);
     const parseToggleMeta = (key, fallback = true) => parseBool(meta[key], fallback);
 
-    setToggle('show-role', parseBool(meta.show_role, true));
-    setToggle('show-bio', parseBool(meta.show_bio, true));
+    const fallbackShowRole = snapshotFields['show-role'];
+    const fallbackShowBio = snapshotFields['show-bio'];
+    setToggle('show-role', hasMeta('show_role') ? parseBool(meta.show_role, true) : parseBool(fallbackShowRole, true));
+    setToggle('show-bio', hasMeta('show_bio') ? parseBool(meta.show_bio, true) : parseBool(fallbackShowBio, true));
     setToggle('show-slug', parseBool(meta.show_slug, true));
     setToggle('show-website', parseToggleMeta('show_website', true));
     setToggle('show-phone', parseToggleMeta('show_phone', true));
