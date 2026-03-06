@@ -664,14 +664,24 @@ function ensureLocalDraftForUser(user) {
       setAuthOnly(true);
     } else if (forceLoad || session) {
       toggleEditor(true);
-      loadProfile(session.user);
       setAuthOnly(false);
+      try {
+        await loadProfile(session.user);
+      } catch (err) {
+        console.error('Profile load failed after session init', err);
+        showStatusEl(document.getElementById('lt-save-status'), 'Signed in, but profile data failed to load.', 'error');
+        loadLocalDraft();
+      }
     }
     supabase.auth.onAuthStateChange((event, sessionNow) => {
       if (sessionNow) {
         toggleEditor(true);
-        loadProfile(sessionNow.user);
         setAuthOnly(false);
+        loadProfile(sessionNow.user).catch(err => {
+          console.error('Profile load failed on auth state change', err);
+          showStatusEl(document.getElementById('lt-save-status'), 'Signed in, but profile data failed to load.', 'error');
+          loadLocalDraft();
+        });
       } else {
         toggleEditor(false);
         setAuthOnly(true);
