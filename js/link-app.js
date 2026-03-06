@@ -428,6 +428,23 @@ function ensureLocalDraftForUser(user) {
     return `${window.location.origin}${profilePath}?u=${suffix}`;
   }
 
+  function buildAdminContextUrl(slug) {
+    const url = new URL(window.location.href);
+    const normalizedSlug = resolveSlug(slug || '', '');
+    if (normalizedSlug) url.searchParams.set('u', normalizedSlug);
+    else url.searchParams.delete('u');
+    url.hash = '';
+    return `${url.pathname}${url.search}`;
+  }
+
+  function updateAdminContextUrl(slug) {
+    const nextUrl = buildAdminContextUrl(slug);
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState({}, '', nextUrl);
+    }
+  }
+
   function updatePublicUrl(slug) {
     const urlEl = document.getElementById('lt-public-url');
     if (!urlEl) return;
@@ -744,6 +761,8 @@ function ensureLocalDraftForUser(user) {
       await ensureProfileRow(user);
       ({ data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single());
     }
+    const adminSlug = resolveSlug(profile?.slug, profile?.auth_email, user?.email);
+    updateAdminContextUrl(adminSlug);
     // Fetch links; add hidden default false so toggles work locally
     const { data: links } = await supabase.from('links').select('*').eq('profile_id', user.id).order('sort', { ascending: true });
     const { meta, normalLinks } = extractMetaFromLinks(links || []);
@@ -1402,6 +1421,7 @@ function ensureLocalDraftForUser(user) {
         showStatusEl(document.getElementById('lt-auth-status'), 'Local mode: data stays on this device.', 'success');
       }
       persistCurrentUser(null);
+      updateAdminContextUrl('');
       setAuthOnly(true);
       toggleEditor(false);
       bindAuth();
