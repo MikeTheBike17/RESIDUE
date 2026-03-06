@@ -694,6 +694,37 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   margin: 0;
 }
 
+.legal {
+  gap: 14px;
+  padding-top: 14px;
+}
+
+.legal p {
+  margin: 0;
+  max-width: 115ch;
+  padding: 14px 16px 14px 18px;
+  border-left: 1px solid rgba(216, 176, 122, 0.4);
+  background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015));
+  line-height: 1.72;
+  letter-spacing: 0.01em;
+}
+
+.legal strong {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.legal a {
+  color: var(--accent-premium);
+  text-decoration: none;
+}
+
+.legal a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .narrow p {
   max-width: 580px;
 }
@@ -1811,5 +1842,30 @@ body::after { opacity: 0.04; }
 @media (max-width: 900px) {
   .contact-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.background-scroll-over{
+  background-color: #050505;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.9)),
+    url('../images/leather-wallet-multitool-residue-card-edc.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+
+@media (max-width: 840px) {
+  .background-scroll-over,
+  .page-break {
+    background-attachment: scroll;
+  }
+
+  .page-break {
+    min-height: 240px;
+    margin-top: 56px;
+    margin-bottom: 56px;
   }
 }
