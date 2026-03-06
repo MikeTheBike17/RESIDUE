@@ -461,12 +461,12 @@ body.how-page .hero {
 }
 
 #rotating-quote {
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
 .fade-out {
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(12px);
 }
 
 .fade-in {

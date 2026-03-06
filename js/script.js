@@ -593,6 +593,8 @@
   const quoteElement = document.getElementById("rotating-quote");
   const subheadElement = document.getElementById("rotating-subhead");
   let heroIndex = 0;
+  const FADE_DURATION = 800;
+  const ROTATE_INTERVAL = 8000;
 
   function swapText(el, html) {
     if (!el) return;
@@ -601,8 +603,8 @@
       el.innerHTML = html;
       el.classList.remove("fade-out");
       el.classList.add("fade-in");
-      setTimeout(() => el.classList.remove("fade-in"), 600);
-    }, 600);
+      setTimeout(() => el.classList.remove("fade-in"), FADE_DURATION);
+    }, FADE_DURATION);
   }
 
   function changeHeroCopy() {
@@ -618,5 +620,5 @@
     }
   }
 
-  setInterval(changeHeroCopy, 6000);
+  setInterval(changeHeroCopy, ROTATE_INTERVAL);
 })();
