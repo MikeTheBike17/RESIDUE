@@ -1401,14 +1401,11 @@ function ensureLocalDraftForUser(user) {
       if (!supabase) {
         showStatusEl(document.getElementById('lt-auth-status'), 'Local mode: data stays on this device.', 'success');
       }
+      persistCurrentUser(null);
       setAuthOnly(true);
       toggleEditor(false);
       bindAuth();
       bindEditorActions();
-      initSession().catch(err => {
-        console.error('Admin session init failed', err);
-        showStatusEl(document.getElementById('lt-auth-status'), 'Could not restore your session.', 'error');
-      });
     }
   };
 })();
