@@ -151,6 +151,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const LOCAL_PROFILE_KEY_PREFIX = 'residue_link_profile_';
   const META_PREFIX = '__meta__';
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
+  let authStateSubscription = null;
   const contactDownloadState = { name: '', phone: '' };
   let contactDownloadBound = false;
   const socialConfig = [
@@ -332,6 +333,28 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function normalizeEmail(value) {
     return (value || '').trim().toLowerCase();
+  }
+
+  function readStoredCurrentUser() {
+    const raw = localStorage.getItem(CURRENT_USER_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return parsed;
+    } catch {}
+    const email = normalizeEmail(raw);
+    return email ? { email } : null;
+  }
+
+  function persistCurrentUser(user) {
+    if (!user) {
+      localStorage.removeItem(CURRENT_USER_KEY);
+      return;
+    }
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({
+      id: user.id || null,
+      email: normalizeEmail(user.email) || null
+    }));
   }
 
   function slugify(value) {
@@ -534,7 +557,7 @@ function ensureLocalDraftForUser(user) {
     }
 
   async function startLocalSession(user, statusEl) {
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    persistCurrentUser(user);
     showStatusEl(statusEl, 'Signed in (local)', 'success');
     toggleEditor(true);
     ensureLocalDraftForUser(user);
@@ -585,8 +608,9 @@ function ensureLocalDraftForUser(user) {
             user_id: data?.user?.id || null,
             detail: `Supabase ${mode} succeeded on link-admin.`
           });
+          persistCurrentUser(data?.user || { email });
           showStatusEl(statusEl, 'Success', 'success');
-          initSession(true);
+          await initSession(true);
           return;
         }
 
@@ -644,15 +668,13 @@ function ensureLocalDraftForUser(user) {
   async function initSession(forceLoad = false) {
     if (!supabase) {
       // Local/demo mode: if a local user exists, show editor with local draft
-      try {
-        const localUser = JSON.parse(localStorage.getItem(CURRENT_USER_KEY) || 'null');
-        if (localUser) {
-          toggleEditor(true);
-          loadLocalDraft();
-          setAuthOnly(false);
-          return;
-        }
-      } catch {}
+      const localUser = readStoredCurrentUser();
+      if (localUser) {
+        toggleEditor(true);
+        loadLocalDraft();
+        setAuthOnly(false);
+        return;
+      }
       toggleEditor(false);
       setAuthOnly(true);
       return;
@@ -663,6 +685,7 @@ function ensureLocalDraftForUser(user) {
       toggleEditor(false);
       setAuthOnly(true);
     } else if (forceLoad || session) {
+      persistCurrentUser(session.user);
       toggleEditor(true);
       setAuthOnly(false);
       try {
@@ -673,8 +696,10 @@ function ensureLocalDraftForUser(user) {
         loadLocalDraft();
       }
     }
-    supabase.auth.onAuthStateChange((event, sessionNow) => {
+    if (authStateSubscription) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessionNow) => {
       if (sessionNow) {
+        persistCurrentUser(sessionNow.user);
         toggleEditor(true);
         setAuthOnly(false);
         loadProfile(sessionNow.user).catch(err => {
@@ -683,10 +708,12 @@ function ensureLocalDraftForUser(user) {
           loadLocalDraft();
         });
       } else {
+        persistCurrentUser(null);
         toggleEditor(false);
         setAuthOnly(true);
       }
     });
+    authStateSubscription = subscription;
   }
 
   async function loadProfile(user) {
@@ -1352,21 +1379,14 @@ function ensureLocalDraftForUser(user) {
       if (!supabase) {
         showStatusEl(document.getElementById('lt-auth-status'), 'Local mode: data stays on this device.', 'success');
       }
-      // keep any existing local session so users remain signed in
-      const localUser = (() => {
-        try { return JSON.parse(localStorage.getItem(CURRENT_USER_KEY) || 'null'); } catch { return null; }
-      })();
-      if (!localUser) {
-        setAuthOnly(true);
-        toggleEditor(false);
-      }
+      setAuthOnly(true);
+      toggleEditor(false);
       bindAuth();
       bindEditorActions();
-      if (localUser) {
-        toggleEditor(true);
-        loadLocalDraft();
-        setAuthOnly(false);
-      }
+      initSession().catch(err => {
+        console.error('Admin session init failed', err);
+        showStatusEl(document.getElementById('lt-auth-status'), 'Could not restore your session.', 'error');
+      });
     }
   };
 })();
