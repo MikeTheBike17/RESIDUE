@@ -483,6 +483,38 @@ import { residueTelemetry } from './supabase-telemetry.js';
       showStatusEl(resetStatus, 'Password reset. You can sign in now.', 'success');
     });
 
+    async function localAuth(mode, email, password) {
+      const users = getLocalUsers();
+      if (mode === 'login') {
+        const user = users.find(u => normalizeEmail(u.email) === email);
+        if (!user) throw new Error('Account not found. Try creating one first.');
+        const hash = await sha256Hex(password);
+        if (user.passwordHash !== hash) throw new Error('Incorrect email or password.');
+        return { user };
+      }
+      // signup
+      if (users.some(u => normalizeEmail(u.email) === email)) {
+        throw new Error('Account already exists. Please log in.');
+      }
+      const user = {
+        id: `local-${Date.now()}`,
+        email,
+        passwordHash: await sha256Hex(password),
+        createdAt: new Date().toISOString()
+      };
+      users.push(user);
+      saveLocalUsers(users);
+      return { user };
+    }
+
+    async function startLocalSession(user, statusEl) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      showStatusEl(statusEl, 'Signed in (local)', 'success');
+      toggleEditor(true);
+      loadLocalDraft();
+      setAuthOnly(false);
+    }
+
     const doAuth = async mode => {
       try {
         const email = normalizeEmail(emailInput?.value);
@@ -496,37 +528,51 @@ import { residueTelemetry } from './supabase-telemetry.js';
         if (!email || !password) return showStatusEl(statusEl, 'Enter email and password', 'error');
         showStatusEl(statusEl, mode === 'login' ? 'Logging in...' : 'Creating account...', 'loading');
 
-        if (isFileProtocol) return showStatusEl(statusEl, 'Run over http://, not file://', 'error');
-        if (!supabase) return showStatusEl(statusEl, 'Missing Supabase config', 'error');
-        let error, data;
-        if (mode === 'login') {
-          ({ error, data } = await supabase.auth.signInWithPassword({ email, password }));
-        } else {
-          ({ error, data } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { emailRedirectTo: `${window.location.origin}/link-admin.html` }
-          }));
-        }
-        if (error) return showStatusEl(statusEl, error.message, 'error');
-        if (mode === 'signup' && data?.user && !data.session) {
+        const canUseSupabase = !isFileProtocol && !!supabase;
+
+        if (canUseSupabase) {
+          let error, data;
+          if (mode === 'login') {
+            ({ error, data } = await supabase.auth.signInWithPassword({ email, password }));
+          } else {
+            ({ error, data } = await supabase.auth.signUp({
+              email,
+              password,
+              options: { emailRedirectTo: `${window.location.origin}/link-admin.html` }
+            }));
+          }
+          if (error) return showStatusEl(statusEl, error.message, 'error');
+          if (mode === 'signup' && data?.user && !data.session) {
+            residueTelemetry.logAuthEvent({
+              action: 'signup',
+              outcome: 'success',
+              email,
+              detail: 'Supabase signup created; awaiting email confirmation.'
+            });
+            return showStatusEl(statusEl, 'Check your email to confirm, then log in.', 'success');
+          }
           residueTelemetry.logAuthEvent({
-            action: 'signup',
+            action: mode === 'login' ? 'signin' : 'signup',
             outcome: 'success',
             email,
-            detail: 'Supabase signup created; awaiting email confirmation.'
+            user_id: data?.user?.id || null,
+            detail: `Supabase ${mode} succeeded on link-admin.`
           });
-          return showStatusEl(statusEl, 'Check your email to confirm, then log in.', 'success');
+          showStatusEl(statusEl, 'Success', 'success');
+          initSession(true);
+          return;
         }
+
+        // Local fallback (demo / offline)
+        const { user } = await localAuth(mode, email, password);
         residueTelemetry.logAuthEvent({
           action: mode === 'login' ? 'signin' : 'signup',
           outcome: 'success',
           email,
-          user_id: data?.user?.id || null,
-          detail: `Supabase ${mode} succeeded on link-admin.`
+          user_id: user.id,
+          detail: `Local ${mode} succeeded on link-admin.`
         });
-        showStatusEl(statusEl, 'Success', 'success');
-        initSession(true);
+        await startLocalSession(user, statusEl);
       } catch (err) {
         console.error('Auth error', err);
         residueTelemetry.logAuthEvent({
@@ -569,7 +615,22 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   async function initSession(forceLoad = false) {
-    if (!supabase) return;
+    if (!supabase) {
+      // Local/demo mode: if a local user exists, show editor with local draft
+      try {
+        const localUser = JSON.parse(localStorage.getItem(CURRENT_USER_KEY) || 'null');
+        if (localUser) {
+          toggleEditor(true);
+          loadLocalDraft();
+          setAuthOnly(false);
+          return;
+        }
+      } catch {}
+      toggleEditor(false);
+      setAuthOnly(true);
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       toggleEditor(false);

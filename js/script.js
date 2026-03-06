@@ -559,45 +559,48 @@
 
 
   // ROTATING HERO HEADER
-  const quotes = [
-    [
-      "You don’t need to be the",
-      "loudest in the room."
-    ],
-    [
-      "First impressions fade.",
-      "Residue remains."
-    ],
-    [
-      "Luxury is remembered.",
-      "Not announced."
-    ]
+  const heroCopy = [
+    {
+      head: ["You don’t need to be the", "loudest in the room."],
+      sub: "You never did. You care about what remains after the introduction."
+    },
+    {
+      head: ["First impressions fade.", "Residue remains."],
+      sub: "Leave a signal that outlasts hello."
+    },
+    {
+      head: ["Luxury is remembered.", "Not announced."],
+      sub: "Presence without noise. Clarity after the tap."
+    }
   ];
 
   const quoteElement = document.getElementById("rotating-quote");
-  let index = 0;
+  const subheadElement = document.getElementById("rotating-subhead");
+  let heroIndex = 0;
 
-  function changeQuote() {
-    if (!quoteElement) return;
-    quoteElement.classList.add("fade-out");
-
+  function swapText(el, html) {
+    if (!el) return;
+    el.classList.add("fade-out");
     setTimeout(() => {
-      index = (index + 1) % quotes.length;
-
-      quoteElement.innerHTML = `
-        <span class="nowrap">${quotes[index][0]}</span><br>
-        <span class="nowrap">${quotes[index][1]}</span>
-      `;
-
-      quoteElement.classList.remove("fade-out");
-      quoteElement.classList.add("fade-in");
-
-      setTimeout(() => {
-        quoteElement.classList.remove("fade-in");
-      }, 600);
-
+      el.innerHTML = html;
+      el.classList.remove("fade-out");
+      el.classList.add("fade-in");
+      setTimeout(() => el.classList.remove("fade-in"), 600);
     }, 600);
   }
 
-  setInterval(changeQuote, 5000);
+  function changeHeroCopy() {
+    if (!quoteElement) return;
+    heroIndex = (heroIndex + 1) % heroCopy.length;
+    const { head, sub } = heroCopy[heroIndex];
+    swapText(
+      quoteElement,
+      `<span class="nowrap">${head[0]}</span><br><span class="nowrap">${head[1]}</span>`
+    );
+    if (subheadElement) {
+      swapText(subheadElement, `<span>${sub}</span>`);
+    }
+  }
+
+  setInterval(changeHeroCopy, 6000);
 })();

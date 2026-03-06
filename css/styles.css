@@ -390,10 +390,16 @@ header.scrolled {
   text-align: center;
   padding: 20vh 24px 18vh;
   overflow: hidden;
-  background-image: url('../images/residue-cards-fanned-dark-surface-brand-visible.jpg.jpg');
+  background-image: url('../images/residue-cards-fanned-macro-shallow-focus.jpg.jpg');
   background-size: cover;
   background-position: center;
   isolation: isolate;
+}
+
+/* Page-specific hero overrides */
+body.how-page .hero {
+  background-image: url('../images/residue-card-tap-interaction-hand..jpg');
+  background-position: center center;
 }
 
 .hero-overlay {
@@ -1064,7 +1070,10 @@ input:focus, textarea:focus {
   letter-spacing: 0.16em;
   font-weight: 600;
   font-size: clamp(1.2rem, 1.9vw, 1.5rem);
-  text-align: center;
+  text-align: left;
+  justify-items: start;
+  align-self: center;
+  transform: translateX(-18vw);
 }
 
 .word-stack span {
@@ -1709,6 +1718,9 @@ footer {
   .word-stack {
     gap: 14px;
     font-size: clamp(1rem, 4vw, 1.2rem);
+    transform: none;
+    text-align: center;
+    justify-items: center;
   }
 
   .panel {
