@@ -401,7 +401,7 @@
 }
 
 .lt-cropper-modal[hidden] {
-  display: none !important;
+  display: none;
 }
 
 .lt-cropper-backdrop {
