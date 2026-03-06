@@ -759,6 +759,7 @@ input, textarea {
   background: rgba(255,255,255,0.02);
   color: var(--text);
   font-family: inherit;
+  font-size: 16px;
   transition: border-color var(--transition), background var(--transition);
 }
 
@@ -1458,6 +1459,10 @@ input:focus, textarea:focus {
 
 .support-contact {
   padding: 8px 0 30px;
+}
+
+.support-contact-wide {
+  max-width: 920px;
 }
 
 .support-contact-card {
