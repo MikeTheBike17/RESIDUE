@@ -1057,10 +1057,15 @@ function ensureLocalDraftForUser(user) {
     return await new Promise(resolve => {
       let settled = false;
       let dragging = false;
+      let pinchStartDistance = null;
+      let pinchStartSize = null;
+      let pinchCenter = null;
+      const activePointers = new Map();
       let dragOffsetX = 0;
       let dragOffsetY = 0;
       let imageRect = { left: 0, top: 0, width: 0, height: 0 };
       const box = { left: 0, top: 0, size: 0 };
+      const MIN_BOX_SIZE = 64;
 
       const cleanup = result => {
         if (settled) return;
@@ -1073,9 +1078,13 @@ function ensureLocalDraftForUser(user) {
         cancelBtn.removeEventListener('click', onCancel);
         applyBtn.removeEventListener('click', onApply);
         boxEl.removeEventListener('pointerdown', onPointerDown);
+        stage.removeEventListener('wheel', onWheel);
         stage.removeEventListener('pointermove', onPointerMove);
         stage.removeEventListener('pointerup', onPointerUp);
         stage.removeEventListener('pointercancel', onPointerUp);
+        stage.removeEventListener('pointerdown', trackPointer);
+        stage.removeEventListener('pointerup', untrackPointer);
+        stage.removeEventListener('pointercancel', untrackPointer);
         resolve(result);
       };
 
@@ -1084,6 +1093,25 @@ function ensureLocalDraftForUser(user) {
         const maxTop = imageRect.top + imageRect.height - box.size;
         box.left = Math.max(imageRect.left, Math.min(box.left, maxLeft));
         box.top = Math.max(imageRect.top, Math.min(box.top, maxTop));
+      };
+
+      const clampSize = size => {
+        const maxSize = Math.min(imageRect.width, imageRect.height);
+        return Math.min(Math.max(size, MIN_BOX_SIZE), maxSize);
+      };
+
+      const setBoxSize = (nextSize, anchor = null) => {
+        const size = clampSize(nextSize);
+        const currentCenter = {
+          x: box.left + box.size / 2,
+          y: box.top + box.size / 2
+        };
+        const targetCenter = anchor || currentCenter;
+        box.size = size;
+        box.left = targetCenter.x - size / 2;
+        box.top = targetCenter.y - size / 2;
+        clampBox();
+        renderBox();
       };
 
       const renderBox = () => {
@@ -1112,25 +1140,47 @@ function ensureLocalDraftForUser(user) {
           box.left = imageRect.left + (width - box.size) / 2;
           box.top = imageRect.top + (height - box.size) / 2;
         } else {
-          box.size = Math.min(box.size, Math.floor(Math.min(width, height)));
+          box.size = clampSize(Math.floor(Math.min(width, height)));
           clampBox();
         }
         renderBox();
       };
 
+      const stagePoint = event => {
+        const rect = stage.getBoundingClientRect();
+        return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      };
+
       const onPointerDown = event => {
         event.preventDefault();
         dragging = true;
-        dragOffsetX = event.clientX - box.left;
-        dragOffsetY = event.clientY - box.top;
+        const { x, y } = stagePoint(event);
+        dragOffsetX = x - box.left;
+        dragOffsetY = y - box.top;
         boxEl.setPointerCapture?.(event.pointerId);
+        boxEl.classList.add('is-dragging');
       };
 
       const onPointerMove = event => {
+        const { x, y } = stagePoint(event);
+
+        // Pinch-to-zoom when two pointers are active
+        if (activePointers.size === 2 && pinchStartDistance && pinchStartSize) {
+          activePointers.set(event.pointerId, { x, y });
+          const points = Array.from(activePointers.values());
+          const dx = points[0].x - points[1].x;
+          const dy = points[0].y - points[1].y;
+          const distance = Math.hypot(dx, dy);
+          if (distance > 0) {
+            const scale = distance / pinchStartDistance;
+            setBoxSize(pinchStartSize * scale, pinchCenter);
+          }
+          return;
+        }
+
         if (!dragging) return;
-        const stageRect = stage.getBoundingClientRect();
-        box.left = event.clientX - stageRect.left - dragOffsetX;
-        box.top = event.clientY - stageRect.top - dragOffsetY;
+        box.left = x - dragOffsetX;
+        box.top = y - dragOffsetY;
         clampBox();
         renderBox();
       };
@@ -1138,6 +1188,40 @@ function ensureLocalDraftForUser(user) {
       const onPointerUp = event => {
         dragging = false;
         boxEl.releasePointerCapture?.(event.pointerId);
+        boxEl.classList.remove('is-dragging');
+      };
+
+      const onWheel = event => {
+        event.preventDefault();
+        const { x, y } = stagePoint(event);
+        const scale = event.deltaY > 0 ? 1.08 : 0.92;
+        const nextSize = box.size * scale;
+        setBoxSize(nextSize, { x, y });
+      };
+
+      const trackPointer = event => {
+        const { x, y } = stagePoint(event);
+        activePointers.set(event.pointerId, { x, y });
+        if (activePointers.size === 2) {
+          dragging = false;
+          boxEl.classList.remove('is-dragging');
+          const points = Array.from(activePointers.values());
+          const dx = points[0].x - points[1].x;
+          const dy = points[0].y - points[1].y;
+          pinchStartDistance = Math.hypot(dx, dy);
+          pinchStartSize = box.size;
+          pinchCenter = {
+            x: (points[0].x + points[1].x) / 2,
+            y: (points[0].y + points[1].y) / 2
+          };
+        }
+      };
+
+      const untrackPointer = event => {
+        activePointers.delete(event.pointerId);
+        pinchStartDistance = null;
+        pinchStartSize = null;
+        pinchCenter = null;
       };
 
       const onCancel = () => cleanup(null);
@@ -1168,9 +1252,13 @@ function ensureLocalDraftForUser(user) {
       cancelBtn.addEventListener('click', onCancel);
       applyBtn.addEventListener('click', onApply);
       boxEl.addEventListener('pointerdown', onPointerDown);
+      stage.addEventListener('wheel', onWheel, { passive: false });
       stage.addEventListener('pointermove', onPointerMove);
       stage.addEventListener('pointerup', onPointerUp);
       stage.addEventListener('pointercancel', onPointerUp);
+      stage.addEventListener('pointerdown', trackPointer);
+      stage.addEventListener('pointerup', untrackPointer);
+      stage.addEventListener('pointercancel', untrackPointer);
       updateLayout();
     });
   }

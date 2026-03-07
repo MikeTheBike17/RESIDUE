@@ -119,6 +119,12 @@ body.access-page {
   --layer: rgba(15,12,24,0.78);
   background-color: #0b0814;
   background-image: linear-gradient(180deg, rgba(15,12,24,0.62), rgba(12,10,22,0.62)), url('../images/residue-card-brand-leave-your-mark-edc-scene..jpg');
+  background-image:
+    linear-gradient(180deg, rgba(15,12,24,0.62), rgba(12,10,22,0.62)),
+    image-set(
+      url('../images/residue-card-brand-leave-your-mark-edc-scene..webp') type('image/webp'),
+      url('../images/residue-card-brand-leave-your-mark-edc-scene..jpg') type('image/jpeg')
+    );
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -408,6 +414,10 @@ header.scrolled {
   padding: 20vh 24px 18vh;
   overflow: hidden;
   background-image: url('../images/residue-cards-fanned-macro-shallow-focus.jpg.jpg');
+  background-image: image-set(
+    url('../images/residue-cards-fanned-macro-shallow-focus.webp') type('image/webp'),
+    url('../images/residue-cards-fanned-macro-shallow-focus.jpg.jpg') type('image/jpeg')
+  );
   background-size: cover;
   background-position: center;
   isolation: isolate;
@@ -416,6 +426,10 @@ header.scrolled {
 /* Page-specific hero overrides */
 body.how-page .hero {
   background-image: url('../images/residue-card-tap-interaction-hand..jpg');
+  background-image: image-set(
+    url('../images/residue-card-tap-interaction-hand..webp') type('image/webp'),
+    url('../images/residue-card-tap-interaction-hand..jpg') type('image/jpeg')
+  );
   background-position: center center;
 }
 
@@ -1173,6 +1187,10 @@ input:focus, textarea:focus {
   align-items: center;
   justify-content: center;
   background-image: url('../images/leather-wallet-multitool-overhead-residue-brand.jpg.jpg');
+  background-image: image-set(
+    url('../images/leather-wallet-multitool-overhead-residue-brand.webp') type('image/webp'),
+    url('../images/leather-wallet-multitool-overhead-residue-brand.jpg.jpg') type('image/jpeg')
+  );
   background-size: cover;
   background-position: center;
   overflow: hidden;
@@ -1443,6 +1461,10 @@ input:focus, textarea:focus {
 /* Premium hero */
 .premium-hero {
   background-image: url('../images/arcitecture of old greek.jpg');
+  background-image: image-set(
+    url('../images/arcitecture of old greek.webp') type('image/webp'),
+    url('../images/arcitecture of old greek.jpg') type('image/jpeg')
+  );
   filter: saturate(0.92) brightness(0.96);
   overflow: hidden;
 }
@@ -2035,6 +2057,12 @@ body::after { opacity: 0.04; }
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.9)),
     url('../images/leather-wallet-multitool-residue-card-edc.jpg');
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.9)),
+    image-set(
+      url('../images/leather-wallet-multitool-residue-card-edc.webp') type('image/webp'),
+      url('../images/leather-wallet-multitool-residue-card-edc.jpg') type('image/jpeg')
+    );
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

@@ -458,10 +458,14 @@
   left: 21%;
   top: 21%;
   border: 2px solid var(--lt-accent);
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.48);
-  cursor: move;
+  cursor: grab;
   touch-action: none;
+}
+
+.lt-cropper-box.is-dragging {
+  cursor: grabbing;
 }
 
 .lt-cropper-actions {
