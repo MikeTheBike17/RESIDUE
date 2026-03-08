@@ -1356,7 +1356,7 @@ input:focus, textarea:focus {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 100%;
-  transition: transform 520ms ease;
+  transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
 }
 
@@ -1365,6 +1365,9 @@ input:focus, textarea:focus {
   min-height: 58vh;
   isolation: isolate;
   overflow: hidden;
+  opacity: 0.35;
+  transform: scale(0.94);
+  transition: opacity 520ms ease, transform 520ms ease;
 }
 
 .carousel-slide .media {
@@ -1390,6 +1393,11 @@ input:focus, textarea:focus {
 }
 
 .carousel-slide figcaption { display: none; }
+
+.carousel-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
 
 .quiet-head {
   font-size: clamp(2.2rem, 1.2vw, 3.2rem);

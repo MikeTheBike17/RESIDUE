@@ -579,7 +579,7 @@
   const galleryPrev = document.querySelector("[data-gallery-prev]");
   const galleryNext = document.querySelector("[data-gallery-next]");
   const galleryData = [
-    // Curated order (shuffled from folder listing)
+    // Curated set (kept product moments, removed industrial/architecture)
     { webp: "images/residue-card-iphone-edc-flatlay.webp", fallback: "images/residue-card-iphone-edc-flatlay.jpg", alt: "Residue card with iPhone flatlay" },
     { webp: "images/residue-card-tap-interaction-hand..webp", fallback: "images/residue-card-tap-interaction-hand..jpg", alt: "Tap interaction close-up" },
     { webp: "images/residue-card-first-impressions-wallet-edc.webp", fallback: "images/residue-card-first-impressions-wallet-edc.jpg.jpg", alt: "Wallet EDC scene" },
@@ -602,7 +602,6 @@
     { path: "images/residue-card-nfc-window-feature.jpg.jpg", alt: "NFC window feature" },
     { path: "images/multitool-wallet-residue-card-macro-detail.jpg", alt: "Residue card macro detail" },
     { path: "images/multitool-wallet-residue-card-edc-close.jpg.jpg", alt: "Multitool wallet EDC close" },
-    { path: "images/residue-card-iphone-edc-flatlay.jpg.jpg", alt: "Residue card and iPhone flatlay 2" },
     { path: "images/residue-card-first-impressions-fade-message.jpg.jpg", alt: "First impressions fade message" },
     { path: "images/residue-cards-fanned-dark-moody-composition.jpg.jpg", alt: "Fanned cards dark composition" }
   ];
@@ -614,6 +613,7 @@
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
 
+    const slides = [];
     const createSlide = (item, idx) => {
       const figure = document.createElement("figure");
       figure.className = "carousel-slide";
@@ -625,7 +625,7 @@
         picture.appendChild(source);
       }
       const img = document.createElement("img");
-      img.loading = "lazy";
+      img.loading = "eager"; // ensure off-screen slides load in carousels
       img.decoding = "async";
       img.src = encodeURI(item.path || item.fallback || item.webp);
       img.alt = item.alt || `Residue frame ${idx + 1}`;
@@ -638,17 +638,20 @@
     };
 
     shuffled.forEach((item, idx) => {
-      galleryTrack.appendChild(createSlide(item, idx));
+      const slide = createSlide(item, idx);
+      slides.push(slide);
+      galleryTrack.appendChild(slide);
     });
 
     let current = 0;
-    const total = galleryTrack.children.length;
+    const total = slides.length;
     let autoTimer = null;
     const interval = 3000;
 
     const goTo = (index) => {
       current = (index + total) % total;
       galleryTrack.style.transform = `translateX(-${current * 100}%)`;
+      slides.forEach((s, i) => s.classList.toggle("is-active", i === current));
     };
 
     const startAuto = () => {
