@@ -47,6 +47,37 @@
             </tbody>
           </table>
         </div>
+
+        <div class="stack" style="gap:14px; margin-top: 28px;">
+          <div class="eyebrow">Invoicing</div>
+          <p class="muted" style="margin:0;">Payment and shipping details for completed purchase attempts.</p>
+        </div>
+
+        <div class="card-urls-toolbar">
+          <button class="btn" id="invoice-refresh" type="button">Refresh</button>
+        </div>
+
+        <div class="card-urls-table-wrap">
+          <table class="card-urls-table">
+            <thead>
+              <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col">Number</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Config</th>
+                <th scope="col">Logo</th>
+                <th scope="col">Shipping</th>
+                <th scope="col">Payment</th>
+              </tr>
+            </thead>
+            <tbody id="invoice-rows-body">
+              <tr>
+                <td colspan="8" class="card-urls-empty">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </section>
   </main>

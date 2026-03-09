@@ -175,7 +175,31 @@ create table if not exists public.card_configs (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.purchase_invoices (
+  invoice_no text primary key,
+  profile_id uuid references public.profiles(id) on delete set null,
+  customer_name text not null default '',
+  customer_email text not null default '',
+  customer_phone text,
+  quantity integer not null default 0 check (quantity >= 0),
+  card_configuration integer check (card_configuration in (1, 2, 3)),
+  custom_logo_requested boolean not null default false,
+  custom_logo_file_name text,
+  custom_logo_image text,
+  shipping_name text,
+  shipping_street text,
+  shipping_city text,
+  shipping_postal text,
+  payment_provider text,
+  payment_status text not null default 'PENDING',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists card_configs_auth_email_idx on public.card_configs (auth_email);
+create index if not exists purchase_invoices_profile_id_idx on public.purchase_invoices (profile_id);
+create index if not exists purchase_invoices_customer_email_idx on public.purchase_invoices (customer_email);
+create index if not exists purchase_invoices_created_at_idx on public.purchase_invoices (created_at desc);
 
 alter table public.card_configs
   add column if not exists auth_email text;
@@ -185,6 +209,69 @@ alter table public.card_configs
   add column if not exists created_at timestamptz not null default now();
 alter table public.card_configs
   add column if not exists updated_at timestamptz not null default now();
+
+alter table public.purchase_invoices
+  add column if not exists profile_id uuid references public.profiles(id) on delete set null;
+alter table public.purchase_invoices
+  add column if not exists customer_name text not null default '';
+alter table public.purchase_invoices
+  add column if not exists customer_email text not null default '';
+alter table public.purchase_invoices
+  add column if not exists customer_phone text;
+alter table public.purchase_invoices
+  add column if not exists quantity integer not null default 0;
+alter table public.purchase_invoices
+  add column if not exists card_configuration integer;
+alter table public.purchase_invoices
+  add column if not exists custom_logo_requested boolean not null default false;
+alter table public.purchase_invoices
+  add column if not exists custom_logo_file_name text;
+alter table public.purchase_invoices
+  add column if not exists custom_logo_image text;
+alter table public.purchase_invoices
+  add column if not exists shipping_name text;
+alter table public.purchase_invoices
+  add column if not exists shipping_street text;
+alter table public.purchase_invoices
+  add column if not exists shipping_city text;
+alter table public.purchase_invoices
+  add column if not exists shipping_postal text;
+alter table public.purchase_invoices
+  add column if not exists payment_provider text;
+alter table public.purchase_invoices
+  add column if not exists payment_status text not null default 'PENDING';
+alter table public.purchase_invoices
+  add column if not exists created_at timestamptz not null default now();
+alter table public.purchase_invoices
+  add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'purchase_invoices_card_configuration_check'
+      and conrelid = 'public.purchase_invoices'::regclass
+  ) then
+    alter table public.purchase_invoices
+      add constraint purchase_invoices_card_configuration_check
+      check (card_configuration in (1, 2, 3) or card_configuration is null);
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'purchase_invoices_quantity_check'
+      and conrelid = 'public.purchase_invoices'::regclass
+  ) then
+    alter table public.purchase_invoices
+      add constraint purchase_invoices_quantity_check
+      check (quantity >= 0);
+  end if;
+end $$;
 
 update public.card_configs c
 set auth_email = lower(u.email)
@@ -230,6 +317,7 @@ alter table public.profiles enable row level security;
 alter table public.links enable row level security;
 alter table public.codes enable row level security;
 alter table public.card_configs enable row level security;
+alter table public.purchase_invoices enable row level security;
 
 drop policy if exists "profiles public read by slug" on public.profiles;
 create policy "profiles public read by slug"
@@ -276,6 +364,21 @@ for all
 to authenticated
 using (auth.uid() = profile_id)
 with check (auth.uid() = profile_id);
+
+drop policy if exists "purchase invoices owner write" on public.purchase_invoices;
+create policy "purchase invoices owner write"
+on public.purchase_invoices
+for all
+to authenticated
+using (auth.uid() = profile_id)
+with check (auth.uid() = profile_id);
+
+drop policy if exists "purchase invoices manager read" on public.purchase_invoices;
+create policy "purchase invoices manager read"
+on public.purchase_invoices
+for select
+to authenticated
+using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'check.email@residue.com');
 
 create or replace function public.create_code_for_user(p_owner uuid)
 returns public.codes

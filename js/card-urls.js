@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 const cfg = window.env || {};
 const MANAGER_EMAIL = 'check.email@residue.com';
 const MANAGER_ACCESS_KEY = 'residue_manager_access';
+const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
 
 const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
   ? null
@@ -15,8 +16,10 @@ const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
     });
 
 const statusEl = document.getElementById('card-urls-status');
-const tbody = document.getElementById('card-urls-body');
+const urlsBody = document.getElementById('card-urls-body');
+const invoiceBody = document.getElementById('invoice-rows-body');
 const refreshBtn = document.getElementById('card-urls-refresh');
+const invoiceRefreshBtn = document.getElementById('invoice-refresh');
 
 function normalizeEmail(value) {
   return (value || '').trim().toLowerCase();
@@ -45,14 +48,14 @@ function clearManagerFlag() {
   localStorage.removeItem(MANAGER_ACCESS_KEY);
 }
 
-function renderRows(rows) {
-  if (!tbody) return;
+function renderUrlRows(rows) {
+  if (!urlsBody) return;
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="3" class="card-urls-empty">No users found.</td></tr>';
+    urlsBody.innerHTML = '<tr><td colspan="3" class="card-urls-empty">No users found.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = '';
+  urlsBody.innerHTML = '';
   rows.forEach(row => {
     const tr = document.createElement('tr');
 
@@ -60,12 +63,10 @@ function renderRows(rows) {
     emailTd.textContent = row.auth_email || '';
 
     const urlTd = document.createElement('td');
-    const link = document.createElement('a');
-    link.href = row.url;
-    link.textContent = row.url;
-    link.target = '_blank';
-    link.rel = 'noreferrer noopener';
-    urlTd.appendChild(link);
+    const urlText = document.createElement('span');
+    urlText.className = 'card-urls-link-text';
+    urlText.textContent = row.url;
+    urlTd.appendChild(urlText);
 
     const copyTd = document.createElement('td');
     copyTd.className = 'card-urls-copy-col';
@@ -73,7 +74,7 @@ function renderRows(rows) {
     copyBtn.type = 'button';
     copyBtn.className = 'card-urls-copy-btn';
     copyBtn.setAttribute('aria-label', `Copy URL for ${row.auth_email}`);
-    copyBtn.textContent = '⧉';
+    copyBtn.textContent = 'Copy';
     copyBtn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(row.url);
@@ -85,7 +86,56 @@ function renderRows(rows) {
     copyTd.appendChild(copyBtn);
 
     tr.append(emailTd, urlTd, copyTd);
-    tbody.appendChild(tr);
+    urlsBody.appendChild(tr);
+  });
+}
+
+function paymentLabel(status) {
+  const normalized = String(status || '').toUpperCase();
+  if (normalized === 'COMPLETE') return 'Sent';
+  if (normalized === 'FAILED' || normalized === 'CANCELLED') return 'Declined';
+  return normalized || 'Pending';
+}
+
+function formatShipping(row) {
+  return [
+    row.shipping_name,
+    row.shipping_street,
+    row.shipping_city,
+    row.shipping_postal
+  ].filter(Boolean).join(', ');
+}
+
+function renderInvoiceRows(rows) {
+  if (!invoiceBody) return;
+  if (!rows.length) {
+    invoiceBody.innerHTML = '<tr><td colspan="8" class="card-urls-empty">No invoices found.</td></tr>';
+    return;
+  }
+
+  invoiceBody.innerHTML = '';
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    const cells = [
+      row.customer_name,
+      row.customer_email,
+      row.customer_phone,
+      String(row.quantity),
+      row.card_configuration,
+      row.logo_value,
+      row.shipping,
+      row.payment_status
+    ];
+
+    cells.forEach((value, index) => {
+      const td = document.createElement('td');
+      if (index === 5) td.className = 'card-urls-inline-text';
+      if (index === 6) td.classList.add('card-urls-shipping');
+      td.textContent = value || '';
+      tr.appendChild(td);
+    });
+
+    invoiceBody.appendChild(tr);
   });
 }
 
@@ -108,41 +158,97 @@ async function guardManagerAccess() {
   return session;
 }
 
-async function fetchRows() {
-  if (!supabase) {
-    setStatus('Supabase is not configured.', 'error');
-    return;
-  }
-
-  setStatus('Refreshing...', 'loading');
-  refreshBtn && (refreshBtn.disabled = true);
+async function fetchProfileRows() {
   const { data, error } = await supabase
     .from('profiles')
     .select('auth_email, slug')
     .not('auth_email', 'is', null)
     .order('auth_email', { ascending: true });
 
-  refreshBtn && (refreshBtn.disabled = false);
-  if (error) {
-    setStatus(error.message || 'Could not load card URLs.', 'error');
-    renderRows([]);
-    return;
-  }
+  if (error) throw new Error(error.message || 'Could not load card URLs.');
 
-  const rows = (data || [])
+  return (data || [])
     .filter(row => row.auth_email && row.slug)
     .map(row => ({
       auth_email: row.auth_email,
       url: buildProfileUrl(row.slug)
     }));
-
-  renderRows(rows);
-  setStatus(`Loaded ${rows.length} card URL${rows.length === 1 ? '' : 's'}.`, 'success');
 }
 
-refreshBtn?.addEventListener('click', fetchRows);
+async function fetchInvoiceRows() {
+  const { data, error } = await supabase
+    .from(INVOICE_TABLE)
+    .select('customer_name, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_city, shipping_postal, payment_status, created_at')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message || 'Could not load invoices.');
+
+  return (data || []).map(row => ({
+    customer_name: row.customer_name || '',
+    customer_email: row.customer_email || '',
+    customer_phone: row.customer_phone || '',
+    quantity: row.quantity ?? '',
+    card_configuration: row.card_configuration ? String(row.card_configuration) : '',
+    logo_value: row.custom_logo_requested ? (row.custom_logo_image || row.custom_logo_file_name || 'Yes') : 'No',
+    shipping: formatShipping(row),
+    payment_status: paymentLabel(row.payment_status)
+  }));
+}
+
+async function fetchAllRows() {
+  if (!supabase) {
+    setStatus('Supabase is not configured.', 'error');
+    return;
+  }
+
+  setStatus('Refreshing...', 'loading');
+  if (refreshBtn) refreshBtn.disabled = true;
+   if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = true;
+
+  try {
+    const [profileRows, invoiceRows] = await Promise.all([
+      fetchProfileRows(),
+      fetchInvoiceRows()
+    ]);
+
+    renderUrlRows(profileRows);
+    renderInvoiceRows(invoiceRows);
+    setStatus(`Loaded ${profileRows.length} URLs and ${invoiceRows.length} invoice rows.`, 'success');
+  } catch (error) {
+    renderUrlRows([]);
+    renderInvoiceRows([]);
+    setStatus(error.message || 'Could not load manager data.', 'error');
+  } finally {
+    if (refreshBtn) refreshBtn.disabled = false;
+    if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = false;
+  }
+}
+
+async function refreshInvoicesOnly() {
+  if (!supabase) {
+    setStatus('Supabase is not configured.', 'error');
+    return;
+  }
+
+  setStatus('Refreshing invoices...', 'loading');
+  if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = true;
+
+  try {
+    const invoiceRows = await fetchInvoiceRows();
+    renderInvoiceRows(invoiceRows);
+    setStatus(`Loaded ${invoiceRows.length} invoice rows.`, 'success');
+  } catch (error) {
+    renderInvoiceRows([]);
+    setStatus(error.message || 'Could not load invoices.', 'error');
+  } finally {
+    if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = false;
+  }
+}
+
+refreshBtn?.addEventListener('click', fetchAllRows);
+invoiceRefreshBtn?.addEventListener('click', refreshInvoicesOnly);
 
 (async () => {
   await guardManagerAccess();
-  await fetchRows();
+  await fetchAllRows();
 })();

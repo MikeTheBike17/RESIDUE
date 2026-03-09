@@ -4,6 +4,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 (() => {
   const cfg = window.env || {};
   const ORDER_TABLE = cfg.SUPABASE_ORDERS_TABLE || "orders";
+  const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || "purchase_invoices";
   const CARD_CONFIG_TABLE = "card_configs";
   const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 99);
   const PAYFAST_PROCESS_URL = cfg.PAYFAST_PROCESS_URL || "https://www.payfast.co.za/eng/process";
@@ -170,6 +171,12 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return u.toString();
   }
 
+  async function getAuthenticatedUser() {
+    if (!supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user || null;
+  }
+
   async function insertOrder(order) {
     if (!supabase) throw new Error("Supabase is not configured in js/env.js.");
     const orderRecord = {
@@ -195,10 +202,50 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (error) throw new Error(`Could not create order in Supabase: ${error.message}`);
   }
 
+  function buildInvoiceRecord(order, userId = null) {
+    return {
+      invoice_no: order.invoice_no,
+      profile_id: userId,
+      customer_name: order.customer_name,
+      customer_email: order.customer_email,
+      customer_phone: order.customer_phone,
+      quantity: order.quantity,
+      card_configuration: order.card_configuration,
+      custom_logo_requested: order.custom_logo_requested,
+      custom_logo_file_name: order.custom_logo_file_name || null,
+      custom_logo_image: customLogoDataUrl || null,
+      shipping_name: order.shipping_name,
+      shipping_street: order.shipping_street,
+      shipping_city: order.shipping_city,
+      shipping_postal: order.shipping_postal,
+      payment_provider: order.payment_provider,
+      payment_status: order.payment_status,
+      created_at: order.created_at,
+      updated_at: new Date().toISOString()
+    };
+  }
+
+  async function upsertInvoice(order, userId = null) {
+    if (!supabase) throw new Error("Supabase is not configured in js/env.js.");
+    const { error } = await supabase
+      .from(INVOICE_TABLE)
+      .upsert(buildInvoiceRecord(order, userId), { onConflict: "invoice_no" });
+    if (error) throw new Error(`Could not save invoice in Supabase: ${error.message}`);
+  }
+
   async function updateOrderStatus(invoiceNo, updates) {
     if (!supabase || !invoiceNo) return;
     const { error } = await supabase.from(ORDER_TABLE).update(updates).eq("invoice_no", invoiceNo);
     if (error) throw new Error(`Could not update payment in Supabase: ${error.message}`);
+  }
+
+  async function updateInvoiceStatus(invoiceNo, updates) {
+    if (!supabase || !invoiceNo) return;
+    const { error } = await supabase
+      .from(INVOICE_TABLE)
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("invoice_no", invoiceNo);
+    if (error) throw new Error(`Could not update invoice in Supabase: ${error.message}`);
   }
 
   function configurePayFastForm(order) {
@@ -346,14 +393,14 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     });
   }
 
-  async function saveCardConfiguration() {
+  async function saveCardConfiguration(user = null) {
     if (!supabase || !selectedCardConfiguration) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
+    const sessionUser = user || await getAuthenticatedUser();
+    if (!sessionUser?.id) return;
     const { data: existingRow } = await supabase
       .from(CARD_CONFIG_TABLE)
       .select("config_data")
-      .eq("profile_id", session.user.id)
+      .eq("profile_id", sessionUser.id)
       .maybeSingle();
     const configData = {
       ...(existingRow?.config_data || {}),
@@ -369,8 +416,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       }
     };
     const { error } = await supabase.from(CARD_CONFIG_TABLE).upsert({
-      profile_id: session.user.id,
-      auth_email: (session.user.email || "").trim().toLowerCase(),
+      profile_id: sessionUser.id,
+      auth_email: (sessionUser.email || "").trim().toLowerCase(),
       config_data: configData,
       updated_at: new Date().toISOString()
     });
@@ -456,9 +503,11 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   async function proceedToPayFast(order) {
     try {
+      const sessionUser = await getAuthenticatedUser();
       setStatus(els.payfastStatus, "Creating invoice and saving order...", "loading");
-      await saveCardConfiguration();
+      await saveCardConfiguration(sessionUser);
       await insertOrder(order);
+      await upsertInvoice(order, sessionUser?.id || null);
       residueTelemetry.logPurchaseEvent({
         stage: "invoice_created",
         outcome: "success",
@@ -470,7 +519,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         amount_total: order.total_amount,
         product: order.product,
         quantity: order.quantity,
-        detail: "Order inserted in Supabase orders table."
+        detail: "Order and invoice inserted in Supabase."
       });
       persistPending(order);
       configurePayFastForm(order);
@@ -515,6 +564,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         payfast_payment_id: state.payfastPaymentId || null,
         payment_reference: state.payfastPaymentId || null,
         payment_updated_at: new Date().toISOString()
+      });
+      await updateInvoiceStatus(invoice, {
+        payment_status: status
       });
       residueTelemetry.logPurchaseEvent({
         stage: "payment_return",

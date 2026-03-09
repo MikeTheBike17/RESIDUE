@@ -2374,7 +2374,8 @@ body::after { opacity: 0.04; }
   border-bottom: 0;
 }
 
-.card-urls-table a {
+.card-urls-table .card-urls-link-text,
+.card-urls-table .card-urls-inline-text {
   color: var(--accent-premium);
   word-break: break-all;
 }
@@ -2382,6 +2383,11 @@ body::after { opacity: 0.04; }
 .card-urls-copy-col {
   width: 88px;
   text-align: center;
+}
+
+.card-urls-shipping {
+  white-space: normal;
+  min-width: 220px;
 }
 
 .card-urls-copy-btn {
