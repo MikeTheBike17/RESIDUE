@@ -260,6 +260,7 @@
     const MANAGER_PASSWORD = "Mike&Lim1";
     const PRIVATE_PAGE = "residue-private.html";
     const CARD_URLS_PAGE = "card-urls.html";
+    const DEFAULT_PROFILE_NAME = "Your name";
     const cfg = window.env || {};
     const profileTableFromEnv = (cfg.SUPABASE_PROFILE_TABLE || "").trim().toLowerCase();
     const PROFILE_TABLES = [...new Set(
@@ -295,19 +296,49 @@
       return "";
     }
 
+    async function ensureUniqueProfileSlug(supabase, preferredSlug, { excludeId = null, fallbackSlug = "" } = {}) {
+      const base = resolveSlug(preferredSlug, fallbackSlug) || fallbackSlug || "card";
+      let candidate = base;
+      let suffix = 2;
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("slug", candidate)
+          .limit(1);
+        const conflict = !error && Array.isArray(data) && data.some(row => row.id !== excludeId);
+        if (!conflict) return candidate;
+        candidate = `${base}-${suffix}`;
+        suffix += 1;
+      }
+    }
+
     async function ensureProfileRow(supabase, user, fallbackEmail = "") {
       if (!supabase || !user?.id) return { ok: false, reason: "missing_context" };
       const authEmail = normalizeEmail(user.email || fallbackEmail);
-      const slug = resolveSlug(authEmail.split("@")[0], `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`);
-
-      const payloadFor = (table) => {
+      const payloadFor = async (table) => {
         if (table === "users") {
           return { id: user.id, email: authEmail || null };
         }
+        const { data: existingProfile } = await supabase
+          .from(table)
+          .select("name, slug")
+          .eq("id", user.id)
+          .maybeSingle();
+        const slug = existingProfile?.slug || await ensureUniqueProfileSlug(
+          supabase,
+          resolveSlug(authEmail.split("@")[0], `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`),
+          {
+            excludeId: user.id,
+            fallbackSlug: `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`
+          }
+        );
+        const savedName = String(existingProfile?.name || "").trim();
         return {
           id: user.id,
           auth_email: authEmail || null,
-          name: user.email || authEmail || "Residue User",
+          name: savedName && !savedName.includes("@") ? savedName : DEFAULT_PROFILE_NAME,
           slug,
           theme: "dark"
         };
@@ -315,7 +346,8 @@
 
       let lastError = null;
       for (const table of PROFILE_TABLES) {
-        const { error } = await supabase.from(table).upsert(payloadFor(table), { onConflict: "id" });
+        const payload = await payloadFor(table);
+        const { error } = await supabase.from(table).upsert(payload, { onConflict: "id" });
         if (!error) {
           logAuth({
             action: "profile_sync",

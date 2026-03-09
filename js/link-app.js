@@ -124,7 +124,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function fillPublic(profile, meta = {}) {
     setTheme(profile.theme || 'dark');
-    setText('lt-name', profile.name || 'Your name');
+    setText('lt-name', deriveDisplayName(profile?.name, null));
     const includeRole = parseBool(meta.show_role, true);
     const includeBio = parseBool(meta.show_bio, true);
     setText('lt-title', includeRole ? (profile.title || '') : '');
@@ -159,6 +159,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   let authStateSubscription = null;
   const contactDownloadState = { name: '', phone: '' };
   let contactDownloadBound = false;
+  const DEFAULT_PROFILE_NAME = 'Your name';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
     { id: 'social-2', label: 'Instagram', toggle: 'show-social-2' },
@@ -199,6 +200,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
       if (atMatch) return normalizeCoordinates(`${atMatch[1]},${atMatch[2]}`);
     } catch {}
     return '';
+  }
+
+  function isEmailLike(value) {
+    return /@/.test(String(value || '').trim());
   }
 
   const parseBool = (val, fallback = true) => {
@@ -417,10 +422,14 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
 const localProfileKey = slug => `${LOCAL_PROFILE_KEY_PREFIX}${(slug || '').toLowerCase()}`;
 
-function ensureLocalDraftForUser(user) {
+async function ensureLocalDraftForUser(user) {
   if (!user?.email) return;
   const email = normalizeEmail(user.email);
-  const slug = resolveSlug(email.split('@')[0], email) || 'card';
+  const slug = await ensureUniqueSlug(resolveSlug(email.split('@')[0], email), {
+    excludeId: user.id || null,
+    fallbackSlug: 'card',
+    supabaseClient: null
+  });
   const key = localProfileKey(slug);
   const existing = localStorage.getItem(key);
   if (existing) {
@@ -428,7 +437,8 @@ function ensureLocalDraftForUser(user) {
     return;
   }
   const profile = {
-    name: email,
+    id: user.id || null,
+    name: DEFAULT_PROFILE_NAME,
     title: '',
     bio: '',
     avatar_url: '',
@@ -443,14 +453,51 @@ function ensureLocalDraftForUser(user) {
   localStorage.setItem('residue_link_last_profile_key', key);
 }
 
+  function getStoredLocalProfiles() {
+    return Object.keys(localStorage)
+      .filter(key => key.startsWith(LOCAL_PROFILE_KEY_PREFIX))
+      .map(key => {
+        try {
+          return JSON.parse(localStorage.getItem(key) || 'null');
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+  }
+
+  async function ensureUniqueSlug(baseSlug, { excludeId = null, fallbackSlug = '', supabaseClient = supabase } = {}) {
+    const base = resolveSlug(baseSlug, fallbackSlug) || fallbackSlug || 'card';
+    const localProfiles = getStoredLocalProfiles();
+    const hasLocalConflict = candidate => localProfiles.some(profile => {
+      if (!profile?.slug) return false;
+      if (excludeId && profile.id && profile.id === excludeId) return false;
+      return profile.slug === candidate;
+    });
+    const hasRemoteConflict = async candidate => {
+      if (!supabaseClient) return false;
+      let query = supabaseClient.from('profiles').select('id').eq('slug', candidate).limit(1);
+      if (excludeId) query = query.neq('id', excludeId);
+      const { data, error } = await query;
+      if (error) return false;
+      return Array.isArray(data) && data.length > 0;
+    };
+
+    let candidate = base;
+    let suffix = 2;
+    while (hasLocalConflict(candidate) || await hasRemoteConflict(candidate)) {
+      candidate = `${base}-${suffix}`;
+      suffix += 1;
+    }
+    return candidate;
+  }
+
   function deriveDisplayName(profileName, user) {
     const fromProfile = String(profileName || '').trim();
     if (fromProfile && !fromProfile.includes('@')) return fromProfile;
     const fromMeta = String(user?.user_metadata?.full_name || user?.user_metadata?.name || '').trim();
-    if (fromMeta) return fromMeta;
-    if (fromProfile) return fromProfile;
-    const emailPrefix = String(user?.email || '').split('@')[0] || '';
-    return emailPrefix.replace(/[._-]+/g, ' ').trim();
+    if (fromMeta && !isEmailLike(fromMeta)) return fromMeta;
+    return DEFAULT_PROFILE_NAME;
   }
 
   function buildPublicProfileUrl(slug) {
@@ -632,7 +679,7 @@ function ensureLocalDraftForUser(user) {
     persistCurrentUser(user);
     showStatusEl(statusEl, 'Signed in (local)', 'success');
     toggleEditor(true);
-    ensureLocalDraftForUser(user);
+    await ensureLocalDraftForUser(user);
     loadLocalDraft();
     setAuthOnly(false);
   }
@@ -743,11 +790,17 @@ function ensureLocalDraftForUser(user) {
     if (!user) return;
     const authEmail = normalizeEmail(user.email);
     const emailPrefix = (authEmail || user.email || '').split('@')[0];
-    const fallbackSlug = resolveSlug(emailPrefix, authEmail) || `user-${String(user.id || '').replace(/-/g, '').slice(0, 8)}`;
+    const fallbackSlug = await ensureUniqueSlug(
+      resolveSlug(emailPrefix, authEmail),
+      {
+        excludeId: user.id,
+        fallbackSlug: `user-${String(user.id || '').replace(/-/g, '').slice(0, 8)}`
+      }
+    );
     await supabase.from('profiles').upsert({
       id: user.id,
       auth_email: authEmail || null,
-      name: user.email,
+      name: DEFAULT_PROFILE_NAME,
       slug: fallbackSlug,
       theme: 'dark'
     });
@@ -883,7 +936,8 @@ function ensureLocalDraftForUser(user) {
     setValue('full-name', displayName || '');
     setValue('role', savedTitle || profile.title || '');
     setValue('lt-bio', savedBio || profile.bio || '');
-    syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
+    if (profile?.slug) updatePublicUrl(profile.slug);
+    else syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
     const setToggle = (id, checked = true) => {
       const el = document.getElementById(id);
       if (el) el.checked = !!checked;
@@ -1389,7 +1443,7 @@ function ensureLocalDraftForUser(user) {
           if (!session) return showStatusEl(statusEl, 'Not signed in.', 'error');
         }
 
-        const profile = collectProfilePayload(session?.user || null);
+        const profile = await collectProfilePayload(session?.user || null);
         if (!profile.name) return showStatusEl(statusEl, 'Name is required.', 'error');
         const locationCoordinates = getValue('location-coordinates');
         if (locationCoordinates && !normalizeCoordinates(locationCoordinates)) {
@@ -1432,6 +1486,7 @@ function ensureLocalDraftForUser(user) {
         }
 
         const localProfile = {
+          id: profile.id,
           name: profile.name,
           title: profile.title,
           bio: profile.bio,
@@ -1453,14 +1508,18 @@ function ensureLocalDraftForUser(user) {
       }
     });
   }
-  function collectProfilePayload(user) {
-    const name = getValue('full-name') || getValue('lt-name');
-    const slug = resolveSlug(name, getValue('email-config') || normalizeEmail(user?.email));
+  async function collectProfilePayload(user) {
+    const name = getValue('full-name') || getValue('lt-name') || DEFAULT_PROFILE_NAME;
+    const auth_email = normalizeEmail(user?.email);
+    const fallbackSlug = resolveSlug(auth_email.split('@')[0], auth_email) || `user-${String(user?.id || '').replace(/-/g, '').slice(0, 8)}`;
+    const slug = await ensureUniqueSlug(name, {
+      excludeId: user?.id || null,
+      fallbackSlug
+    });
     const title = getValue('role') || getValue('lt-title');
     const bio = getValue('lt-bio');
     const avatar_url = getValue('lt-avatar-url');
     const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'dark';
-    const auth_email = normalizeEmail(user?.email);
     const id = user?.id || CURRENT_USER_KEY;
     return { id, auth_email: auth_email || null, name, slug, title, bio, avatar_url, theme };
   }
