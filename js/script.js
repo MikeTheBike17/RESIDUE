@@ -260,6 +260,7 @@
     const MANAGER_PASSWORD = "Mike&Lim1";
     const PRIVATE_PAGE = "residue-private.html";
     const CARD_URLS_PAGE = "card-urls.html";
+    const DEFAULT_PROFILE_NAME = "Your name";
     const cfg = window.env || {};
     const profileTableFromEnv = (cfg.SUPABASE_PROFILE_TABLE || "").trim().toLowerCase();
     const PROFILE_TABLES = [...new Set(
@@ -295,19 +296,49 @@
       return "";
     }
 
+    async function ensureUniqueProfileSlug(supabase, preferredSlug, { excludeId = null, fallbackSlug = "" } = {}) {
+      const base = resolveSlug(preferredSlug, fallbackSlug) || fallbackSlug || "card";
+      let candidate = base;
+      let suffix = 2;
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("slug", candidate)
+          .limit(1);
+        const conflict = !error && Array.isArray(data) && data.some(row => row.id !== excludeId);
+        if (!conflict) return candidate;
+        candidate = `${base}-${suffix}`;
+        suffix += 1;
+      }
+    }
+
     async function ensureProfileRow(supabase, user, fallbackEmail = "") {
       if (!supabase || !user?.id) return { ok: false, reason: "missing_context" };
       const authEmail = normalizeEmail(user.email || fallbackEmail);
-      const slug = resolveSlug(authEmail.split("@")[0], `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`);
-
-      const payloadFor = (table) => {
+      const payloadFor = async (table) => {
         if (table === "users") {
           return { id: user.id, email: authEmail || null };
         }
+        const { data: existingProfile } = await supabase
+          .from(table)
+          .select("name, slug")
+          .eq("id", user.id)
+          .maybeSingle();
+        const slug = existingProfile?.slug || await ensureUniqueProfileSlug(
+          supabase,
+          resolveSlug(authEmail.split("@")[0], `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`),
+          {
+            excludeId: user.id,
+            fallbackSlug: `user-${String(user.id).replace(/-/g, "").slice(0, 8)}`
+          }
+        );
+        const savedName = String(existingProfile?.name || "").trim();
         return {
           id: user.id,
           auth_email: authEmail || null,
-          name: user.email || authEmail || "Residue User",
+          name: savedName && !savedName.includes("@") ? savedName : DEFAULT_PROFILE_NAME,
           slug,
           theme: "dark"
         };
@@ -315,7 +346,8 @@
 
       let lastError = null;
       for (const table of PROFILE_TABLES) {
-        const { error } = await supabase.from(table).upsert(payloadFor(table), { onConflict: "id" });
+        const payload = await payloadFor(table);
+        const { error } = await supabase.from(table).upsert(payload, { onConflict: "id" });
         if (!error) {
           logAuth({
             action: "profile_sync",
@@ -575,6 +607,7 @@
     });
 
   // PRODUCT GALLERY
+  const gallery = document.querySelector("[data-carousel]");
   const galleryTrack = document.querySelector("[data-carousel-track]");
   const galleryPrev = document.querySelector("[data-gallery-prev]");
   const galleryNext = document.querySelector("[data-gallery-next]");
@@ -606,7 +639,22 @@
     { path: "images/residue-cards-fanned-dark-moody-composition.jpg.jpg", alt: "Fanned cards dark composition" }
   ];
 
-  if (galleryTrack) {
+  if (gallery && galleryTrack) {
+    const galleryControls = document.querySelector(".gallery-controls");
+    if (galleryControls && galleryControls.parentElement !== gallery) {
+      gallery.appendChild(galleryControls);
+    }
+
+    if (galleryPrev) {
+      galleryPrev.classList.add("gallery-arrow-prev");
+      galleryPrev.innerHTML = "&#8592;";
+    }
+
+    if (galleryNext) {
+      galleryNext.classList.add("gallery-arrow-next");
+      galleryNext.innerHTML = "&#8594;";
+    }
+
     const shuffled = [...galleryData];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -646,7 +694,11 @@
     let current = 0;
     const total = slides.length;
     let autoTimer = null;
-    const interval = 3000;
+    const interval = 7000;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipePointerId = null;
+    let isSwiping = false;
 
     const goTo = (index) => {
       current = (index + total) % total;
@@ -675,10 +727,45 @@
       startAuto();
     });
 
-    galleryTrack.addEventListener("pointerenter", stopAuto);
-    galleryTrack.addEventListener("pointerleave", startAuto);
-    galleryTrack.addEventListener("focusin", stopAuto);
-    galleryTrack.addEventListener("focusout", startAuto);
+    const resetSwipe = () => {
+      swipePointerId = null;
+      isSwiping = false;
+    };
+
+    gallery.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "touch") return;
+      swipePointerId = event.pointerId;
+      swipeStartX = event.clientX;
+      swipeStartY = event.clientY;
+      isSwiping = true;
+      stopAuto();
+    });
+
+    gallery.addEventListener("pointerup", (event) => {
+      if (!isSwiping || event.pointerId !== swipePointerId) return;
+
+      const deltaX = event.clientX - swipeStartX;
+      const deltaY = event.clientY - swipeStartY;
+      const swipeThreshold = 45;
+
+      if (Math.abs(deltaX) > swipeThreshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+        goTo(current + (deltaX < 0 ? 1 : -1));
+      }
+
+      resetSwipe();
+      startAuto();
+    });
+
+    gallery.addEventListener("pointercancel", () => {
+      if (!isSwiping) return;
+      resetSwipe();
+      startAuto();
+    });
+
+    gallery.addEventListener("pointerenter", stopAuto);
+    gallery.addEventListener("pointerleave", startAuto);
+    gallery.addEventListener("focusin", stopAuto);
+    gallery.addEventListener("focusout", startAuto);
 
     startAuto();
   }
