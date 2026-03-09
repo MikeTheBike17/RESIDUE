@@ -575,6 +575,7 @@
     });
 
   // PRODUCT GALLERY
+  const gallery = document.querySelector("[data-carousel]");
   const galleryTrack = document.querySelector("[data-carousel-track]");
   const galleryPrev = document.querySelector("[data-gallery-prev]");
   const galleryNext = document.querySelector("[data-gallery-next]");
@@ -606,7 +607,22 @@
     { path: "images/residue-cards-fanned-dark-moody-composition.jpg.jpg", alt: "Fanned cards dark composition" }
   ];
 
-  if (galleryTrack) {
+  if (gallery && galleryTrack) {
+    const galleryControls = document.querySelector(".gallery-controls");
+    if (galleryControls && galleryControls.parentElement !== gallery) {
+      gallery.appendChild(galleryControls);
+    }
+
+    if (galleryPrev) {
+      galleryPrev.classList.add("gallery-arrow-prev");
+      galleryPrev.innerHTML = "&#8592;";
+    }
+
+    if (galleryNext) {
+      galleryNext.classList.add("gallery-arrow-next");
+      galleryNext.innerHTML = "&#8594;";
+    }
+
     const shuffled = [...galleryData];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -646,7 +662,11 @@
     let current = 0;
     const total = slides.length;
     let autoTimer = null;
-    const interval = 3000;
+    const interval = 7000;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipePointerId = null;
+    let isSwiping = false;
 
     const goTo = (index) => {
       current = (index + total) % total;
@@ -675,10 +695,45 @@
       startAuto();
     });
 
-    galleryTrack.addEventListener("pointerenter", stopAuto);
-    galleryTrack.addEventListener("pointerleave", startAuto);
-    galleryTrack.addEventListener("focusin", stopAuto);
-    galleryTrack.addEventListener("focusout", startAuto);
+    const resetSwipe = () => {
+      swipePointerId = null;
+      isSwiping = false;
+    };
+
+    gallery.addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "touch") return;
+      swipePointerId = event.pointerId;
+      swipeStartX = event.clientX;
+      swipeStartY = event.clientY;
+      isSwiping = true;
+      stopAuto();
+    });
+
+    gallery.addEventListener("pointerup", (event) => {
+      if (!isSwiping || event.pointerId !== swipePointerId) return;
+
+      const deltaX = event.clientX - swipeStartX;
+      const deltaY = event.clientY - swipeStartY;
+      const swipeThreshold = 45;
+
+      if (Math.abs(deltaX) > swipeThreshold && Math.abs(deltaX) > Math.abs(deltaY)) {
+        goTo(current + (deltaX < 0 ? 1 : -1));
+      }
+
+      resetSwipe();
+      startAuto();
+    });
+
+    gallery.addEventListener("pointercancel", () => {
+      if (!isSwiping) return;
+      resetSwipe();
+      startAuto();
+    });
+
+    gallery.addEventListener("pointerenter", stopAuto);
+    gallery.addEventListener("pointerleave", startAuto);
+    gallery.addEventListener("focusin", stopAuto);
+    gallery.addEventListener("focusout", startAuto);
 
     startAuto();
   }
