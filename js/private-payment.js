@@ -4,6 +4,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 (() => {
   const cfg = window.env || {};
   const ORDER_TABLE = cfg.SUPABASE_ORDERS_TABLE || "orders";
+  const CARD_CONFIG_TABLE = "card_configs";
   const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 99);
   const PAYFAST_PROCESS_URL = cfg.PAYFAST_PROCESS_URL || "https://www.payfast.co.za/eng/process";
   const PENDING_ORDER_KEY = "residue_pending_order";
@@ -23,12 +24,23 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     email: qs("#email-config"),
     phone: qs("#phone"),
     quantity: qs("#quantity"),
+    cardConfigOptions: qsa("[data-card-config]"),
+    customLogoToggle: qs("#custom-logo-toggle"),
+    customLogoPanel: qs("#custom-logo-panel"),
+    customLogoFile: qs("#custom-logo-file"),
+    customLogoFileName: qs("#custom-logo-file-name"),
+    configurePrice: qs("#configure-price"),
+    configurePriceNote: qs("#configure-price-note"),
     purchaseBtn: qs("#purchase-btn"),
     validationModal: qs("#validation-modal"),
     missingFields: qs("#missing-fields-list"),
     validationClose: qs("#validation-close-btn"),
     paymentModal: qs("#payment-modal"),
     payClose: qs("#payment-modal .close-btn"),
+    termsModal: qs("#terms-modal"),
+    termsClose: qs("#terms-modal .close-btn"),
+    termsAgreeBtn: qs("#terms-agree-btn"),
+    termsDisagreeBtn: qs("#terms-disagree-btn"),
     subtotal: qs("#modal-subtotal"),
     shipping: qs("#modal-shipping"),
     total: qs("#modal-total"),
@@ -64,7 +76,10 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     customQty: qs("#pf-custom-qty")
   };
 
-  let selectedProduct = null;
+  let selectedCardConfiguration = null;
+  let customLogoDataUrl = "";
+  let customLogoMeta = null;
+  let pendingTermsOrder = null;
 
   function setStatus(el, message, type = "") {
     if (!el) return;
@@ -94,19 +109,22 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return Number(value).toFixed(2);
   }
 
-  function unitPrice(product, qty) {
-    if (product === "standard") {
-      if (qty >= 5) return 299;
-      if (qty >= 2) return 349;
-      return 399;
-    }
-    if (qty >= 5) return 499;
-    if (qty >= 2) return 549;
-    return 599;
+  function baseUnitPrice(qty) {
+    if (qty > 4) return 399;
+    if (qty >= 2) return 449;
+    return 499;
   }
 
-  function titleCaseProduct(product) {
-    return product === "standard" ? "Standard Cards" : "Premium Cards";
+  function customLogoEnabled() {
+    return !!els.customLogoPanel && !els.customLogoPanel.hidden;
+  }
+
+  function customLogoFeePerCard() {
+    return customLogoEnabled() ? 100 : 0;
+  }
+
+  function configurationLabel(configNumber) {
+    return `Card configuration ${configNumber || ""}`.trim();
   }
 
   function splitName(fullName) {
@@ -154,7 +172,26 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   async function insertOrder(order) {
     if (!supabase) throw new Error("Supabase is not configured in js/env.js.");
-    const { error } = await supabase.from(ORDER_TABLE).insert(order);
+    const orderRecord = {
+      invoice_no: order.invoice_no,
+      customer_name: order.customer_name,
+      customer_email: order.customer_email,
+      customer_phone: order.customer_phone,
+      product: order.product,
+      quantity: order.quantity,
+      unit_price: order.unit_price,
+      subtotal_amount: order.subtotal_amount,
+      shipping_amount: order.shipping_amount,
+      total_amount: order.total_amount,
+      payment_provider: order.payment_provider,
+      payment_status: order.payment_status,
+      shipping_name: order.shipping_name,
+      shipping_street: order.shipping_street,
+      shipping_city: order.shipping_city,
+      shipping_postal: order.shipping_postal,
+      created_at: order.created_at
+    };
+    const { error } = await supabase.from(ORDER_TABLE).insert(orderRecord);
     if (error) throw new Error(`Could not create order in Supabase: ${error.message}`);
   }
 
@@ -186,8 +223,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     pfFields.email.value = order.customer_email;
     pfFields.paymentId.value = order.invoice_no;
     pfFields.amount.value = amountForPayFast(order.total_amount);
-    pfFields.itemName.value = `${titleCaseProduct(order.product)} x ${order.quantity}`;
-    pfFields.itemDescription.value = `Residue order ${order.invoice_no}`;
+    pfFields.itemName.value = `${configurationLabel(order.card_configuration)} x ${order.quantity}`;
+    pfFields.itemDescription.value = `Residue order ${order.invoice_no}${order.custom_logo_requested ? " with custom logo" : ""}`;
     pfFields.customInvoice.value = order.invoice_no;
     pfFields.customEmail.value = order.customer_email;
     pfFields.customProduct.value = order.product;
@@ -198,11 +235,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function getCheckoutData() {
     const qty = Number.parseInt(els.quantity?.value || "0", 10);
     const safeQty = Number.isNaN(qty) ? 0 : qty;
-    const perItem = unitPrice(selectedProduct, safeQty);
+    const basePerItem = baseUnitPrice(safeQty);
+    const logoFee = customLogoFeePerCard();
+    const perItem = basePerItem + logoFee;
     const subtotal = safeQty * perItem;
     const shipping = SHIPPING_FEE;
     const total = subtotal + shipping;
-    return { qty: safeQty, perItem, subtotal, shipping, total };
+    return { qty: safeQty, basePerItem, logoFee, perItem, subtotal, shipping, total };
   }
 
   function requiredFieldErrors() {
@@ -216,7 +255,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     });
     const { qty } = getCheckoutData();
     if (qty <= 0) missing.push("Quantity (must be greater than 0)");
-    if (!selectedProduct) missing.push("Select a product");
+    if (!selectedCardConfiguration) missing.push("Select a card configuration");
+    if (customLogoEnabled() && !els.customLogoFile?.files?.length) missing.push("Upload custom logo image");
     return missing;
   }
 
@@ -226,15 +266,115 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (els.total) els.total.textContent = formatCurrency(total);
   }
 
-  function setProductSelection() {
-    const boxes = qsa(".product-box");
-    boxes.forEach((box) => {
-      box.addEventListener("click", () => {
-        boxes.forEach((b) => b.classList.remove("selected"));
-        box.classList.add("selected");
-        selectedProduct = box.getAttribute("data-product") || null;
+  function updatePriceDisplay() {
+    const checkout = getCheckoutData();
+    if (els.configurePrice) {
+      els.configurePrice.textContent = formatCurrency(checkout.subtotal);
+    }
+    if (els.configurePriceNote) {
+      if (!selectedCardConfiguration || checkout.qty <= 0) {
+        els.configurePriceNote.textContent = "Select a quantity and card configuration.";
+        return;
+      }
+      const logoText = customLogoEnabled() ? ` Includes custom logo at ${formatCurrency(checkout.logoFee)} per card.` : "";
+      els.configurePriceNote.textContent = `${checkout.qty} card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each.${logoText}`;
+    }
+  }
+
+  function setCardConfigurationSelection() {
+    els.cardConfigOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        els.cardConfigOptions.forEach((item) => {
+          item.classList.remove("is-selected");
+          item.setAttribute("aria-pressed", "false");
+        });
+        option.classList.add("is-selected");
+        option.setAttribute("aria-pressed", "true");
+        selectedCardConfiguration = Number(option.getAttribute("data-card-config")) || null;
+        updatePriceDisplay();
       });
     });
+  }
+
+  function updateCustomLogoFileName() {
+    if (!els.customLogoFileName) return;
+    els.customLogoFileName.textContent = els.customLogoFile?.files?.[0]?.name || "No logo selected.";
+  }
+
+  function wireCustomLogoToggle() {
+    els.customLogoToggle?.addEventListener("click", () => {
+      const nextExpanded = !(els.customLogoPanel && !els.customLogoPanel.hidden);
+      if (els.customLogoPanel) els.customLogoPanel.hidden = !nextExpanded;
+      els.customLogoToggle?.setAttribute("aria-expanded", String(nextExpanded));
+      if (!nextExpanded && els.customLogoFile) {
+        els.customLogoFile.value = "";
+        customLogoDataUrl = "";
+        customLogoMeta = null;
+        updateCustomLogoFileName();
+      }
+      updatePriceDisplay();
+    });
+
+    els.customLogoFile?.addEventListener("change", async () => {
+      const file = els.customLogoFile?.files?.[0] || null;
+      if (!file) {
+        customLogoDataUrl = "";
+        customLogoMeta = null;
+        updateCustomLogoFileName();
+        return;
+      }
+      if (!(file.type || "").startsWith("image/")) {
+        setStatus(els.payfastStatus, "Custom logo must be an image file.", "error");
+        els.customLogoFile.value = "";
+        customLogoDataUrl = "";
+        customLogoMeta = null;
+        updateCustomLogoFileName();
+        return;
+      }
+      customLogoMeta = { name: file.name, type: file.type || "", size: file.size || 0 };
+      customLogoDataUrl = await readFileAsDataUrl(file);
+      updateCustomLogoFileName();
+    });
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Could not read custom logo file."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function saveCardConfiguration() {
+    if (!supabase || !selectedCardConfiguration) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+    const { data: existingRow } = await supabase
+      .from(CARD_CONFIG_TABLE)
+      .select("config_data")
+      .eq("profile_id", session.user.id)
+      .maybeSingle();
+    const configData = {
+      ...(existingRow?.config_data || {}),
+      purchase_configuration: {
+        card_configuration: selectedCardConfiguration,
+        quantity: getCheckoutData().qty,
+        custom_logo_requested: customLogoEnabled(),
+        custom_logo_file_name: customLogoMeta?.name || "",
+        custom_logo_file_type: customLogoMeta?.type || "",
+        custom_logo_file_size: customLogoMeta?.size || 0,
+        custom_logo_image: customLogoDataUrl || "",
+        updated_at: new Date().toISOString()
+      }
+    };
+    const { error } = await supabase.from(CARD_CONFIG_TABLE).upsert({
+      profile_id: session.user.id,
+      auth_email: (session.user.email || "").trim().toLowerCase(),
+      config_data: configData,
+      updated_at: new Date().toISOString()
+    });
+    if (error) throw new Error(`Could not save card configuration: ${error.message}`);
   }
 
   function persistPending(order) {
@@ -288,12 +428,15 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
 
     const checkout = getCheckoutData();
-    const order = {
+    pendingTermsOrder = {
       invoice_no: generateInvoiceNo(),
       customer_name: (els.fullName?.value || "").trim(),
       customer_email: (els.email?.value || "").trim().toLowerCase(),
       customer_phone: (els.phone?.value || "").trim(),
-      product: selectedProduct,
+      product: `card-configuration-${selectedCardConfiguration}`,
+      card_configuration: selectedCardConfiguration,
+      custom_logo_requested: customLogoEnabled(),
+      custom_logo_file_name: customLogoMeta?.name || null,
       quantity: checkout.qty,
       unit_price: checkout.perItem,
       subtotal_amount: checkout.subtotal,
@@ -308,8 +451,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       created_at: new Date().toISOString()
     };
 
+    openModal(els.termsModal);
+  }
+
+  async function proceedToPayFast(order) {
     try {
       setStatus(els.payfastStatus, "Creating invoice and saving order...", "loading");
+      await saveCardConfiguration();
       await insertOrder(order);
       residueTelemetry.logPurchaseEvent({
         stage: "invoice_created",
@@ -411,6 +559,26 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       if (e.target === els.paymentModal) closeModal(els.paymentModal);
     });
 
+    const dismissTermsModal = () => {
+      pendingTermsOrder = null;
+      closeModal(els.termsModal);
+    };
+
+    els.termsClose?.addEventListener("click", dismissTermsModal);
+    els.termsDisagreeBtn?.addEventListener("click", dismissTermsModal);
+    els.termsAgreeBtn?.addEventListener("click", async () => {
+      if (!pendingTermsOrder) {
+        closeModal(els.termsModal);
+        return;
+      }
+      closeModal(els.termsModal);
+      await proceedToPayFast(pendingTermsOrder);
+      pendingTermsOrder = null;
+    });
+    els.termsModal?.addEventListener("click", (e) => {
+      if (e.target === els.termsModal) dismissTermsModal();
+    });
+
     const validationClose = qs("#validation-modal .close-btn");
     validationClose?.addEventListener("click", () => closeModal(els.validationModal));
     els.validationClose?.addEventListener("click", () => closeModal(els.validationModal));
@@ -424,10 +592,12 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function wireEvents() {
-    setProductSelection();
+    setCardConfigurationSelection();
+    wireCustomLogoToggle();
     wireModalClose();
     els.purchaseBtn?.addEventListener("click", onPurchaseClick);
     els.payBtn?.addEventListener("click", onPayFastClick);
+    els.quantity?.addEventListener("input", updatePriceDisplay);
     els.redirectBtn?.addEventListener("click", () => {
       window.location.href = "residue-private.html";
     });
@@ -435,6 +605,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   document.addEventListener("DOMContentLoaded", async () => {
     wireEvents();
+    updateCustomLogoFileName();
+    updatePriceDisplay();
     await handleReturnFromPayFast();
   });
 })();

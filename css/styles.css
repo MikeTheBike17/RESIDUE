@@ -689,28 +689,116 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 
 
 /* pricing tweaks */
-.price-stack { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; align-items: center; text-align: center; }
-.price-amount { font-size: 1.1rem; color: var(--text); }
+.card-configurator {
+  margin-top: 12px;
+  display: grid;
+  gap: 18px;
+}
 
-.price-align { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
-.product-box {
+.configure-form #quantity + .card-configurator {
+  margin-top: -2px;
+}
+
+.card-config-title {
+  margin: -6px 0 0;
+}
+
+.card-config-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card-config-box {
   position: relative;
-  padding: 16px 20px 20px 20px;
+  display: grid;
+  gap: 10px;
+  padding: 22px 16px 16px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--layer);
-  transition: background 150ms var(--transition), transform 120ms ease-out;
-}
-.product-box:hover { 
-  border-color: var(--accent);
-  transform: scale(1.02);
-}
-.product-box.selected {
-  background: var(--accent-premium-soft);
-  border-color: var(--accent-premium);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
-.price-option { display: inline-block; /* kept for spacing but dots now absolute */ cursor: pointer; }
+.card-config-box:hover {
+  transform: translateY(-3px);
+  border-color: rgba(216,176,122,0.54);
+  box-shadow: 0 22px 48px rgba(0,0,0,0.22);
+}
+
+.card-config-box.is-selected {
+  border-color: rgba(216,176,122,0.88);
+  background: linear-gradient(180deg, rgba(216,176,122,0.16), rgba(255,255,255,0.04));
+  box-shadow: 0 24px 52px rgba(0,0,0,0.28);
+}
+
+.card-config-number {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(216,176,122,0.4);
+  background: rgba(12,10,16,0.72);
+  color: var(--accent-premium);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.card-config-face-label {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.card-config-image {
+  width: 100%;
+  aspect-ratio: 1.58 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+}
+
+.card-config-logo-btn {
+  width: 100%;
+}
+
+.card-config-logo-panel {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+}
+
+.price-summary-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 20px 0 8px;
+}
+
+.price-summary-amount {
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.price-summary-note {
+  margin: 0;
+}
 
 .stack { display: flex; flex-direction: column; gap: 12px; }
 
@@ -1639,6 +1727,41 @@ input:focus, textarea:focus {
   cursor: pointer;
 }
 
+.terms-modal-content {
+  width: min(760px, 92vw);
+}
+
+.terms-title {
+  margin: 0;
+  color: var(--text);
+}
+
+.terms-scroll-box {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+  scrollbar-gutter: stable;
+}
+
+.terms-scroll-box p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.terms-scroll-box p:last-child {
+  margin-bottom: 0;
+}
+
+.terms-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 /* order summary styling */
 .order-summary {
   border: 1px solid var(--border-strong);
@@ -2057,6 +2180,10 @@ footer {
   .one-tap-grid {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .card-config-grid {
+    grid-template-columns: 1fr;
   }
 
   .one-tap-cards {

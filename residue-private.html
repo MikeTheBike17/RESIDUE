@@ -103,36 +103,48 @@
           <label for="quantity">Quantity</label>
           <input id="quantity" name="quantity" type="number" min="0" step="1" placeholder="0">
 
-
-          <!--PRICES-->
-          <section class="prices" style="margin: 16px 0 8px 0; padding:0;">
-            <div class="eyebrow premium" style="text-align:left;">Pricing</div>
-            <div class="price-align" style="margin-top: 1rem;">
-              <!-- product 1-->
-              <div class="product-box" data-product="standard">
-                <div class="stack price-stack" style="margin-top: 2rem;">
-                  <div class="price-option">
-                    <span class="price-amount"><b>Standard Cards</b></span>
-                  </div>
-                  <div class="price-amount">R399</div>
-                  <div class="price-amount">2–4 cards: R349 each</div>
-                  <div class="price-amount">5+ cards: R299 each</div>
-                  <div class="price-line" style="margin-top:4px;"></div>
-                </div>
-              </div>
-
-              <!--product 2-->
-              <div class="product-box" data-product="premium">
-                <div class="stack price-stack" style="margin-top: 2rem;">
-                  <div class="price-option">
-                    <span class="price-amount"><b>test payfast</b></span>
-                  </div>
-                  <div class="price-amount">R5</div>
-                  <div class="price-line" style="margin-top:4px;"></div>
-                </div>
-              </div>
+          <section class="card-configurator" aria-labelledby="card-config-title">
+            <div class="eyebrow premium">Configure card</div>
+            <h3 class="h3 card-config-title" id="card-config-title">Choose your card layout</h3>
+            <div class="card-config-grid">
+              <button class="card-config-box" type="button" data-card-config="1" aria-pressed="false">
+                <span class="card-config-number">1</span>
+                <span class="card-config-face-label">Front</span>
+                <img class="card-config-image" src="images/residue-card-large-r-logo-product.jpg.jpg" alt="Card configuration 1 front" loading="lazy" decoding="async">
+                <span class="card-config-face-label">Back</span>
+                <img class="card-config-image" src="images/residue-card-nfc-window-feature.jpg.jpg" alt="Card configuration 1 back" loading="lazy" decoding="async">
+              </button>
+              <button class="card-config-box" type="button" data-card-config="2" aria-pressed="false">
+                <span class="card-config-number">2</span>
+                <span class="card-config-face-label">Front</span>
+                <img class="card-config-image" src="images/residue-card-not-a-card-a-signal-product.jpg.jpg" alt="Card configuration 2 front" loading="lazy" decoding="async">
+                <span class="card-config-face-label">Back</span>
+                <img class="card-config-image" src="images/residue-card-on-leather-wallet-message-display.jpg.jpg" alt="Card configuration 2 back" loading="lazy" decoding="async">
+              </button>
+              <button class="card-config-box" type="button" data-card-config="3" aria-pressed="false">
+                <span class="card-config-number">3</span>
+                <span class="card-config-face-label">Front</span>
+                <img class="card-config-image" src="images/residue-card-leave-your-mark-product.jpg.jpg" alt="Card configuration 3 front" loading="lazy" decoding="async">
+                <span class="card-config-face-label">Back</span>
+                <img class="card-config-image" src="images/residue-card-first-impressions-fade-product.jpg.jpg" alt="Card configuration 3 back" loading="lazy" decoding="async">
+              </button>
+            </div>
+            <button id="custom-logo-toggle" type="button" class="btn btn-outline premium-btn card-config-logo-btn" aria-expanded="false">
+              Custom company logo on card +R100
+            </button>
+            <div id="custom-logo-panel" class="card-config-logo-panel" hidden>
+              <label for="custom-logo-file">Upload logo image</label>
+              <input id="custom-logo-file" name="custom-logo-file" type="file" accept="image/*">
+              <p class="muted small" id="custom-logo-file-name">No logo selected.</p>
             </div>
           </section>
+
+          <section class="price-summary-block" aria-labelledby="price-summary-title">
+            <div class="eyebrow premium" id="price-summary-title">Price</div>
+            <div class="price-summary-amount" id="configure-price">R0</div>
+            <p class="muted small price-summary-note" id="configure-price-note">Select a quantity and card configuration.</p>
+          </section>
+
 
 
           <button id="purchase-btn" type="button" class="btn btn-outline premium-btn">Purchase Now</button>
@@ -237,6 +249,30 @@
       </div>
     </div>
 
+    <div id="terms-modal" class="pay-modal hidden" aria-hidden="true">
+      <div class="modal-content terms-modal-content">
+        <button class="close-btn" aria-label="Close terms and conditions">&times;</button>
+        <div class="stack" style="gap:16px;">
+          <h3 class="terms-title">T&amp;C's</h3>
+          <div class="terms-scroll-box" id="terms-scroll-box">
+            <p>By proceeding with payment, you confirm that all purchase, shipping, and card configuration details submitted are accurate and complete.</p>
+            <p>Residue card production only starts after successful payment confirmation. Lead times may vary depending on production volume, logo preparation, and delivery region.</p>
+            <p>Custom company logo uploads must be owned by you or provided with full authorization for use. You accept responsibility for any trademark, copyright, or brand-use claims arising from submitted artwork.</p>
+            <p>Uploaded logo files may be adjusted for placement, sizing, engraving suitability, and technical production requirements. Residue may reject files that are low quality, unsuitable, or unlawful to reproduce.</p>
+            <p>Card configuration selections, quantity selections, and custom logo requests are treated as part of the final order instructions once payment is submitted.</p>
+            <p>Orders containing custom card production or personalized branding may not be refundable once manufacturing has started, except where required by law.</p>
+            <p>Shipping timelines are estimates and may be affected by courier delays, customs handling, or events outside Residue's control.</p>
+            <p>Residue reserves the right to cancel, pause, or refuse fulfillment where fraud, abuse, payment failure, unauthorized branding, or invalid shipping information is detected.</p>
+            <p>Proceeding to PayFast means you agree to these terms and consent to Residue storing the relevant purchase, shipping, and card configuration data needed to fulfill your order.</p>
+          </div>
+          <div class="terms-actions">
+            <button id="terms-disagree-btn" class="btn btn-outline premium-btn" type="button">Disagree</button>
+            <button id="terms-agree-btn" class="btn btn-outline premium-btn" type="button">Agree</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Thank You Modal -->
     <div id="thank-you-modal" class="pay-modal hidden" aria-hidden="true">
       <div class="modal-content" style="text-align:center;">
@@ -261,193 +297,8 @@
   <script type="module" src="js/supabase-telemetry.js"></script>
   <script src="js/script.js"></script>
   <script type="module" src="js/private-payment.js"></script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      return;
-      const qtyInput = document.getElementById('quantity');
-      const totalDue = document.getElementById('total-due');
-
-      const unitPrice = (qty) => {
-        if (qty >= 5) return 499;
-        if (qty >= 2) return 549;
-        return 599;
-      };
-
-      const refreshTotal = () => {
-        if (!qtyInput || !totalDue) return;
-
-        let qty = parseInt(qtyInput.value, 10);
-        if (isNaN(qty) || qty < 0) qty = 0;
-
-        if (qtyInput.value !== '' && qtyInput.value !== String(qty)) {
-          qtyInput.value = qty;
-        }
-
-        const total = qty * unitPrice(qty);
-        totalDue.textContent = 'R' + total.toLocaleString('en-ZA');
-        updatePurchaseState();
-      };
-
-      qtyInput?.addEventListener('input', refreshTotal);
-      qtyInput?.addEventListener('change', refreshTotal);
-
-      const purchaseBtn = document.getElementById('purchase-btn');
-      const configureForm = document.querySelector('.configure-form');
-      const requiredInputs = Array.from(configureForm.querySelectorAll('[required]'));
-      let selectedProduct = null;
-
-      function updatePurchaseState() {
-        if (!purchaseBtn) return;
-        // Button stays enabled; validate on click.
-      }
-
-      // product box selection
-      const productBoxes = document.querySelectorAll('.product-box');
-      productBoxes.forEach(box => {
-        box.addEventListener('click', () => {
-          productBoxes.forEach(b => b.classList.remove('selected'));
-          box.classList.add('selected');
-          selectedProduct = box.getAttribute('data-product') || box.textContent.trim();
-        });
-      });
-
-      requiredInputs.forEach(i => i.addEventListener('input', updatePurchaseState));
-      updatePurchaseState();
-
-      purchaseBtn?.addEventListener('click', () => {
-        const qty = parseInt(qtyInput.value, 10) || 0;
-        const missingFields = [];
-
-        requiredInputs.forEach(input => {
-          if (input.value.trim() === '') {
-            const label = document.querySelector(`label[for="${input.id}"]`);
-            const fieldName = label ? label.textContent.trim() : input.id;
-            missingFields.push(fieldName);
-          }
-        });
-
-        if (qty === 0) missingFields.push('Quantity (must be greater than 0)');
-        if (!selectedProduct) missingFields.push('Select a product');
-
-        if (missingFields.length > 0) {
-          const validationModal = document.getElementById('validation-modal');
-          const fieldsList = document.getElementById('missing-fields-list');
-
-          if (fieldsList) {
-            fieldsList.innerHTML = missingFields
-              .map(field => `<div style="padding:4px 0; color:var(--muted);">• ${field}</div>`)
-              .join('');
-          }
-
-          if (validationModal) {
-            validationModal.classList.remove('hidden');
-            validationModal.setAttribute('aria-hidden', 'false');
-          }
-        } else {
-          const payModal = document.getElementById('payment-modal');
-          const subtotal = qty * unitPrice(qty);
-          const shipping = 99;
-          const total = subtotal + shipping;
-
-          const subtotalEl = document.getElementById('modal-subtotal');
-          const shippingEl = document.getElementById('modal-shipping');
-          const totalEl = document.getElementById('modal-total');
-
-          if (subtotalEl) subtotalEl.textContent = 'R' + subtotal.toLocaleString('en-ZA');
-          if (shippingEl) shippingEl.textContent = 'R' + shipping.toLocaleString('en-ZA');
-          if (totalEl) totalEl.textContent = 'R' + total.toLocaleString('en-ZA');
-
-          if (payModal) {
-            payModal.classList.remove('hidden');
-            payModal.setAttribute('aria-hidden', 'false');
-          }
-        }
-      });
-
-      // payment modal close functionality
-      const payModal = document.getElementById('payment-modal');
-      const payCloseBtn = payModal?.querySelector('.close-btn');
-
-      payCloseBtn?.addEventListener('click', () => {
-        if (payModal) {
-          payModal.classList.add('hidden');
-          payModal.setAttribute('aria-hidden', 'true');
-        }
-      });
-
-      payModal?.addEventListener('click', (e) => {
-        if (e.target === payModal) {
-          payModal.classList.add('hidden');
-          payModal.setAttribute('aria-hidden', 'true');
-        }
-      });
-
-      // pay button handler
-      const payBtn = document.getElementById('pay-btn');
-      const thankYouModal = document.getElementById('thank-you-modal');
-      const redirectBtn = document.getElementById('redirect-btn');
-
-      payBtn?.addEventListener('click', () => {
-        const cardName = document.getElementById('card-name').value.trim();
-        const cardNumber = document.getElementById('card-number').value.trim();
-        const cardExpiry = document.getElementById('card-expiry').value.trim();
-        const cardCvv = document.getElementById('card-cvv').value.trim();
-        const shippingName = document.getElementById('shipping-name').value.trim();
-        const shippingStreet = document.getElementById('shipping-street').value.trim();
-        const shippingCity = document.getElementById('shipping-city').value.trim();
-        const shippingPostal = document.getElementById('shipping-postal').value.trim();
-
-        if (cardName && cardNumber && cardExpiry && cardCvv && shippingName && shippingStreet && shippingCity && shippingPostal) {
-          if (payModal) {
-            payModal.classList.add('hidden');
-            payModal.setAttribute('aria-hidden', 'true');
-          }
-          if (thankYouModal) {
-            thankYouModal.classList.remove('hidden');
-            thankYouModal.setAttribute('aria-hidden', 'false');
-          }
-          setTimeout(() => {
-            window.location.href = 'residue-private.html';
-          }, 3000);
-        } else {
-          alert('Please fill in all payment and shipping details.');
-        }
-      });
-
-      redirectBtn?.addEventListener('click', () => {
-        window.location.href = 'residue-private.html';
-      });
-
-      // validation modal close handlers
-      const validationModal = document.getElementById('validation-modal');
-      const validationCloseBtn = validationModal?.querySelector('.close-btn');
-      const validationConfirmBtn = document.getElementById('validation-close-btn');
-
-      function closeValidationModal() {
-        if (validationModal) {
-          validationModal.classList.add('hidden');
-          validationModal.setAttribute('aria-hidden', 'true');
-        }
-      }
-
-      validationCloseBtn?.addEventListener('click', closeValidationModal);
-      validationConfirmBtn?.addEventListener('click', closeValidationModal);
-
-      validationModal?.addEventListener('click', (e) => {
-        if (e.target === validationModal) closeValidationModal();
-      });
-
-      // thank-you modal close on backdrop click (optional)
-      thankYouModal?.addEventListener('click', (e) => {
-        if (e.target === thankYouModal) {
-          thankYouModal.classList.add('hidden');
-          thankYouModal.setAttribute('aria-hidden', 'true');
-        }
-      });
-
-      refreshTotal();
-    });
-  </script>
 </body>
 </html>
+
+
+
