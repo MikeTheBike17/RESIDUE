@@ -80,6 +80,38 @@
       </div>
     </section>
 
+    <section class="pricing-per-card reveal" aria-labelledby="pricing-per-card-title">
+      <div class="container">
+        <div class="pricing-per-card-grid">
+          <div class="pricing-per-card-copy">
+            <div class="eyebrow premium">Pricing</div>
+            <h2 class="h2" id="pricing-per-card-title">Pricing Per Card</h2>
+            <div class="pricing-per-card-list" aria-label="Per-card pricing tiers">
+              <div class="pricing-per-card-item">
+                <span class="pricing-per-card-qty">Quantity 1</span>
+                <span class="pricing-per-card-price">R499</span>
+              </div>
+              <div class="pricing-per-card-item">
+                <span class="pricing-per-card-qty">Quantity 2-4</span>
+                <span class="pricing-per-card-price">R449</span>
+              </div>
+              <div class="pricing-per-card-item">
+                <span class="pricing-per-card-qty">Quantity greater than 4</span>
+                <span class="pricing-per-card-price">R399</span>
+              </div>
+            </div>
+            <p class="muted pricing-per-card-note">Per card for all qualifying quantities.</p>
+            <p class="muted pricing-per-card-note">Customizable front of the card.</p>
+            <p class="muted pricing-per-card-note">Back of the card shown here.</p>
+          </div>
+          <div class="pricing-per-card-media">
+            <div class="card-config-face-label">Back of the card</div>
+            <img class="pricing-per-card-image" src="images/card-images/residue-card-not-a-card-a-signal-product-closeup.png" alt="Back of the Residue card" loading="lazy" decoding="async">
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!--PURCHASE SECTION-->
     <section class="configure reveal" id="purchase" aria-label="Configure your card">
       <div class="container">
@@ -110,25 +142,20 @@
               <button class="card-config-box" type="button" data-card-config="1" aria-pressed="false">
                 <span class="card-config-number">1</span>
                 <span class="card-config-face-label">Front</span>
-                <img class="card-config-image" src="images/residue-card-large-r-logo-product.jpg.jpg" alt="Card configuration 1 front" loading="lazy" decoding="async">
-                <span class="card-config-face-label">Back</span>
-                <img class="card-config-image" src="images/residue-card-nfc-window-feature.jpg.jpg" alt="Card configuration 1 back" loading="lazy" decoding="async">
+                <img class="card-config-image" src="images/card-images/residue-card-large-r-logo-product-closeup.png" alt="Card configuration 1 front" loading="lazy" decoding="async">
               </button>
               <button class="card-config-box" type="button" data-card-config="2" aria-pressed="false">
                 <span class="card-config-number">2</span>
                 <span class="card-config-face-label">Front</span>
-                <img class="card-config-image" src="images/residue-card-not-a-card-a-signal-product.jpg.jpg" alt="Card configuration 2 front" loading="lazy" decoding="async">
-                <span class="card-config-face-label">Back</span>
-                <img class="card-config-image" src="images/residue-card-on-leather-wallet-message-display.jpg.jpg" alt="Card configuration 2 back" loading="lazy" decoding="async">
+                <img class="card-config-image" src="images/card-images/residue-card-nfc-window-feature-closeup.png" alt="Card configuration 2 front" loading="lazy" decoding="async">
               </button>
               <button class="card-config-box" type="button" data-card-config="3" aria-pressed="false">
                 <span class="card-config-number">3</span>
                 <span class="card-config-face-label">Front</span>
-                <img class="card-config-image" src="images/residue-card-leave-your-mark-product.jpg.jpg" alt="Card configuration 3 front" loading="lazy" decoding="async">
-                <span class="card-config-face-label">Back</span>
-                <img class="card-config-image" src="images/residue-card-first-impressions-fade-product.jpg.jpg" alt="Card configuration 3 back" loading="lazy" decoding="async">
+                <img class="card-config-image" src="images/card-images/" alt="Card configuration 3 front" loading="lazy" decoding="async">
               </button>
             </div>
+            <h3 class="h3 card-config-title" id="card-config-title">Add your company logo on the card</h3>
             <button id="custom-logo-toggle" type="button" class="btn btn-outline premium-btn card-config-logo-btn" aria-expanded="false">
               Custom company logo on card +R100
             </button>
@@ -139,7 +166,7 @@
             </div>
           </section>
 
-          <section class="price-summary-block" aria-labelledby="price-summary-title">
+          <section class="price-summary-block" aria-labelledby="price-summary-title" style="margin-top: -6rem;">
             <div class="eyebrow premium" id="price-summary-title">Price</div>
             <div class="price-summary-amount" id="configure-price">R0</div>
             <p class="muted small price-summary-note" id="configure-price-note">Select a quantity and card configuration.</p>

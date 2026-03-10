@@ -414,7 +414,7 @@ header.scrolled {
   text-align: center;
   padding: 20vh 24px 18vh;
   overflow: hidden;
-  background-image: url('../images/residue-cards-fanned-macro-shallow-focus.jpg.jpg');
+  background-image: url('../images/residue-cards-fanned-macro-shallow-focus.webp');
   background-image: image-set(
     url('../images/residue-cards-fanned-macro-shallow-focus.webp') type('image/webp'),
     url('../images/residue-cards-fanned-macro-shallow-focus.jpg.jpg') type('image/jpeg')
@@ -426,7 +426,7 @@ header.scrolled {
 
 /* Page-specific hero overrides */
 body.how-page .hero {
-  background-image: url('../images/residue-card-tap-interaction-hand..jpg');
+  background-image: url('../images/residue-card-tap-interaction-hand..webp');
   background-image: image-set(
     url('../images/residue-card-tap-interaction-hand..webp') type('image/webp'),
     url('../images/residue-card-tap-interaction-hand..jpg') type('image/jpeg')
@@ -690,13 +690,13 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 
 /* pricing tweaks */
 .card-configurator {
-  margin-top: 12px;
+  margin-top: 4px;
   display: grid;
   gap: 18px;
 }
 
 .configure-form #quantity + .card-configurator {
-  margin-top: -2px;
+  margin-top: -10px;
 }
 
 .card-config-title {
@@ -752,7 +752,7 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 }
 
 .card-config-face-label {
-  margin-top: 18px;
+  margin-top: 28px;
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 700;
@@ -780,6 +780,10 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   border: 1px solid var(--border);
   border-radius: 14px;
   background: rgba(255,255,255,0.02);
+}
+
+.card-config-logo-panel[hidden] {
+  display: none;
 }
 
 .price-summary-block {
@@ -1275,7 +1279,7 @@ input:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: url('../images/leather-wallet-multitool-overhead-residue-brand.jpg.jpg');
+  background-image: url('../images/leather-wallet-multitool-overhead-residue-brand.webp');
   background-image: image-set(
     url('../images/leather-wallet-multitool-overhead-residue-brand.webp') type('image/webp'),
     url('../images/leather-wallet-multitool-overhead-residue-brand.jpg.jpg') type('image/jpeg')
@@ -1795,7 +1799,7 @@ input:focus, textarea:focus {
 
 /* Premium hero */
 .premium-hero {
-  background-image: url('../images/arcitecture of old greek.jpg');
+  background-image: url('../images/arcitecture of old greek.webp');
   background-image: image-set(
     url('../images/arcitecture of old greek.webp') type('image/webp'),
     url('../images/arcitecture of old greek.jpg') type('image/jpeg')
@@ -1966,6 +1970,13 @@ input:focus, textarea:focus {
   .support-sep {
     display: none;
   }
+  .pricing-per-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .pricing-per-card-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .brand-immersion .h2 {
@@ -2011,6 +2022,70 @@ input:focus, textarea:focus {
   font-weight: 600;
   letter-spacing: 0.04em;
   margin-bottom: 6px;
+}
+
+.pricing-per-card {
+  padding: 120px 24px;
+}
+
+.pricing-per-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  gap: 32px;
+  align-items: center;
+}
+
+.pricing-per-card-copy {
+  display: grid;
+  gap: 16px;
+}
+
+.pricing-per-card-list {
+  display: grid;
+  gap: 14px;
+}
+
+.pricing-per-card-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+}
+
+.pricing-per-card-qty {
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pricing-per-card-price {
+  color: var(--accent-premium);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.pricing-per-card-note {
+  margin: 0;
+}
+
+.pricing-per-card-media {
+  display: grid;
+  gap: 14px;
+}
+
+.pricing-per-card-image {
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 1.58 / 1;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  box-shadow: 0 18px 42px rgba(0,0,0,0.28);
 }
 
 @keyframes premiumDrift {
@@ -2431,7 +2506,7 @@ body::after { opacity: 0.04; }
   background-color: #050505;
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.9)),
-    url('../images/leather-wallet-multitool-residue-card-edc.jpg');
+    url('../images/leather-wallet-multitool-residue-card-edc.webp');
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.9)),
     image-set(
