@@ -144,7 +144,6 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   object-fit: cover;
   display: inline-flex;
   margin: 0 0 18px 0; 
-  border-radius: 22px;
   background: transparent;
   border: 1px solid var(--lt-avatar-border, rgba(255,255,255,0.18));
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
