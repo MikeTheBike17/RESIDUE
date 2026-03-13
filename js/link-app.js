@@ -173,9 +173,44 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const value = String(raw || '').trim();
     if (!value) return '';
     const match = value.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
-    if (!match) return '';
-    const lat = Number(match[1]);
-    const lng = Number(match[2]);
+    let lat = null;
+    let lng = null;
+
+    if (match) {
+      lat = Number(match[1]);
+      lng = Number(match[2]);
+    } else {
+      const dmsMatches = [...value.matchAll(/(\d{1,3})\s*°\s*(\d{1,2})\s*['’]\s*(\d{1,2}(?:\.\d+)?)\s*["”]?\s*([NSEW])/gi)];
+      if (dmsMatches.length === 2) {
+        const dmsToDecimal = ([, degRaw, minRaw, secRaw, dirRaw]) => {
+          const degrees = Number(degRaw);
+          const minutes = Number(minRaw);
+          const seconds = Number(secRaw);
+          const direction = String(dirRaw || '').toUpperCase();
+          if (![degrees, minutes, seconds].every(Number.isFinite)) return null;
+          if (minutes >= 60 || seconds >= 60) return null;
+          let decimal = degrees + minutes / 60 + seconds / 3600;
+          if (direction === 'S' || direction === 'W') decimal *= -1;
+          return decimal;
+        };
+
+        const firstDir = dmsMatches[0][4].toUpperCase();
+        const secondDir = dmsMatches[1][4].toUpperCase();
+        const firstValue = dmsToDecimal(dmsMatches[0]);
+        const secondValue = dmsToDecimal(dmsMatches[1]);
+
+        if (firstValue != null && secondValue != null) {
+          if ('NS'.includes(firstDir) && 'EW'.includes(secondDir)) {
+            lat = firstValue;
+            lng = secondValue;
+          } else if ('EW'.includes(firstDir) && 'NS'.includes(secondDir)) {
+            lng = firstValue;
+            lat = secondValue;
+          }
+        }
+      }
+    }
+
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return '';
     return `${lat},${lng}`;
@@ -1478,7 +1513,7 @@ async function ensureLocalDraftForUser(user) {
         if (!profile.name) return showStatusEl(statusEl, 'Name is required.', 'error');
         const locationCoordinates = getValue('location-coordinates');
         if (locationCoordinates && !normalizeCoordinates(locationCoordinates)) {
-          return showStatusEl(statusEl, 'Location coordinates must be in "latitude, longitude" format.', 'error');
+          return showStatusEl(statusEl, 'Location must be decimal "latitude, longitude" or DMS like 25°56\'06.9"S 28°08\'41.3"E.', 'error');
         }
         const links = collectLinks();
         showStatusEl(statusEl, 'Saving...', 'loading');
