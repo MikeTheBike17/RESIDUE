@@ -263,6 +263,136 @@ body.drop-page .card img {
   mask-composite: intersect;
 }
 
+.drop-guide {
+  display: grid;
+  gap: 42px;
+  margin-bottom: 48px;
+  padding: 34px 32px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.drop-guide-header {
+  display: grid;
+  gap: 10px;
+  max-width: 760px;
+}
+
+.drop-guide-eyebrow {
+  margin: 0;
+  color: var(--accent-premium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+
+.drop-guide-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+
+.drop-guide-intro {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 1.04rem;
+}
+
+.drop-guide-group {
+  display: grid;
+  gap: calc(22px + 1rem);
+}
+
+.drop-guide-group + .drop-guide-group {
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.drop-guide-group-head {
+  display: grid;
+  gap: 6px;
+}
+
+.drop-guide-label {
+  margin: 0;
+  color: var(--accent-premium);
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.drop-guide-group-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  letter-spacing: -0.02em;
+}
+
+.drop-guide-step {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(300px, 1.05fr);
+  gap: 24px;
+  align-items: center;
+  padding: 22px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+}
+
+.drop-guide-step-reverse {
+  grid-template-columns: minmax(300px, 1.05fr) minmax(0, 0.95fr);
+}
+
+.drop-guide-step-reverse .drop-guide-copy {
+  order: 2;
+}
+
+.drop-guide-step-reverse .drop-guide-visual {
+  order: 1;
+}
+
+.drop-guide-copy {
+  display: grid;
+  gap: 12px;
+  padding: 4px 4px 4px 2px;
+}
+
+.drop-guide-copy p {
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 90%, var(--muted));
+  font-size: clamp(1rem, 1.8vw, 1.08rem);
+  line-height: 1.75;
+}
+
+.drop-guide-visual {
+  margin: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(216,176,122,0.72);
+  background: rgba(216,176,122,0.14);
+  box-shadow: none;
+  padding: 2px;
+}
+
+.drop-guide-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.drop-guide-visual-compact {
+  width: min(280px, 100%);
+  justify-self: center;
+}
+
+.drop-window-section {
+  margin-top: 3rem;
+}
+
 body.contact-page {
   background-color: #050505;
   background-image:
@@ -731,6 +861,66 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 
 .btn-outline {
   border-color: var(--text);
+}
+
+.how-card-cta-section {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 24px 18px 8px;
+}
+
+.how-card-cta-copy {
+  margin: 0;
+  max-width: 50ch;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.how-card-cta-row {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.how-card-cta-arrow {
+  position: absolute;
+  right: calc(100% + 24px);
+  top: 50%;
+  display: inline-block;
+  width: 48px;
+  height: 12px;
+  color: var(--accent-premium);
+  animation: ctaArrowNudge 1.6s ease-in-out infinite;
+  transform: translateY(-50%);
+}
+
+.how-card-cta-arrow::before,
+.how-card-cta-arrow::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  display: block;
+}
+
+.how-card-cta-arrow::before {
+  left: 0;
+  width: 34px;
+  height: 1px;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+.how-card-cta-arrow::after {
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-top: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  transform: translateY(-50%) rotate(45deg);
 }
 
 /* Layout blocks */
@@ -2225,6 +2415,11 @@ input:focus, textarea:focus {
   50% { opacity: 1; transform: scaleX(1.05); }
 }
 
+@keyframes ctaArrowNudge {
+  0%, 100% { transform: translateX(0); opacity: 0.72; }
+  50% { transform: translateX(8px); opacity: 1; }
+}
+
 .gate-form {
   margin-top: 18px;
   display: grid;
@@ -2367,6 +2562,22 @@ footer {
   .tap-list li {
     max-width: 260px;
   }
+
+  .drop-guide {
+    padding: 26px 20px;
+    gap: 32px;
+  }
+
+  .drop-guide-step,
+  .drop-guide-step-reverse {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .drop-guide-step-reverse .drop-guide-copy,
+  .drop-guide-step-reverse .drop-guide-visual {
+    order: initial;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2462,6 +2673,20 @@ footer {
 
   .panel {
     padding: 0;
+  }
+
+  .drop-guide {
+    padding: 22px 16px;
+    border-radius: 16px;
+  }
+
+  .drop-guide-step {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .drop-guide-title {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
   }
 }
 

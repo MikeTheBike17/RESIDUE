@@ -53,7 +53,7 @@
 
   // Intersection Observer reveal
   if (!prefersReducedMotion && 'IntersectionObserver' in window) {
-    const revealEls = document.querySelectorAll('.reveal');
+    const revealEls = document.querySelectorAll('.reveal:not(.reveal-late)');
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -64,6 +64,20 @@
     }, { threshold: 0.18 });
 
     revealEls.forEach(el => observer.observe(el));
+
+    const lateRevealEls = document.querySelectorAll('.reveal-late');
+    if (lateRevealEls.length) {
+      const lateObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            lateObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.42 });
+
+      lateRevealEls.forEach(el => lateObserver.observe(el));
+    }
   } else {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
   }
