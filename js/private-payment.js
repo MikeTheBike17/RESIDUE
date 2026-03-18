@@ -171,6 +171,25 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return u.toString();
   }
 
+  function buildSupabaseFunctionsBaseUrl() {
+    if (!cfg.SUPABASE_URL) return "";
+    try {
+      const url = new URL(cfg.SUPABASE_URL);
+      return `${url.origin}/functions/v1`;
+    } catch {
+      return "";
+    }
+  }
+
+  function getPayFastPublicConfig() {
+    const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
+    return {
+      returnUrl: buildReturnUrl("residue-private.html", "success"),
+      cancelUrl: buildReturnUrl("residue-private.html", "cancelled"),
+      notifyUrl: functionsBaseUrl ? `${functionsBaseUrl}/payfast-notify` : ""
+    };
+  }
+
   async function getAuthenticatedUser() {
     if (!supabase) return null;
     const { data: { session } } = await supabase.auth.getSession();
@@ -249,22 +268,23 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function configurePayFastForm(order) {
-    const merchantId = cfg.PAYFAST_MERCHANT_ID || "";
-    const merchantKey = cfg.PAYFAST_MERCHANT_KEY || "";
-    const notifyUrl = cfg.PAYFAST_NOTIFY_URL || "";
-    const returnUrl = cfg.PAYFAST_RETURN_URL || buildReturnUrl("residue-private.html", "success");
-    const cancelUrl = cfg.PAYFAST_CANCEL_URL || buildReturnUrl("residue-private.html", "cancelled");
-    if (!merchantId || !merchantKey || !notifyUrl) {
-      throw new Error("Missing PayFast config in js/env.js (merchant id/key/notify url).");
+    const merchantId = (pfFields.merchantId?.value || "").trim();
+    const merchantKey = (pfFields.merchantKey?.value || "").trim();
+    const publicConfig = getPayFastPublicConfig();
+    if (!merchantId || !merchantKey) {
+      throw new Error("PayFast checkout is not configured yet. Store merchant credentials as Supabase Edge Function secrets before enabling payments.");
+    }
+    if (!publicConfig.notifyUrl) {
+      throw new Error("PayFast notify URL could not be derived from SUPABASE_URL.");
     }
 
     const names = splitName(order.customer_name);
 
     pfFields.merchantId.value = merchantId;
     pfFields.merchantKey.value = merchantKey;
-    pfFields.notifyUrl.value = notifyUrl;
-    pfFields.returnUrl.value = returnUrl;
-    pfFields.cancelUrl.value = cancelUrl;
+    pfFields.notifyUrl.value = publicConfig.notifyUrl;
+    pfFields.returnUrl.value = publicConfig.returnUrl;
+    pfFields.cancelUrl.value = publicConfig.cancelUrl;
     pfFields.nameFirst.value = names.first;
     pfFields.nameLast.value = names.last;
     pfFields.email.value = order.customer_email;

@@ -254,6 +254,7 @@
             <button id="pay-btn" class="btn btn-outline premium-btn" type="button">Continue to PayFast</button>
 
             <form id="payfast-form" action="https://www.payfast.co.za/eng/process" method="post" style="display:none;">
+              <!-- Merchant credentials should be injected from a trusted server path, not committed to client config. -->
               <input type="hidden" name="merchant_id" id="pf-merchant-id">
               <input type="hidden" name="merchant_key" id="pf-merchant-key">
               <input type="hidden" name="return_url" id="pf-return-url">
