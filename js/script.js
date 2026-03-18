@@ -291,7 +291,6 @@
     const CURRENT_USER_KEY = "residue_current_user";
     const MANAGER_ACCESS_KEY = "residue_manager_access";
     const MANAGER_EMAIL = "check.email@residue.com";
-    const MANAGER_PASSWORD = "Mike&Lim1";
     const PRIVATE_PAGE = "residue-private.html";
     const CARD_URLS_PAGE = "card-urls.html";
     const DEFAULT_PROFILE_NAME = "Your name";
@@ -514,39 +513,7 @@
 
       const email = normalizeEmail($("#signin-email")?.value || "");
       const password = $("#signin-password")?.value || "";
-      const managerEmail = MANAGER_EMAIL.toLowerCase();
       logAuth({ action: 'signin', outcome: 'attempt', email, detail: 'Sign in submitted.' });
-
-      if (email === managerEmail && password === MANAGER_PASSWORD) {
-        const supabase = await getSupabaseClient();
-        if (!supabase) {
-          logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Supabase not configured for manager access.' });
-          return setStatus(signinStatus, "Auth is not configured yet. Contact support.", true);
-        }
-
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          logAuth({ action: 'signin', outcome: 'failure', email, detail: error.message || 'Manager sign in failed.' });
-          return setStatus(signinStatus, error.message || "Could not sign in.", true);
-        }
-
-        if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);
-
-        localStorage.setItem(CURRENT_USER_KEY, (data?.user?.email || email).toLowerCase());
-        localStorage.setItem(MANAGER_ACCESS_KEY, JSON.stringify({
-          email: (data?.user?.email || email).toLowerCase(),
-          granted_at: new Date().toISOString()
-        }));
-        logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via manager credentials.' });
-        setStatus(signinStatus, "Signed in.", true);
-
-        setTimeout(() => {
-          closeAuthModal();
-          signinForm.reset();
-          window.location.href = CARD_URLS_PAGE;
-        }, 500);
-        return;
-      }
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Invalid email format.' });
@@ -571,14 +538,29 @@
 
       if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);
 
-      localStorage.setItem(CURRENT_USER_KEY, (data?.user?.email || email).toLowerCase());
-      logAuth({ action: 'signin', outcome: 'success', email, detail: 'Signed in via Supabase auth.' });
+      const signedInEmail = (data?.user?.email || email).toLowerCase();
+      const isManager = signedInEmail === MANAGER_EMAIL.toLowerCase();
+      localStorage.setItem(CURRENT_USER_KEY, signedInEmail);
+      if (isManager) {
+        localStorage.setItem(MANAGER_ACCESS_KEY, JSON.stringify({
+          email: signedInEmail,
+          granted_at: new Date().toISOString()
+        }));
+      } else {
+        localStorage.removeItem(MANAGER_ACCESS_KEY);
+      }
+      logAuth({
+        action: 'signin',
+        outcome: 'success',
+        email,
+        detail: isManager ? 'Signed in via Supabase auth as manager.' : 'Signed in via Supabase auth.'
+      });
       setStatus(signinStatus, "Signed in.", true);
 
       setTimeout(() => {
         closeAuthModal();
         signinForm.reset();
-        window.location.href = PRIVATE_PAGE;
+        window.location.href = isManager ? CARD_URLS_PAGE : PRIVATE_PAGE;
       }, 500);
     });
 
