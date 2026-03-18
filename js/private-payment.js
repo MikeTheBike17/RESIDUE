@@ -81,6 +81,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   let customLogoDataUrl = "";
   let customLogoMeta = null;
   let pendingTermsOrder = null;
+  let payFastCredentialsPromise = null;
 
   function setStatus(el, message, type = "") {
     if (!el) return;
@@ -190,6 +191,52 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     };
   }
 
+  async function getPayFastCredentials() {
+    if (payFastCredentialsPromise) return payFastCredentialsPromise;
+
+    payFastCredentialsPromise = (async () => {
+      if (!supabase) throw new Error("Supabase is not configured in js/env.js.");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("Sign in before starting a PayFast checkout.");
+      }
+
+      const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
+      if (!functionsBaseUrl) {
+        throw new Error("Could not determine the Supabase Functions URL.");
+      }
+
+      const response = await fetch(`${functionsBaseUrl}/payfast-config`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: cfg.SUPABASE_ANON_KEY || "",
+          Accept: "application/json"
+        }
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.error || "Could not load PayFast checkout configuration.");
+      }
+
+      const merchantId = String(payload?.merchantId || "").trim();
+      const merchantKey = String(payload?.merchantKey || "").trim();
+      if (!merchantId || !merchantKey) {
+        throw new Error("PayFast checkout configuration is incomplete.");
+      }
+
+      return { merchantId, merchantKey };
+    })();
+
+    try {
+      return await payFastCredentialsPromise;
+    } catch (error) {
+      payFastCredentialsPromise = null;
+      throw error;
+    }
+  }
+
   async function getAuthenticatedUser() {
     if (!supabase) return null;
     const { data: { session } } = await supabase.auth.getSession();
@@ -267,13 +314,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (error) throw new Error(`Could not update invoice in Supabase: ${error.message}`);
   }
 
-  function configurePayFastForm(order) {
-    const merchantId = (pfFields.merchantId?.value || "").trim();
-    const merchantKey = (pfFields.merchantKey?.value || "").trim();
+  async function configurePayFastForm(order) {
+    const { merchantId, merchantKey } = await getPayFastCredentials();
     const publicConfig = getPayFastPublicConfig();
-    if (!merchantId || !merchantKey) {
-      throw new Error("PayFast checkout is not configured yet. Store merchant credentials as Supabase Edge Function secrets before enabling payments.");
-    }
     if (!publicConfig.notifyUrl) {
       throw new Error("PayFast notify URL could not be derived from SUPABASE_URL.");
     }
@@ -542,7 +585,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         detail: "Order and invoice inserted in Supabase."
       });
       persistPending(order);
-      configurePayFastForm(order);
+      await configurePayFastForm(order);
       residueTelemetry.logPurchaseEvent({
         stage: "redirect_payfast",
         outcome: "success",
