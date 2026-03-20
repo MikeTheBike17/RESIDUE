@@ -2135,6 +2135,13 @@ input:focus, textarea:focus {
   justify-content: flex-end;
 }
 
+.purchase-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 /* order summary styling */
 .order-summary {
   border: 1px solid var(--border-strong);

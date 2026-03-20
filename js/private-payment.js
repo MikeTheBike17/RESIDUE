@@ -6,7 +6,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   const ORDER_TABLE = cfg.SUPABASE_ORDERS_TABLE || "orders";
   const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || "purchase_invoices";
   const CARD_CONFIG_TABLE = "card_configs";
-  const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 99);
+  const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 120);
   const PAYFAST_PROCESS_URL = cfg.PAYFAST_PROCESS_URL || "https://www.payfast.co.za/eng/process";
   const PENDING_ORDER_KEY = "residue_pending_order";
 
@@ -47,15 +47,24 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     total: qs("#modal-total"),
     shippingName: qs("#shipping-name"),
     shippingStreet: qs("#shipping-street"),
+    shippingSuburb: qs("#shipping-suburb"),
     shippingCity: qs("#shipping-city"),
     shippingPostal: qs("#shipping-postal"),
-    payBtn: qs("#pay-btn"),
+    shippingNextBtn: qs("#shipping-next-btn"),
     payfastStatus: qs("#payfast-status"),
+    payfastConfirmModal: qs("#payfast-confirm-modal"),
+    payfastConfirmClose: qs("#payfast-confirm-modal .close-btn"),
+    payfastSubtotal: qs("#payfast-subtotal"),
+    payfastShipping: qs("#payfast-shipping"),
+    payfastTotal: qs("#payfast-total"),
+    payfastBackBtn: qs("#payfast-back-btn"),
+    payfastContinueBtn: qs("#payfast-continue-btn"),
     payfastForm: qs("#payfast-form"),
     thankYouModal: qs("#thank-you-modal"),
     thankYouInvoice: qs("#thank-you-invoice"),
     thankYouPaymentStatus: qs("#thank-you-payment-status"),
-    redirectBtn: qs("#redirect-btn")
+    redirectBtn: qs("#redirect-btn"),
+    termsBackBtn: qs("#terms-back-btn")
   };
 
   const pfFields = {
@@ -101,6 +110,11 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (!el) return;
     el.classList.add("hidden");
     el.setAttribute("aria-hidden", "true");
+  }
+
+  function showPurchaseStep(nextModal, previousModal = null) {
+    if (previousModal) closeModal(previousModal);
+    openModal(nextModal);
   }
 
   function formatCurrency(value) {
@@ -260,6 +274,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       payment_status: order.payment_status,
       shipping_name: order.shipping_name,
       shipping_street: order.shipping_street,
+      shipping_suburb: order.shipping_suburb,
       shipping_city: order.shipping_city,
       shipping_postal: order.shipping_postal,
       created_at: order.created_at
@@ -282,6 +297,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       custom_logo_image: customLogoDataUrl || null,
       shipping_name: order.shipping_name,
       shipping_street: order.shipping_street,
+      shipping_suburb: order.shipping_suburb,
       shipping_city: order.shipping_city,
       shipping_postal: order.shipping_postal,
       payment_provider: order.payment_provider,
@@ -374,6 +390,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (els.subtotal) els.subtotal.textContent = formatCurrency(subtotal);
     if (els.shipping) els.shipping.textContent = formatCurrency(shipping);
     if (els.total) els.total.textContent = formatCurrency(total);
+    if (els.payfastSubtotal) els.payfastSubtotal.textContent = formatCurrency(subtotal);
+    if (els.payfastShipping) els.payfastShipping.textContent = formatCurrency(shipping);
+    if (els.payfastTotal) els.payfastTotal.textContent = formatCurrency(total);
   }
 
   function updatePriceDisplay() {
@@ -518,15 +537,16 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       els.shippingName.value = (els.fullName?.value || "").trim();
     }
     setStatus(els.payfastStatus, "");
-    openModal(els.paymentModal);
+    showPurchaseStep(els.paymentModal);
   }
 
-  async function onPayFastClick() {
+  async function onShippingNextClick() {
     const shippingName = (els.shippingName?.value || "").trim();
     const shippingStreet = (els.shippingStreet?.value || "").trim();
+    const shippingSuburb = (els.shippingSuburb?.value || "").trim();
     const shippingCity = (els.shippingCity?.value || "").trim();
     const shippingPostal = (els.shippingPostal?.value || "").trim();
-    if (!shippingName || !shippingStreet || !shippingCity || !shippingPostal) {
+    if (!shippingName || !shippingStreet || !shippingSuburb || !shippingCity || !shippingPostal) {
       residueTelemetry.logPurchaseEvent({
         stage: "shipping_validate",
         outcome: "failure",
@@ -556,12 +576,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       payment_status: "PENDING",
       shipping_name: shippingName,
       shipping_street: shippingStreet,
+      shipping_suburb: shippingSuburb,
       shipping_city: shippingCity,
       shipping_postal: shippingPostal,
       created_at: new Date().toISOString()
     };
 
-    openModal(els.termsModal);
+    showPurchaseStep(els.termsModal, els.paymentModal);
   }
 
   async function proceedToPayFast(order) {
@@ -681,17 +702,41 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
     els.termsClose?.addEventListener("click", dismissTermsModal);
     els.termsDisagreeBtn?.addEventListener("click", dismissTermsModal);
+    els.termsBackBtn?.addEventListener("click", () => {
+      closeModal(els.termsModal);
+      openModal(els.paymentModal);
+    });
     els.termsAgreeBtn?.addEventListener("click", async () => {
       if (!pendingTermsOrder) {
         closeModal(els.termsModal);
         return;
       }
-      closeModal(els.termsModal);
-      await proceedToPayFast(pendingTermsOrder);
-      pendingTermsOrder = null;
+      showPurchaseStep(els.payfastConfirmModal, els.termsModal);
     });
     els.termsModal?.addEventListener("click", (e) => {
       if (e.target === els.termsModal) dismissTermsModal();
+    });
+
+    const dismissPayFastConfirm = () => {
+      closeModal(els.payfastConfirmModal);
+    };
+
+    els.payfastConfirmClose?.addEventListener("click", dismissPayFastConfirm);
+    els.payfastBackBtn?.addEventListener("click", () => {
+      closeModal(els.payfastConfirmModal);
+      openModal(els.termsModal);
+    });
+    els.payfastContinueBtn?.addEventListener("click", async () => {
+      if (!pendingTermsOrder) {
+        dismissPayFastConfirm();
+        return;
+      }
+      closeModal(els.payfastConfirmModal);
+      await proceedToPayFast(pendingTermsOrder);
+      pendingTermsOrder = null;
+    });
+    els.payfastConfirmModal?.addEventListener("click", (e) => {
+      if (e.target === els.payfastConfirmModal) dismissPayFastConfirm();
     });
 
     const validationClose = qs("#validation-modal .close-btn");
@@ -711,7 +756,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     wireCustomLogoToggle();
     wireModalClose();
     els.purchaseBtn?.addEventListener("click", onPurchaseClick);
-    els.payBtn?.addEventListener("click", onPayFastClick);
+    els.shippingNextBtn?.addEventListener("click", onShippingNextClick);
     els.quantity?.addEventListener("input", updatePriceDisplay);
     els.redirectBtn?.addEventListener("click", () => {
       window.location.href = "residue-private.html";

@@ -188,6 +188,7 @@ create table if not exists public.purchase_invoices (
   custom_logo_image text,
   shipping_name text,
   shipping_street text,
+  shipping_suburb text,
   shipping_city text,
   shipping_postal text,
   payment_provider text,
@@ -232,6 +233,8 @@ alter table public.purchase_invoices
   add column if not exists shipping_name text;
 alter table public.purchase_invoices
   add column if not exists shipping_street text;
+alter table public.purchase_invoices
+  add column if not exists shipping_suburb text;
 alter table public.purchase_invoices
   add column if not exists shipping_city text;
 alter table public.purchase_invoices

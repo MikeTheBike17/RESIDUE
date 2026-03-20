@@ -227,9 +227,22 @@
               <span class="purchase-step-line" aria-hidden="true"></span>
               <span class="purchase-step">4</span>
             </div>
-            <div class="eyebrow premium">PayFast Checkout</div>
-            <p class="muted small">Secure bank payment powered by PayFast.</p>
+            <div class="eyebrow premium">Delivery</div>
+              <p class="muted small">Enter the destination details for your card order.</p>
 
+              <!-- Shipping Address -->
+              <label for="shipping-name">Full Name</label>
+              <input id="shipping-name" name="shipping-name" type="text" placeholder="Full Name" required>
+              <label for="shipping-street">Street Address</label>
+              <input id="shipping-street" name="shipping-street" type="text" placeholder="Street Address" required>
+              <label for="shipping-suburb">Suburb</label>
+              <input id="shipping-suburb" name="shipping-suburb" type="text" placeholder="Suburb" required>
+              <label for="shipping-city">City</label>
+              <input id="shipping-city" name="shipping-city" type="text" placeholder="City" required>
+              <label for="shipping-postal">Postal Code</label>
+              <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
+            <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
+            
             <!-- Order Summary -->
             <div class="order-summary">
               <div class="summary-line">
@@ -238,49 +251,17 @@
               </div>
               <div class="summary-line">
                 <span>Shipping</span>
-                <span id="modal-shipping">R99</span>
+                <span id="modal-shipping">R120</span>
               </div>
               <div class="summary-line total">
                 <span>Total Due</span>
-                <span id="modal-total">R99</span>
+                <span id="modal-total">R120</span>
               </div>
             </div>
-
-            <!-- Shipping Address -->
-            <label for="shipping-name">Full Name</label>
-            <input id="shipping-name" name="shipping-name" type="text" placeholder="Full Name" required>
-
-            <label for="shipping-street">Street Address</label>
-            <input id="shipping-street" name="shipping-street" type="text" placeholder="Street Address" required>
-
-            <label for="shipping-city">City</label>
-            <input id="shipping-city" name="shipping-city" type="text" placeholder="City" required>
-
-            <label for="shipping-postal">Postal Code</label>
-            <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
-
-            <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
-            <button id="pay-btn" class="btn btn-outline premium-btn" type="button">Continue to PayFast</button>
-
-            <form id="payfast-form" action="https://www.payfast.co.za/eng/process" method="post" style="display:none;">
-              <!-- Merchant credentials should be injected from a trusted server path, not committed to client config. -->
-              <input type="hidden" name="merchant_id" id="pf-merchant-id">
-              <input type="hidden" name="merchant_key" id="pf-merchant-key">
-              <input type="hidden" name="return_url" id="pf-return-url">
-              <input type="hidden" name="cancel_url" id="pf-cancel-url">
-              <input type="hidden" name="notify_url" id="pf-notify-url">
-              <input type="hidden" name="name_first" id="pf-name-first">
-              <input type="hidden" name="name_last" id="pf-name-last">
-              <input type="hidden" name="email_address" id="pf-email">
-              <input type="hidden" name="m_payment_id" id="pf-payment-id">
-              <input type="hidden" name="amount" id="pf-amount">
-              <input type="hidden" name="item_name" id="pf-item-name">
-              <input type="hidden" name="item_description" id="pf-item-description">
-              <input type="hidden" name="custom_str1" id="pf-custom-invoice">
-              <input type="hidden" name="custom_str2" id="pf-custom-email">
-              <input type="hidden" name="custom_str3" id="pf-custom-product">
-              <input type="hidden" name="custom_str4" id="pf-custom-qty">
-            </form>
+            
+            <div class="purchase-modal-actions">
+              <button id="shipping-next-btn" class="btn btn-outline premium-btn" type="button">Review Terms</button>
+            </div>
           </div>
         </section>
       </div>
@@ -299,7 +280,7 @@
             <span class="purchase-step-line" aria-hidden="true"></span>
             <span class="purchase-step">4</span>
           </div>
-          <h3 class="terms-title">T&amp;C's</h3>
+          <h3 class="terms-title">Terms &amp; Conditions</h3>
           <div class="terms-scroll-box" id="terms-scroll-box">
             <p>By proceeding with payment, you confirm that all purchase, shipping, and card configuration details submitted are accurate and complete.</p>
             <p>Residue card production only starts after successful payment confirmation. Lead times may vary depending on production volume, logo preparation, and delivery region.</p>
@@ -312,12 +293,71 @@
             <p>Proceeding to PayFast means you agree to these terms and consent to Residue storing the relevant purchase, shipping, and card configuration data needed to fulfill your order.</p>
           </div>
           <div class="terms-actions">
-            <button id="terms-disagree-btn" class="btn btn-outline premium-btn" type="button">Disagree</button>
-            <button id="terms-agree-btn" class="btn btn-outline premium-btn" type="button">Agree</button>
+            <button id="terms-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+            <button id="terms-disagree-btn" class="btn btn-outline premium-btn" type="button">Exit</button>
+            <button id="terms-agree-btn" class="btn btn-outline premium-btn" type="button">Continue to Payment</button>
           </div>
         </div>
       </div>
     </div>
+
+    <div id="payfast-confirm-modal" class="pay-modal hidden" aria-hidden="true">
+      <div class="modal-content terms-modal-content">
+        <button class="close-btn" aria-label="Close PayFast step">&times;</button>
+        <div class="stack" style="gap:16px;">
+          <div class="purchase-step-indicator" aria-label="Purchase flow step 4 of 4">
+            <span class="purchase-step is-complete">1</span>
+            <span class="purchase-step-line is-complete" aria-hidden="true"></span>
+            <span class="purchase-step is-complete">2</span>
+            <span class="purchase-step-line is-complete" aria-hidden="true"></span>
+            <span class="purchase-step is-complete">3</span>
+            <span class="purchase-step-line is-complete" aria-hidden="true"></span>
+            <span class="purchase-step is-active" aria-current="step">4</span>
+          </div>
+          <h3 class="terms-title">Secure Payment</h3>
+          <p class="muted">You are about to leave Residue and complete your order through PayFast.</p>
+          <div class="order-summary">
+            <div class="summary-line">
+              <span>Subtotal</span>
+              <span id="payfast-subtotal">R0</span>
+            </div>
+            <div class="summary-line">
+              <span>Shipping</span>
+              <span id="payfast-shipping">R120</span>
+            </div>
+            <div class="summary-line total">
+              <span>Total Due</span>
+              <span id="payfast-total">R120</span>
+            </div>
+          </div>
+          <div class="purchase-modal-actions">
+            <button id="payfast-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+            <button id="payfast-continue-btn" class="btn btn-outline premium-btn" type="button">Proceed to PayFast</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--Payfast Form-->
+    <form id="payfast-form" action="https://www.payfast.co.za/eng/process" method="post" style="display:none;">
+      <!-- Merchant credentials should be injected from a trusted server path, not committed to client config. -->
+      <input type="hidden" name="merchant_id" id="pf-merchant-id">
+      <input type="hidden" name="merchant_key" id="pf-merchant-key">
+      <input type="hidden" name="return_url" id="pf-return-url">
+      <input type="hidden" name="cancel_url" id="pf-cancel-url">
+      <input type="hidden" name="notify_url" id="pf-notify-url">
+      <input type="hidden" name="name_first" id="pf-name-first">
+      <input type="hidden" name="name_last" id="pf-name-last">
+      <input type="hidden" name="email_address" id="pf-email">
+      <input type="hidden" name="m_payment_id" id="pf-payment-id">
+      <input type="hidden" name="amount" id="pf-amount">
+      <input type="hidden" name="item_name" id="pf-item-name">
+      <input type="hidden" name="item_description" id="pf-item-description">
+      <input type="hidden" name="custom_str1" id="pf-custom-invoice">
+      <input type="hidden" name="custom_str2" id="pf-custom-email">
+      <input type="hidden" name="custom_str3" id="pf-custom-product">
+      <input type="hidden" name="custom_str4" id="pf-custom-qty">
+    </form>
 
     <!-- Thank You Modal -->
     <div id="thank-you-modal" class="pay-modal hidden" aria-hidden="true">
