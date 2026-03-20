@@ -2611,6 +2611,26 @@ footer {
     grid-template-columns: 1fr;
   }
 
+   .pricing-per-card-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .pricing-per-card-copy {
+    order: 1;
+  }
+
+  .pricing-per-card-media {
+    order: 2;
+    justify-items: start;
+    margin-top: 6px;
+  }
+
+  .pricing-per-card-image {
+    max-width: 100%;
+  }
+
   .one-tap-cards {
     grid-template-columns: 1fr;
   }
