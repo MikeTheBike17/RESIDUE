@@ -3,7 +3,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
 (() => {
   const cfg = window.env || {};
-  const ORDER_TABLE = cfg.SUPABASE_ORDERS_TABLE || "orders";
   const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || "purchase_invoices";
   const CARD_CONFIG_TABLE = "card_configs";
   const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 120);
@@ -263,32 +262,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return session?.user || null;
   }
 
-  async function insertOrder(order) {
-    if (!supabase) throw new Error("Supabase is not configured in js/env.js.");
-    const orderRecord = {
-      invoice_no: order.invoice_no,
-      customer_name: order.customer_name,
-      customer_email: order.customer_email,
-      customer_phone: order.customer_phone,
-      product: order.product,
-      quantity: order.quantity,
-      unit_price: order.unit_price,
-      subtotal_amount: order.subtotal_amount,
-      shipping_amount: order.shipping_amount,
-      total_amount: order.total_amount,
-      payment_provider: order.payment_provider,
-      payment_status: order.payment_status,
-      shipping_name: order.shipping_name,
-      shipping_street: order.shipping_street,
-      shipping_suburb: order.shipping_suburb,
-      shipping_city: order.shipping_city,
-      shipping_postal: order.shipping_postal,
-      created_at: order.created_at
-    };
-    const { error } = await supabase.from(ORDER_TABLE).insert(orderRecord);
-    if (error) throw new Error(`Could not create order in Supabase: ${error.message}`);
-  }
-
   function buildInvoiceRecord(order, userId = null) {
     return {
       invoice_no: order.invoice_no,
@@ -319,12 +292,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       .from(INVOICE_TABLE)
       .upsert(buildInvoiceRecord(order, userId), { onConflict: "invoice_no" });
     if (error) throw new Error(`Could not save invoice in Supabase: ${error.message}`);
-  }
-
-  async function updateOrderStatus(invoiceNo, updates) {
-    if (!supabase || !invoiceNo) return;
-    const { error } = await supabase.from(ORDER_TABLE).update(updates).eq("invoice_no", invoiceNo);
-    if (error) throw new Error(`Could not update payment in Supabase: ${error.message}`);
   }
 
   async function updateInvoiceStatus(invoiceNo, updates) {
@@ -594,9 +561,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   async function proceedToPayFast(order) {
     try {
       const sessionUser = await getAuthenticatedUser();
-      setPayFastStatus("Creating invoice and saving order...", "loading");
+      setPayFastStatus("Saving invoice and preparing payment...", "loading");
       await saveCardConfiguration(sessionUser);
-      await insertOrder(order);
       await upsertInvoice(order, sessionUser?.id || null);
       residueTelemetry.logPurchaseEvent({
         stage: "invoice_created",
@@ -609,7 +575,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         amount_total: order.total_amount,
         product: order.product,
         quantity: order.quantity,
-        detail: "Order and invoice inserted in Supabase."
+        detail: "Invoice inserted in Supabase."
       });
       persistPending(order);
       await configurePayFastForm(order);
@@ -636,7 +602,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         stage: "invoice_created",
         outcome: "failure",
         email: (els.email?.value || "").trim().toLowerCase(),
-        detail: err.message || "Could not create invoice/start payment."
+        detail: err.message || "Could not save invoice/start payment."
       });
       setPayFastStatus(err.message || "Could not start payment.", "error");
     }
@@ -652,14 +618,10 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     const pendingOrder = pending ? JSON.parse(pending) : null;
 
     try {
-      await updateOrderStatus(invoice, {
+      await updateInvoiceStatus(invoice, {
         payment_status: status,
-        payfast_payment_id: state.payfastPaymentId || null,
         payment_reference: state.payfastPaymentId || null,
         payment_updated_at: new Date().toISOString()
-      });
-      await updateInvoiceStatus(invoice, {
-        payment_status: status
       });
       residueTelemetry.logPurchaseEvent({
         stage: "payment_return",
