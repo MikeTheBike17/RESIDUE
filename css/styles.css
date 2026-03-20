@@ -956,7 +956,18 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 }
 
 .configure-form #quantity + .card-configurator {
-  margin-top: -10px;
+  margin-top: 18px;
+}
+
+.configure-form #quantity {
+  position: relative;
+  z-index: 1;
+}
+
+.configure-form .card-configurator,
+.configure-form .price-summary-block {
+  position: relative;
+  z-index: 0;
 }
 
 .card-config-title {
@@ -1049,7 +1060,7 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 .price-summary-block {
   display: grid;
   gap: 8px;
-  margin-top: 6px;
+  margin-top: 18px;
   padding: 20px 0 8px;
 }
 
@@ -2037,6 +2048,47 @@ input:focus, textarea:focus {
   max-height: 90%;
   overflow: auto;
 }
+
+.purchase-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 6px;
+  padding: 4px 0 8px;
+}
+
+.purchase-step {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(216,176,122,0.34);
+  background: rgba(255,255,255,0.03);
+  color: color-mix(in srgb, var(--text) 78%, var(--muted));
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.purchase-step.is-active,
+.purchase-step.is-complete {
+  border-color: rgba(216,176,122,0.92);
+  color: #0f0d11;
+  background: var(--accent-premium);
+  box-shadow: 0 0 0 4px rgba(216,176,122,0.12);
+}
+
+.purchase-step-line {
+  width: 28px;
+  height: 1px;
+  background: rgba(216,176,122,0.26);
+}
+
+.purchase-step-line.is-complete {
+  background: rgba(216,176,122,0.86);
+}
 .pay-modal .close-btn {
   position: absolute;
   top: 12px;
@@ -2900,6 +2952,27 @@ body::after { opacity: 0.04; }
 }
 
 .card-urls-copy-btn:hover {
+  border-color: rgba(214,176,122,0.7);
+  background: rgba(214,176,122,0.14);
+  transform: translateY(-1px);
+}
+
+.card-urls-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(214,176,122,0.36);
+  background: rgba(214,176,122,0.08);
+  color: var(--accent-premium);
+  text-decoration: none;
+  font-weight: 600;
+  transition: border-color 180ms ease, transform 180ms ease, background 180ms ease;
+}
+
+.card-urls-download-btn:hover {
   border-color: rgba(214,176,122,0.7);
   background: rgba(214,176,122,0.14);
   transform: translateY(-1px);

@@ -92,9 +92,40 @@ function renderUrlRows(rows) {
 
 function paymentLabel(status) {
   const normalized = String(status || '').toUpperCase();
-  if (normalized === 'COMPLETE') return 'Sent';
+  if (normalized === 'COMPLETE') return 'Complete';
   if (normalized === 'FAILED' || normalized === 'CANCELLED') return 'Declined';
   return normalized || 'Pending';
+}
+
+function formatConfig(value) {
+  const config = Number(value);
+  if (Number.isInteger(config) && config > 0) return `Card ${config}`;
+  return '';
+}
+
+function formatInvoiceNo(value) {
+  return String(value || '').trim() || '';
+}
+
+function formatLogoValue(row) {
+  if (!row.custom_logo_requested) return 'No';
+  if (row.custom_logo_file_name) return row.custom_logo_file_name;
+  return 'Yes';
+}
+
+function buildLogoDownload(row) {
+  const dataUrl = String(row.custom_logo_image || '').trim();
+  if (!row.custom_logo_requested || !dataUrl) return null;
+
+  const anchor = document.createElement('a');
+  anchor.className = 'card-urls-download-btn';
+  anchor.href = dataUrl;
+  anchor.download = row.custom_logo_file_name || `${row.invoice_no || 'residue-logo'}.png`;
+  anchor.textContent = 'Download';
+  anchor.setAttribute('target', '_blank');
+  anchor.setAttribute('rel', 'noopener noreferrer');
+  anchor.setAttribute('aria-label', `Download logo for invoice ${row.invoice_no || 'unknown'}`);
+  return anchor;
 }
 
 function formatShipping(row) {
@@ -109,7 +140,7 @@ function formatShipping(row) {
 function renderInvoiceRows(rows) {
   if (!invoiceBody) return;
   if (!rows.length) {
-    invoiceBody.innerHTML = '<tr><td colspan="8" class="card-urls-empty">No invoices found.</td></tr>';
+    invoiceBody.innerHTML = '<tr><td colspan="10" class="card-urls-empty">No invoices found.</td></tr>';
     return;
   }
 
@@ -117,23 +148,39 @@ function renderInvoiceRows(rows) {
   rows.forEach(row => {
     const tr = document.createElement('tr');
     const cells = [
+      row.invoice_no,
       row.customer_name,
       row.customer_email,
       row.customer_phone,
       String(row.quantity),
       row.card_configuration,
-      row.logo_value,
-      row.shipping,
-      row.payment_status
+      row.logo_value
     ];
 
     cells.forEach((value, index) => {
       const td = document.createElement('td');
       if (index === 5) td.className = 'card-urls-inline-text';
-      if (index === 6) td.classList.add('card-urls-shipping');
       td.textContent = value || '';
       tr.appendChild(td);
     });
+
+    const downloadTd = document.createElement('td');
+    const downloadLink = buildLogoDownload(row);
+    if (downloadLink) {
+      downloadTd.appendChild(downloadLink);
+    } else {
+      downloadTd.textContent = '—';
+    }
+    tr.appendChild(downloadTd);
+
+    const shippingTd = document.createElement('td');
+    shippingTd.classList.add('card-urls-shipping');
+    shippingTd.textContent = row.shipping || '';
+    tr.appendChild(shippingTd);
+
+    const paymentTd = document.createElement('td');
+    paymentTd.textContent = row.payment_status || '';
+    tr.appendChild(paymentTd);
 
     invoiceBody.appendChild(tr);
   });
@@ -178,18 +225,21 @@ async function fetchProfileRows() {
 async function fetchInvoiceRows() {
   const { data, error } = await supabase
     .from(INVOICE_TABLE)
-    .select('customer_name, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_city, shipping_postal, payment_status, created_at')
+    .select('invoice_no, customer_name, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_city, shipping_postal, payment_status, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message || 'Could not load invoices.');
 
   return (data || []).map(row => ({
+    invoice_no: formatInvoiceNo(row.invoice_no),
     customer_name: row.customer_name || '',
     customer_email: row.customer_email || '',
     customer_phone: row.customer_phone || '',
     quantity: row.quantity ?? '',
-    card_configuration: row.card_configuration ? String(row.card_configuration) : '',
-    logo_value: row.custom_logo_requested ? (row.custom_logo_image || row.custom_logo_file_name || 'Yes') : 'No',
+    card_configuration: formatConfig(row.card_configuration),
+    logo_value: formatLogoValue(row),
+    custom_logo_image: row.custom_logo_image || '',
+    custom_logo_file_name: row.custom_logo_file_name || '',
     shipping: formatShipping(row),
     payment_status: paymentLabel(row.payment_status)
   }));

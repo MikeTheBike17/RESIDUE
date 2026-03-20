@@ -130,12 +130,12 @@
           <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
 
           <label for="phone">Phone number</label>
-          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
+          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" required>
 
           <label for="quantity">Quantity</label>
           <input id="quantity" name="quantity" type="number" min="0" step="1" placeholder="0">
 
-          <section class="card-configurator" aria-labelledby="card-config-title" style="margin-top: -6rem;">
+          <section class="card-configurator" aria-labelledby="card-config-title">
             <div class="eyebrow premium">Configure card</div>
             <h3 class="h3 card-config-title" id="card-config-title">Choose your card layout</h3>
             <div class="card-config-grid">
@@ -166,7 +166,7 @@
             </div>
           </section>
 
-          <section class="price-summary-block" aria-labelledby="price-summary-title" style="margin-top: -6rem;">
+          <section class="price-summary-block" aria-labelledby="price-summary-title">
             <div class="eyebrow premium" id="price-summary-title">Price</div>
             <div class="price-summary-amount" id="configure-price">R0</div>
             <p class="muted small price-summary-note" id="configure-price-note">Select a quantity and card configuration.</p>
@@ -218,6 +218,15 @@
         <button class="close-btn" aria-label="Close payment form">×</button>
         <section class="banking-form">
           <div class="stack" style="gap:10px;">
+            <div class="purchase-step-indicator" aria-label="Purchase flow step 2 of 4">
+              <span class="purchase-step is-complete">1</span>
+              <span class="purchase-step-line is-complete" aria-hidden="true"></span>
+              <span class="purchase-step is-active" aria-current="step">2</span>
+              <span class="purchase-step-line" aria-hidden="true"></span>
+              <span class="purchase-step">3</span>
+              <span class="purchase-step-line" aria-hidden="true"></span>
+              <span class="purchase-step">4</span>
+            </div>
             <div class="eyebrow premium">PayFast Checkout</div>
             <p class="muted small">Secure bank payment powered by PayFast.</p>
 
@@ -281,6 +290,15 @@
       <div class="modal-content terms-modal-content">
         <button class="close-btn" aria-label="Close terms and conditions">&times;</button>
         <div class="stack" style="gap:16px;">
+          <div class="purchase-step-indicator" aria-label="Purchase flow step 3 of 4">
+            <span class="purchase-step is-complete">1</span>
+            <span class="purchase-step-line is-complete" aria-hidden="true"></span>
+            <span class="purchase-step is-complete">2</span>
+            <span class="purchase-step-line is-complete" aria-hidden="true"></span>
+            <span class="purchase-step is-active" aria-current="step">3</span>
+            <span class="purchase-step-line" aria-hidden="true"></span>
+            <span class="purchase-step">4</span>
+          </div>
           <h3 class="terms-title">T&amp;C's</h3>
           <div class="terms-scroll-box" id="terms-scroll-box">
             <p>By proceeding with payment, you confirm that all purchase, shipping, and card configuration details submitted are accurate and complete.</p>
