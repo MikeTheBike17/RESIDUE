@@ -24,8 +24,10 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     email: qs("#email-config"),
     phone: qs("#phone"),
     quantity: qs("#quantity"),
+    cardConfigurator: qs(".card-configurator"),
+    cardTypeButtons: qsa("[data-card-type]"),
     cardConfigOptions: qsa("[data-card-config]"),
-    customLogoToggle: qs("#custom-logo-toggle"),
+    standardCardPanel: qs("#standard-card-panel"),
     customLogoPanel: qs("#custom-logo-panel"),
     customLogoFile: qs("#custom-logo-file"),
     customLogoFileName: qs("#custom-logo-file-name"),
@@ -87,6 +89,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   };
 
   let selectedCardConfiguration = null;
+  let activeCardType = null;
   let customLogoDataUrl = "";
   let customLogoMeta = null;
   let pendingTermsOrder = null;
@@ -136,8 +139,12 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return 499;
   }
 
+  function standardCardsEnabled() {
+    return activeCardType === "standard";
+  }
+
   function customLogoEnabled() {
-    return !!els.customLogoPanel && !els.customLogoPanel.hidden;
+    return activeCardType === "custom";
   }
 
   function customLogoFeePerCard() {
@@ -145,6 +152,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function configurationLabel(configNumber) {
+    if (customLogoEnabled()) return "Custom company logo card";
     return `Card configuration ${configNumber || ""}`.trim();
   }
 
@@ -355,7 +363,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     });
     const { qty } = getCheckoutData();
     if (qty <= 0) missing.push("Quantity (must be greater than 0)");
-    if (!selectedCardConfiguration) missing.push("Select a card configuration");
+    if (!activeCardType) missing.push("Select a card type");
+    if (standardCardsEnabled() && !selectedCardConfiguration) missing.push("Select a card configuration");
     if (customLogoEnabled() && !els.customLogoFile?.files?.length) missing.push("Upload custom logo image");
     return missing;
   }
@@ -375,12 +384,15 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       els.configurePrice.textContent = formatCurrency(checkout.subtotal);
     }
     if (els.configurePriceNote) {
-      if (!selectedCardConfiguration || checkout.qty <= 0) {
-        els.configurePriceNote.textContent = "Select a quantity and card configuration.";
+      if (!activeCardType || checkout.qty <= 0 || (standardCardsEnabled() && !selectedCardConfiguration)) {
+        els.configurePriceNote.textContent = "Select a quantity and card type.";
         return;
       }
-      const logoText = customLogoEnabled() ? ` Includes custom logo at ${formatCurrency(checkout.logoFee)} per card.` : "";
-      els.configurePriceNote.textContent = `${checkout.qty} card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each.${logoText}`;
+      if (customLogoEnabled()) {
+        els.configurePriceNote.textContent = `${checkout.qty} custom card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each. Includes custom logo at ${formatCurrency(checkout.logoFee)} per card.`;
+        return;
+      }
+      els.configurePriceNote.textContent = `${checkout.qty} card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each.`;
     }
   }
 
@@ -404,18 +416,31 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     els.customLogoFileName.textContent = els.customLogoFile?.files?.[0]?.name || "No logo selected.";
   }
 
-  function wireCustomLogoToggle() {
-    els.customLogoToggle?.addEventListener("click", () => {
-      const nextExpanded = !(els.customLogoPanel && !els.customLogoPanel.hidden);
-      if (els.customLogoPanel) els.customLogoPanel.hidden = !nextExpanded;
-      els.customLogoToggle?.setAttribute("aria-expanded", String(nextExpanded));
-      if (!nextExpanded && els.customLogoFile) {
-        els.customLogoFile.value = "";
-        customLogoDataUrl = "";
-        customLogoMeta = null;
-        updateCustomLogoFileName();
-      }
-      updatePriceDisplay();
+  function setCardType(type) {
+    activeCardType = type;
+    els.cardTypeButtons.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.getAttribute("data-card-type") === type));
+    });
+    if (els.standardCardPanel) els.standardCardPanel.hidden = type !== "standard";
+    if (els.customLogoPanel) els.customLogoPanel.hidden = type !== "custom";
+    updatePriceDisplay();
+  }
+
+  function resetCardTypeSelection() {
+    activeCardType = null;
+    els.cardTypeButtons.forEach((button) => {
+      button.setAttribute("aria-pressed", "false");
+    });
+    if (els.standardCardPanel) els.standardCardPanel.hidden = true;
+    if (els.customLogoPanel) els.customLogoPanel.hidden = true;
+    updatePriceDisplay();
+  }
+
+  function wireCardTypeToggle() {
+    els.cardTypeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setCardType(button.getAttribute("data-card-type") || null);
+      });
     });
 
     els.customLogoFile?.addEventListener("change", async () => {
@@ -438,6 +463,12 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       customLogoDataUrl = await readFileAsDataUrl(file);
       updateCustomLogoFileName();
     });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (!els.cardConfigurator || !activeCardType) return;
+      if (els.cardConfigurator.contains(event.target)) return;
+      resetCardTypeSelection();
+    });
   }
 
   function readFileAsDataUrl(file) {
@@ -450,7 +481,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   async function saveCardConfiguration(user = null) {
-    if (!supabase || !selectedCardConfiguration) return;
+    if (!supabase || !activeCardType) return;
     const sessionUser = user || await getAuthenticatedUser();
     if (!sessionUser?.id) return;
     const { data: existingRow } = await supabase
@@ -461,7 +492,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     const configData = {
       ...(existingRow?.config_data || {}),
       purchase_configuration: {
-        card_configuration: selectedCardConfiguration,
+        card_type: activeCardType,
+        card_configuration: standardCardsEnabled() ? selectedCardConfiguration : null,
         quantity: getCheckoutData().qty,
         custom_logo_requested: customLogoEnabled(),
         custom_logo_file_name: customLogoMeta?.name || "",
@@ -537,8 +569,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       customer_name: (els.fullName?.value || "").trim(),
       customer_email: (els.email?.value || "").trim().toLowerCase(),
       customer_phone: (els.phone?.value || "").trim(),
-      product: `card-configuration-${selectedCardConfiguration}`,
-      card_configuration: selectedCardConfiguration,
+      product: customLogoEnabled() ? "custom-company-logo-card" : `card-configuration-${selectedCardConfiguration}`,
+      card_configuration: standardCardsEnabled() ? selectedCardConfiguration : null,
       custom_logo_requested: customLogoEnabled(),
       custom_logo_file_name: customLogoMeta?.name || null,
       quantity: checkout.qty,
@@ -726,13 +758,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   function wireEvents() {
     setCardConfigurationSelection();
-    wireCustomLogoToggle();
+    wireCardTypeToggle();
     wireModalClose();
     els.purchaseBtn?.addEventListener("click", onPurchaseClick);
     els.shippingNextBtn?.addEventListener("click", onShippingNextClick);
     els.quantity?.addEventListener("input", updatePriceDisplay);
     els.redirectBtn?.addEventListener("click", () => {
-      window.location.href = "residue-private.html";
+      window.location.href = "residue-inside.html";
     });
   }
 

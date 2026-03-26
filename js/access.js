@@ -61,7 +61,7 @@
   const setUsedCodes = codes => localStorage.setItem(USED_CODES_KEY, JSON.stringify(codes));
 
   const redirectToPrivate = () => {
-    window.location.href = 'residue-private.html';
+    window.location.href = 'residue-inside.html';
   };
 
   const setUnlocked = (code, { redirect = true, showStatusMessage = true, showOptions = true, redirectDelay = 1000 } = {}) => {

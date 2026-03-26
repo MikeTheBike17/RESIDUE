@@ -8,6 +8,7 @@ const sources = [
   'access.html',
   'card-urls.html',
   'drop.html',
+  'residue-inside.html',
   'residue-private.html',
   'thank-you.html',
   'link-admin.html',
