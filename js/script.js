@@ -291,6 +291,7 @@
     const CURRENT_USER_KEY = "residue_current_user";
     const MANAGER_ACCESS_KEY = "residue_manager_access";
     const MANAGER_EMAIL = "check.email@residue.com";
+    const INSIDE_PAGE = "residue-inside.html";
     const PRIVATE_PAGE = "residue-private.html";
     const CARD_URLS_PAGE = "card-urls.html";
     const DEFAULT_PROFILE_NAME = "Your name";
@@ -418,6 +419,36 @@
       }
     }
 
+    async function enforceProtectedRouteSession() {
+      const protectedPages = [
+        INSIDE_PAGE,
+        PRIVATE_PAGE,
+        INSIDE_PAGE.replace(/\.html$/i, ""),
+        PRIVATE_PAGE.replace(/\.html$/i, "")
+      ];
+      const currentPath = (window.location.pathname || "").toLowerCase();
+      const isProtectedPage = protectedPages.some(page => currentPath.endsWith(page));
+      if (!isProtectedPage) return;
+
+      const supabase = await getSupabaseClient();
+      if (!supabase) return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const signedInEmail = normalizeEmail(session.user.email || "");
+          if (signedInEmail) {
+            localStorage.setItem(CURRENT_USER_KEY, signedInEmail);
+          }
+          return;
+        }
+      } catch {
+        return;
+      }
+
+      window.location.href = "access.html";
+    }
+
     function setStatus(el, msg, show = true) {
       if (!el) return;
       el.textContent = msg;
@@ -506,6 +537,7 @@
 
     // Backfill legacy users missing app rows when an auth session already exists.
     syncProfileForCurrentSession();
+    enforceProtectedRouteSession();
 
     // SIGN IN submit
     signinForm?.addEventListener("submit", async (e) => {
@@ -560,7 +592,7 @@
       setTimeout(() => {
         closeAuthModal();
         signinForm.reset();
-        window.location.href = isManager ? CARD_URLS_PAGE : PRIVATE_PAGE;
+        window.location.href = isManager ? CARD_URLS_PAGE : INSIDE_PAGE;
       }, 500);
     });
 
@@ -617,8 +649,7 @@
       setTimeout(() => {
         closeAuthModal();
         createForm.reset();
-        // Take new users straight into the private page (same as sign-in)
-        window.location.href = PRIVATE_PAGE;
+        window.location.href = INSIDE_PAGE;
       }, 600);
     });
 

@@ -15,7 +15,8 @@
       <a class="brand" href="index.html">Residue</a>
       <div class="nav-links" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="residue-private.html#purchase">Purchase</a>
+        <a href="residue-inside.html">Inside</a>
+        <a href="residue-private.html">Purchase</a>
       </div>
       <div class="nav-actions">
         <button class="theme-toggle" type="button" aria-pressed="true" aria-label="Toggle theme">
@@ -29,7 +30,8 @@
     </nav>
     <div class="mobile-nav" aria-label="Mobile navigation">
       <a href="index.html">Home</a>
-      <a href="residue-private.html#purchase">Purchase</a>
+      <a href="residue-inside.html">Inside</a>
+      <a href="residue-private.html">Purchase</a>
       <button class="theme-toggle" type="button" aria-pressed="true" aria-label="Toggle theme (mobile)">
         <span class="dot" aria-hidden="true"></span>
         <span class="theme-label">Dark</span>
@@ -38,77 +40,13 @@
   </header>
 
   <main>
-    <section class="hero premium-hero full-bleed fade-edges" id="top">
+    <section class="hero premium-hero private-hero full-bleed fade-edges" id="top">
       <div class="hero-overlay" aria-hidden="true"></div>
       <div class="hero-content">
-        <div class="eyebrow premium">Access Granted</div>
-        <h1>Welcome Inside.</h1>
-        <div class="subhead premium">Residue circulates intentionally.</div>
+        <div class="eyebrow premium">Purchase</div>
+        <h1>Configure your card layout.</h1>
+        <div class="subhead premium">Design your card appearance.</div>
         <div class="accent-bar premium"></div>
-      </div>
-    </section>
-
-    <section class="brand-immersion reveal" aria-label="Brand immersion">
-      <div class="container narrow">
-        <div class="eyebrow premium">Presence</div>
-        <h2 class="h2">You Now Carry It.</h2>
-        <p class="muted">Residue is not distributed. It is deployed.</p>
-      </div>
-    </section>
-
-    <section class="premium-features reveal" aria-label="Premium signals">
-      <div class="container">
-        <div class="eyebrow premium">Precision Layer</div>
-        <h2 class="h2">Premium Signals</h2>
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-dot"></div>
-            <div class="feature-title">Tuned NFC Field</div>
-            <p class="muted">Optimised read range for metal substrates without interference.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-dot"></div>
-            <div class="feature-title">Micro-engraved Mark</div>
-            <p class="muted">Sub-micron etching preserves brand fidelity under any light.</p>
-          </div>
-          <div class="feature-card">
-            <div class="feature-dot"></div>
-            <div class="feature-title">Controlled Ledger</div>
-            <p class="muted">Private mapping of identifiers—no public directories, no noise.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="pricing-per-card reveal" aria-labelledby="pricing-per-card-title">
-      <div class="container">
-        <div class="pricing-per-card-grid">
-          <div class="pricing-per-card-copy">
-            <div class="eyebrow premium">Pricing</div>
-            <h2 class="h2" id="pricing-per-card-title">Pricing Per Card</h2>
-            <div class="pricing-per-card-list" aria-label="Per-card pricing tiers">
-              <div class="pricing-per-card-item">
-                <span class="pricing-per-card-qty">Quantity 1</span>
-                <span class="pricing-per-card-price">R499</span>
-              </div>
-              <div class="pricing-per-card-item">
-                <span class="pricing-per-card-qty">Quantity 2-4</span>
-                <span class="pricing-per-card-price">R449</span>
-              </div>
-              <div class="pricing-per-card-item">
-                <span class="pricing-per-card-qty">Quantity greater than 4</span>
-                <span class="pricing-per-card-price">R399</span>
-              </div>
-            </div>
-            <p class="muted pricing-per-card-note">Per card for all qualifying quantities.</p>
-            <p class="muted pricing-per-card-note">Customizable front of the card.</p>
-            <p class="muted pricing-per-card-note">Back of the card shown here.</p>
-          </div>
-          <div class="pricing-per-card-media">
-            <div class="card-config-face-label">Back of the card</div>
-            <img class="pricing-per-card-image" src="images/card-images/residue-card-not-a-card-a-signal-product-closeup.png" alt="Back of the Residue card" loading="lazy" decoding="async">
-          </div>
-        </div>
       </div>
     </section>
 
@@ -137,29 +75,39 @@
 
           <section class="card-configurator" aria-labelledby="card-config-title">
             <div class="eyebrow premium">Configure card</div>
-            <h3 class="h3 card-config-title" id="card-config-title">Choose your card layout</h3>
-            <div class="card-config-grid">
-              <button class="card-config-box" type="button" data-card-config="1" aria-pressed="false">
-                <span class="card-config-number">1</span>
-                <span class="card-config-face-label">Front</span>
-                <img class="card-config-image" src="images/card-images/residue-card-large-r-logo-product-closeup.png" alt="Card configuration 1 front" loading="lazy" decoding="async">
+            <h3 class="h3 card-config-title" id="card-config-title">Choose your card type</h3>
+            <div class="card-config-choice-row" role="group" aria-label="Card type">
+              <button type="button" class="btn btn-outline premium-btn card-config-choice-btn" data-card-type="standard" aria-pressed="false" aria-controls="standard-card-panel">
+                Standard cards
               </button>
-              <button class="card-config-box" type="button" data-card-config="2" aria-pressed="false">
-                <span class="card-config-number">2</span>
-                <span class="card-config-face-label">Front</span>
-                <img class="card-config-image" src="images/card-images/residue-card-nfc-window-feature-closeup.png" alt="Card configuration 2 front" loading="lazy" decoding="async">
-              </button>
-              <button class="card-config-box" type="button" data-card-config="3" aria-pressed="false">
-                <span class="card-config-number">3</span>
-                <span class="card-config-face-label">Front</span>
-                <img class="card-config-image" src="images/card-images/" alt="Card configuration 3 front" loading="lazy" decoding="async">
+              <button type="button" class="btn btn-outline premium-btn card-config-choice-btn" data-card-type="custom" aria-pressed="false" aria-controls="custom-logo-panel">
+                Custom company logo on card + R100
               </button>
             </div>
-            <h3 class="h3 card-config-title" id="card-config-title">Add your company logo on the card</h3>
-            <button id="custom-logo-toggle" type="button" class="btn btn-outline premium-btn card-config-logo-btn" aria-expanded="false">
-              Custom company logo on card +R100
-            </button>
-            <div id="custom-logo-panel" class="card-config-logo-panel" hidden>
+
+            <div id="standard-card-panel" class="card-config-panel" hidden>
+              <h3 class="h3 card-config-title">Choose your card layout</h3>
+              <div class="card-config-grid">
+                <button class="card-config-box" type="button" data-card-config="1" aria-pressed="false">
+                  <span class="card-config-number">1</span>
+                  <span class="card-config-face-label">Front</span>
+                  <img class="card-config-image" src="images/card-images/residue-card-large-r-logo-product-closeup.png" alt="Card configuration 1 front" loading="lazy" decoding="async">
+                </button>
+                <button class="card-config-box" type="button" data-card-config="2" aria-pressed="false">
+                  <span class="card-config-number">2</span>
+                  <span class="card-config-face-label">Front</span>
+                  <img class="card-config-image" src="images/card-images/residue-card-nfc-window-feature-closeup.png" alt="Card configuration 2 front" loading="lazy" decoding="async">
+                </button>
+                <button class="card-config-box" type="button" data-card-config="3" aria-pressed="false">
+                  <span class="card-config-number">3</span>
+                  <span class="card-config-face-label">Front</span>
+                  <img class="card-config-image" src="images/card-images/" alt="Card configuration 3 front" loading="lazy" decoding="async">
+                </button>
+              </div>
+            </div>
+
+            <div id="custom-logo-panel" class="card-config-logo-panel card-config-panel" hidden>
+              <h3 class="h3 card-config-title">Upload your custom card image</h3>
               <label for="custom-logo-file">Upload logo image</label>
               <input id="custom-logo-file" name="custom-logo-file" type="file" accept="image/*">
               <p class="muted small" id="custom-logo-file-name">No logo selected.</p>
