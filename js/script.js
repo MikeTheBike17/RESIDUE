@@ -818,6 +818,63 @@
     startAuto();
   }
 
+  const indexAnimationStage = document.querySelector("[data-index-animation-stage]");
+  const indexAnimationCardLane = document.querySelector("[data-index-animation-card-lane]");
+  const indexAnimationCardSticky = document.querySelector("[data-index-animation-card-sticky]");
+  const indexAnimationCard = document.querySelector("[data-index-animation-card]");
+  const indexAnimationPhoneLane = document.querySelector("[data-index-animation-phone-lane]");
+  const indexAnimationPhoneOff = document.querySelector(".phone-off-index-animate");
+  const indexAnimationPhoneOn = document.querySelector(".phone-on-index-animate");
+
+  if (indexAnimationStage && indexAnimationCardLane && indexAnimationCardSticky && indexAnimationCard && indexAnimationPhoneLane && indexAnimationPhoneOff && indexAnimationPhoneOn) {
+    let animationTicking = false;
+
+    const updateIndexAnimation = () => {
+      animationTicking = false;
+
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
+      const stageRect = indexAnimationStage.getBoundingClientRect();
+      const phoneImageRect = indexAnimationPhoneOff.getBoundingClientRect();
+      const viewportCenter = viewportHeight / 2;
+      const cardHeight = indexAnimationCardSticky.offsetHeight || indexAnimationCard.offsetHeight || 0;
+      const cardHalfHeight = cardHeight / 2;
+      const overlapOffset = Math.max(24, cardHeight * 0.16);
+      const landedOverlapOffset = Math.max(38, cardHeight * 0.26);
+      const enterFixedZone = stageRect.top <= viewportCenter - cardHalfHeight;
+      const resetToStartZone = stageRect.top > Math.max(0, viewportCenter - (cardHalfHeight * 1.1) - 212);
+      const releaseFixedZone = phoneImageRect.top <= viewportCenter + cardHalfHeight - overlapOffset;
+      const stageStillActive = stageRect.bottom > viewportCenter + cardHalfHeight;
+      const phoneIsVisible = phoneImageRect.bottom > 0 && phoneImageRect.top < viewportHeight;
+      const shouldFixCard = !resetToStartZone && enterFixedZone && !releaseFixedZone && stageStillActive;
+      const shouldLandCard = !resetToStartZone && enterFixedZone && releaseFixedZone && phoneIsVisible;
+      const shouldShowPhoneOn = !resetToStartZone && enterFixedZone && releaseFixedZone;
+
+      if (shouldLandCard) {
+        const landedTop = (phoneImageRect.top - stageRect.top) - cardHeight + landedOverlapOffset;
+        indexAnimationCardSticky.style.top = `${landedTop}px`;
+      } else {
+        indexAnimationCardSticky.style.top = "";
+      }
+
+      indexAnimationCardSticky.classList.toggle("is-fixed", shouldFixCard);
+      indexAnimationCardSticky.classList.toggle("is-landed", shouldLandCard);
+      indexAnimationCard.classList.toggle("is-centered", shouldFixCard);
+      indexAnimationCard.classList.toggle("is-landed", shouldLandCard);
+      indexAnimationPhoneOff.classList.toggle("is-visible", !shouldShowPhoneOn);
+      indexAnimationPhoneOn.classList.toggle("is-visible", shouldShowPhoneOn);
+    };
+
+    const requestIndexAnimationUpdate = () => {
+      if (animationTicking) return;
+      animationTicking = true;
+      window.requestAnimationFrame(updateIndexAnimation);
+    };
+
+    updateIndexAnimation();
+    window.addEventListener("scroll", requestIndexAnimationUpdate, { passive: true });
+    window.addEventListener("resize", requestIndexAnimationUpdate);
+    window.addEventListener("load", requestIndexAnimationUpdate, { once: true });
+  }
 
   // ROTATING HERO HEADER
   const heroCopy = [

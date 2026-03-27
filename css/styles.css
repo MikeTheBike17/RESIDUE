@@ -1765,6 +1765,100 @@ input:focus, textarea:focus {
   margin-bottom: 8px;
 }
 
+.index-animation-stage {
+  position: relative;
+  margin-top: -32vh;
+  min-height: 220vh;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 0 24px 48px;
+}
+
+.index-animation-stage img {
+  display: block;
+  position: static;
+  transform: none;
+}
+
+.index-animation-card-lane {
+  position: relative;
+  width: 100%;
+  min-height: 135vh;
+  display: grid;
+  justify-items: center;
+}
+
+.index-animation-card-sticky {
+  display: grid;
+  place-items: center;
+  width: min(36vw, 360px);
+  min-height: min(36vw, 360px);
+}
+
+.index-animation-card-sticky.is-fixed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.index-animation-card-sticky.is-landed {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.index-animation-phone-lane {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  padding-top: clamp(240px, 34vh, 420px);
+  padding-bottom: 18vh;
+}
+
+.phone-off-index-animate {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.phone-on-index-animate {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.card-image-index-animate {
+  width: 100%;
+  border-radius: 14px;
+  transition: transform 280ms ease, width 280ms ease;
+  transform-origin: center center;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.card-image-index-animate.is-centered,
+.card-image-index-animate.is-landed {
+  transform: rotate(-90deg) scale(0.5);
+}
+
+.phone-off-index-animate,
+.phone-on-index-animate {
+  width: min(20vw, 200px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease;
+}
+
+.phone-off-index-animate.is-visible,
+.phone-on-index-animate.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Quiet CTA */
 .quiet-cta {
   padding: 260px 24px 280px;
@@ -2238,7 +2332,7 @@ input:focus, textarea:focus {
   --inside-hero-image-scale: 1.22;
   --inside-hero-image-shift: 0px;
   --inside-hero-content-scale: 1.34;
-  --inside-hero-content-shift: 9vh;
+  --inside-hero-content-shift: 4vh;
 }
 
 .inside-hero::before {
@@ -2332,7 +2426,7 @@ body.inside-page.hero-settled .inside-hero {
     min-height: 118svh;
     --inside-hero-image-scale: 1.14;
     --inside-hero-content-scale: 1.18;
-    --inside-hero-content-shift: 5vh;
+    --inside-hero-content-shift: 2.5vh;
   }
 
   .inside-hero h1 {
@@ -2986,6 +3080,34 @@ footer {
     min-height: 60vh;
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .index-animation-stage {
+    margin-top: -22vh;
+    min-height: 180vh;
+    padding: 0 16px 32px;
+  }
+
+  .index-animation-card-lane {
+    min-height: 115vh;
+  }
+
+  .index-animation-phone-lane {
+    padding-top: clamp(180px, 26vh, 280px);
+  }
+
+  .card-image-index-animate {
+    width: 100%;
+  }
+
+  .index-animation-card-sticky {
+    width: min(68vw, 300px);
+    min-height: min(68vw, 300px);
+  }
+
+  .phone-off-index-animate,
+  .phone-on-index-animate {
+    width: min(38vw, 170px);
   }
 
   .word-stack {

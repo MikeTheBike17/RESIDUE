@@ -122,7 +122,7 @@
 
     const imageScale = 1.22 - (0.22 * progress);
     const contentScale = 1.34 - (0.34 * progress);
-    const contentShift = (1 - progress) * 9;
+    const contentShift = (1 - progress) * 4;
     const imageShift = (1 - progress) * 1.8;
     const heroHeight = 128 - (28 * progress);
 
