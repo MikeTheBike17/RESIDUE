@@ -1766,6 +1766,9 @@ input:focus, textarea:focus {
 }
 
 .index-animation-stage {
+  --spotlight-x: 50%;
+  --spotlight-y: 28rem;
+  --spotlight-size: clamp(220px, 32vw, 420px);
   position: relative;
   margin-top: -32vh;
   min-height: 220vh;
@@ -1773,6 +1776,61 @@ input:focus, textarea:focus {
   justify-items: center;
   align-content: start;
   padding: 0 24px 48px;
+  background-image:
+    linear-gradient(180deg, rgba(14, 15, 17, 0.28), rgba(14, 15, 17, 0.46)),
+    url('../images/manage-card-images/animation-background.png');
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover, cover;
+  isolation: isolate;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 12%,
+    #000 86%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0%,
+    #000 12%,
+    #000 86%,
+    transparent 100%
+  );
+}
+
+.index-animation-stage::before,
+.index-animation-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.index-animation-stage::before {
+  background:
+    radial-gradient(
+      circle var(--spotlight-size) at var(--spotlight-x) var(--spotlight-y),
+      rgba(255, 255, 255, 0.32) 0%,
+      rgba(255, 255, 255, 0.18) 24%,
+      rgba(255, 255, 255, 0.08) 42%,
+      rgba(255, 255, 255, 0) 72%
+    );
+  mix-blend-mode: screen;
+  opacity: 0.95;
+  z-index: 0;
+}
+
+.index-animation-stage::after {
+  background:
+    radial-gradient(
+      circle calc(var(--spotlight-size) * 1.7) at var(--spotlight-x) var(--spotlight-y),
+      rgba(9, 10, 12, 0.02) 0%,
+      rgba(9, 10, 12, 0.18) 34%,
+      rgba(9, 10, 12, 0.56) 62%,
+      rgba(6, 7, 9, 0.84) 100%
+    );
+  z-index: 0;
 }
 
 .index-animation-stage img {
@@ -1787,13 +1845,14 @@ input:focus, textarea:focus {
   min-height: 135vh;
   display: grid;
   justify-items: center;
+  z-index: 1;
 }
 
 .index-animation-card-sticky {
   display: grid;
   place-items: center;
-  width: min(36vw, 360px);
-  min-height: min(36vw, 360px);
+  width: min(37.8vw, 378px);
+  min-height: min(37.8vw, 378px);
 }
 
 .index-animation-card-sticky.is-fixed {
@@ -1814,11 +1873,13 @@ input:focus, textarea:focus {
 }
 
 .index-animation-phone-lane {
+  position: relative;
   width: 100%;
   display: grid;
   justify-items: center;
   padding-top: clamp(240px, 34vh, 420px);
   padding-bottom: 18vh;
+  z-index: 1;
 }
 
 .phone-off-index-animate {
@@ -1847,7 +1908,7 @@ input:focus, textarea:focus {
 
 .phone-off-index-animate,
 .phone-on-index-animate {
-  width: min(20vw, 200px);
+  width: min(21vw, 210px);
   opacity: 0;
   visibility: hidden;
   transition: opacity 180ms ease;
@@ -2144,6 +2205,10 @@ input:focus, textarea:focus {
 
 .access-gate {
   padding: 110px 24px 140px;
+}
+
+.index-animation-stage + .access-gate {
+  border-top: 0;
 }
 
 /* Premium buttons */
@@ -3083,9 +3148,25 @@ footer {
   }
 
   .index-animation-stage {
-    margin-top: -22vh;
+    margin-top: -28vh;
     min-height: 180vh;
     padding: 0 16px 32px;
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.18) 10%,
+      #000 24%,
+      #000 84%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0, 0, 0, 0.18) 10%,
+      #000 24%,
+      #000 84%,
+      transparent 100%
+    );
   }
 
   .index-animation-card-lane {
@@ -3101,13 +3182,13 @@ footer {
   }
 
   .index-animation-card-sticky {
-    width: min(68vw, 300px);
-    min-height: min(68vw, 300px);
+    width: min(71.4vw, 315px);
+    min-height: min(71.4vw, 315px);
   }
 
   .phone-off-index-animate,
   .phone-on-index-animate {
-    width: min(38vw, 170px);
+    width: min(39.9vw, 178.5px);
   }
 
   .word-stack {

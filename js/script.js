@@ -856,6 +856,13 @@
         indexAnimationCardSticky.style.top = "";
       }
 
+      const cardRect = indexAnimationCard.getBoundingClientRect();
+      const spotlightX = Math.max(0, Math.min(stageRect.width, (cardRect.left - stageRect.left) + (cardRect.width / 2)));
+      const spotlightY = Math.max(0, Math.min(stageRect.height, (cardRect.top - stageRect.top) + (cardRect.height / 2)));
+
+      indexAnimationStage.style.setProperty("--spotlight-x", `${spotlightX}px`);
+      indexAnimationStage.style.setProperty("--spotlight-y", `${spotlightY}px`);
+
       indexAnimationCardSticky.classList.toggle("is-fixed", shouldFixCard);
       indexAnimationCardSticky.classList.toggle("is-landed", shouldLandCard);
       indexAnimationCard.classList.toggle("is-centered", shouldFixCard);
