@@ -1771,11 +1771,11 @@ input:focus, textarea:focus {
   --spotlight-size: clamp(220px, 32vw, 420px);
   position: relative;
   margin-top: -32vh;
-  min-height: 220vh;
+  min-height: 112vh;
   display: grid;
   justify-items: center;
   align-content: start;
-  padding: 0 24px 48px;
+  padding: 0 20px 26px;
   background-image:
     linear-gradient(180deg, rgba(14, 15, 17, 0.28), rgba(14, 15, 17, 0.46)),
     url('../images/manage-card-images/animation-background.png');
@@ -1842,7 +1842,7 @@ input:focus, textarea:focus {
 .index-animation-card-lane {
   position: relative;
   width: 100%;
-  min-height: 135vh;
+  min-height: 107vh;
   display: grid;
   justify-items: center;
   z-index: 1;
@@ -1877,8 +1877,8 @@ input:focus, textarea:focus {
   width: 100%;
   display: grid;
   justify-items: center;
-  padding-top: clamp(240px, 34vh, 420px);
-  padding-bottom: 18vh;
+  padding-top: clamp(184px, 26vh, 320px);
+  padding-bottom: 6vh;
   z-index: 1;
 }
 
@@ -3148,33 +3148,33 @@ footer {
   }
 
   .index-animation-stage {
-    margin-top: -28vh;
-    min-height: 180vh;
+    margin-top: -34vh;
+    min-height: 128vh;
     padding: 0 16px 32px;
     -webkit-mask-image: linear-gradient(
       180deg,
       transparent 0%,
-      rgba(0, 0, 0, 0.18) 10%,
-      #000 24%,
+      rgba(0, 0, 0, 0.18) 6%,
+      #000 16%,
       #000 84%,
       transparent 100%
     );
     mask-image: linear-gradient(
       180deg,
       transparent 0%,
-      rgba(0, 0, 0, 0.18) 10%,
-      #000 24%,
+      rgba(0, 0, 0, 0.18) 6%,
+      #000 16%,
       #000 84%,
       transparent 100%
     );
   }
 
   .index-animation-card-lane {
-    min-height: 115vh;
+    min-height: 92vh;
   }
 
   .index-animation-phone-lane {
-    padding-top: clamp(180px, 26vh, 280px);
+    padding-top: clamp(144px, 21vh, 230px);
   }
 
   .card-image-index-animate {

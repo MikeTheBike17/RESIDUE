@@ -828,18 +828,70 @@
 
   if (indexAnimationStage && indexAnimationCardLane && indexAnimationCardSticky && indexAnimationCard && indexAnimationPhoneLane && indexAnimationPhoneOff && indexAnimationPhoneOn) {
     let animationTicking = false;
+    let spotlightTicking = false;
+    let lastIndexAnimationScrollY = window.scrollY || window.pageYOffset || 0;
+    let spotlightCurrentX = null;
+    let spotlightCurrentY = null;
+    let spotlightTargetX = null;
+    let spotlightTargetY = null;
+
+    const animateSpotlight = () => {
+      spotlightTicking = false;
+      if (spotlightTargetX === null || spotlightTargetY === null) return;
+
+      if (spotlightCurrentX === null || spotlightCurrentY === null) {
+        spotlightCurrentX = spotlightTargetX;
+        spotlightCurrentY = spotlightTargetY;
+      } else {
+        spotlightCurrentX += (spotlightTargetX - spotlightCurrentX) * 0.22;
+        spotlightCurrentY += (spotlightTargetY - spotlightCurrentY) * 0.22;
+      }
+
+      indexAnimationStage.style.setProperty("--spotlight-x", `${spotlightCurrentX}px`);
+      indexAnimationStage.style.setProperty("--spotlight-y", `${spotlightCurrentY}px`);
+
+      const spotlightSettled =
+        Math.abs(spotlightTargetX - spotlightCurrentX) < 0.5 &&
+        Math.abs(spotlightTargetY - spotlightCurrentY) < 0.5;
+
+      if (!spotlightSettled) {
+        spotlightTicking = true;
+        window.requestAnimationFrame(animateSpotlight);
+      }
+    };
+
+    const requestSpotlightUpdate = (x, y) => {
+      spotlightTargetX = x;
+      spotlightTargetY = y;
+
+      if (spotlightCurrentX === null || spotlightCurrentY === null) {
+        spotlightCurrentX = x;
+        spotlightCurrentY = y;
+        indexAnimationStage.style.setProperty("--spotlight-x", `${x}px`);
+        indexAnimationStage.style.setProperty("--spotlight-y", `${y}px`);
+        return;
+      }
+
+      if (spotlightTicking) return;
+      spotlightTicking = true;
+      window.requestAnimationFrame(animateSpotlight);
+    };
 
     const updateIndexAnimation = () => {
       animationTicking = false;
 
+      const scrollY = window.scrollY || window.pageYOffset || 0;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
       const stageRect = indexAnimationStage.getBoundingClientRect();
       const phoneImageRect = indexAnimationPhoneOff.getBoundingClientRect();
       const viewportCenter = viewportHeight / 2;
       const cardHeight = indexAnimationCardSticky.offsetHeight || indexAnimationCard.offsetHeight || 0;
       const cardHalfHeight = cardHeight / 2;
+      const scrollingUp = scrollY < lastIndexAnimationScrollY;
+      const rotateLeadOffset = Math.max(120, cardHeight * 0.7);
       const overlapOffset = Math.max(24, cardHeight * 0.16);
       const landedOverlapOffset = Math.max(38, cardHeight * 0.26);
+      const enterRotateZone = stageRect.top <= viewportCenter + rotateLeadOffset;
       const enterFixedZone = stageRect.top <= viewportCenter - cardHalfHeight;
       const resetToStartZone = stageRect.top > Math.max(0, viewportCenter - (cardHalfHeight * 1.1) - 212);
       const releaseFixedZone = phoneImageRect.top <= viewportCenter + cardHalfHeight - overlapOffset;
@@ -848,6 +900,14 @@
       const shouldFixCard = !resetToStartZone && enterFixedZone && !releaseFixedZone && stageStillActive;
       const shouldLandCard = !resetToStartZone && enterFixedZone && releaseFixedZone && phoneIsVisible;
       const shouldShowPhoneOn = !resetToStartZone && enterFixedZone && releaseFixedZone;
+      const shouldPreserveReverseRotation =
+        scrollingUp &&
+        !resetToStartZone &&
+        !shouldFixCard &&
+        !shouldLandCard &&
+        stageStillActive &&
+        phoneIsVisible;
+      const shouldRotateCard = !resetToStartZone && stageStillActive && (enterRotateZone || shouldPreserveReverseRotation);
 
       if (shouldLandCard) {
         const landedTop = (phoneImageRect.top - stageRect.top) - cardHeight + landedOverlapOffset;
@@ -856,19 +916,19 @@
         indexAnimationCardSticky.style.top = "";
       }
 
+      indexAnimationCardSticky.classList.toggle("is-fixed", shouldFixCard);
+      indexAnimationCardSticky.classList.toggle("is-landed", shouldLandCard);
+      indexAnimationCard.classList.toggle("is-centered", shouldRotateCard && !shouldLandCard);
+      indexAnimationCard.classList.toggle("is-landed", shouldLandCard);
+      indexAnimationPhoneOff.classList.toggle("is-visible", !shouldShowPhoneOn);
+      indexAnimationPhoneOn.classList.toggle("is-visible", shouldShowPhoneOn);
+
       const cardRect = indexAnimationCard.getBoundingClientRect();
       const spotlightX = Math.max(0, Math.min(stageRect.width, (cardRect.left - stageRect.left) + (cardRect.width / 2)));
       const spotlightY = Math.max(0, Math.min(stageRect.height, (cardRect.top - stageRect.top) + (cardRect.height / 2)));
 
-      indexAnimationStage.style.setProperty("--spotlight-x", `${spotlightX}px`);
-      indexAnimationStage.style.setProperty("--spotlight-y", `${spotlightY}px`);
-
-      indexAnimationCardSticky.classList.toggle("is-fixed", shouldFixCard);
-      indexAnimationCardSticky.classList.toggle("is-landed", shouldLandCard);
-      indexAnimationCard.classList.toggle("is-centered", shouldFixCard);
-      indexAnimationCard.classList.toggle("is-landed", shouldLandCard);
-      indexAnimationPhoneOff.classList.toggle("is-visible", !shouldShowPhoneOn);
-      indexAnimationPhoneOn.classList.toggle("is-visible", shouldShowPhoneOn);
+      requestSpotlightUpdate(spotlightX, spotlightY);
+      lastIndexAnimationScrollY = scrollY;
     };
 
     const requestIndexAnimationUpdate = () => {
