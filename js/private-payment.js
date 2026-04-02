@@ -764,7 +764,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     els.shippingNextBtn?.addEventListener("click", onShippingNextClick);
     els.quantity?.addEventListener("input", updatePriceDisplay);
     els.redirectBtn?.addEventListener("click", () => {
-      window.location.href = "residue-inside.html";
+      window.location.href = "index.html";
     });
   }
 
