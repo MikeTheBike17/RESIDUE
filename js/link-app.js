@@ -362,30 +362,46 @@ import { residueTelemetry } from './supabase-telemetry.js';
     return `${base}/functions/v1/${fnName}`;
   }
 
+  function setWalletMessage(message) {
+    const walletMsg = document.getElementById('lt-wallet-message');
+    if (walletMsg && message) walletMsg.textContent = message;
+  }
+
   async function requestVirtualCard(platform) {
     const slug = String(walletCardState.slug || '').trim().toLowerCase();
     const name = String(walletCardState.name || '').trim();
     if (!slug) {
       showStatus('lt-status', 'Profile link is not ready yet.');
-      return;
+      setWalletMessage('Profile link is not ready yet.');
+      return false;
     }
     const endpoint = buildWalletFunctionUrl('wallet-pass');
     if (!endpoint) {
       showStatus('lt-status', 'Wallet service is unavailable in this environment.');
-      return;
+      setWalletMessage('Wallet service is unavailable in this environment.');
+      return false;
     }
 
     showStatus('lt-status', 'Preparing virtual card...');
+    setWalletMessage('Preparing virtual card...');
     const headers = { 'content-type': 'application/json' };
     if (cfg.SUPABASE_ANON_KEY) {
       headers.apikey = cfg.SUPABASE_ANON_KEY;
       headers.Authorization = `Bearer ${cfg.SUPABASE_ANON_KEY}`;
     }
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ slug, name, platform })
-    });
+    let res;
+    try {
+      res = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ slug, name, platform })
+      });
+    } catch (error) {
+      const detail = error?.message || 'Could not reach wallet service.';
+      showStatus('lt-status', detail);
+      setWalletMessage(detail);
+      return false;
+    }
 
     let payload = null;
     try {
@@ -395,30 +411,37 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (!res.ok) {
       const detail = payload?.error || payload?.detail || 'Failed to generate virtual card.';
       showStatus('lt-status', detail);
-      return;
+      setWalletMessage(detail);
+      return false;
     }
 
     if (platform === 'apple') {
       if (payload?.notReady || payload?.appleReady === false) {
-        showStatus('lt-status', payload?.detail || 'Apple Wallet is not configured yet.');
-        return;
+        const detail = payload?.detail || 'Apple Wallet is not configured yet.';
+        showStatus('lt-status', detail);
+        setWalletMessage(detail);
+        return false;
       }
       if (payload?.applePassUrl) {
         window.location.href = payload.applePassUrl;
-        return;
+        return true;
       }
     }
 
     if (platform === 'google' && payload?.googleSaveUrl) {
-      window.open(payload.googleSaveUrl, '_blank', 'noopener,noreferrer');
-      return;
+      window.location.href = payload.googleSaveUrl;
+      return true;
     }
     if (platform === 'google' && (payload?.notReady || payload?.googleReady === false)) {
-      showStatus('lt-status', payload?.detail || 'Google Wallet is not configured yet.');
-      return;
+      const detail = payload?.detail || 'Google Wallet is not configured yet.';
+      showStatus('lt-status', detail);
+      setWalletMessage(detail);
+      return false;
     }
 
     showStatus('lt-status', 'Virtual card generated, but no wallet link was returned.');
+    setWalletMessage('Virtual card generated, but no wallet link was returned.');
+    return false;
   }
 
   function bindVirtualCardOnce() {
@@ -441,17 +464,18 @@ import { residueTelemetry } from './supabase-telemetry.js';
     virtualBtn?.addEventListener('click', () => {
       if (!walletCardState.slug) {
         showStatus('lt-status', 'Profile link is not ready yet.');
+        setWalletMessage('Profile link is not ready yet.');
         return;
       }
       openWalletModal();
     });
     appleBtn?.addEventListener('click', () => withBusy(async () => {
-      closeWalletModal();
-      await requestVirtualCard('apple');
+      const navigated = await requestVirtualCard('apple');
+      if (navigated) closeWalletModal();
     }));
     googleBtn?.addEventListener('click', () => withBusy(async () => {
-      closeWalletModal();
-      await requestVirtualCard('google');
+      const navigated = await requestVirtualCard('google');
+      if (navigated) closeWalletModal();
     }));
     cancelBtn?.addEventListener('click', closeWalletModal);
     backdrop?.addEventListener('click', closeWalletModal);

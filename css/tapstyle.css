@@ -293,6 +293,19 @@ body.lt-page.preview-mode::-webkit-scrollbar {
 
 .lt-wallet-actions {
   flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.lt-wallet-choice {
+  min-width: 172px;
+}
+
+#lt-wallet-cancel {
+  flex: 0 1 180px;
+  width: 100%;
+  margin-inline: auto;
+  margin-top: 2px;
 }
 
 .lt-contact-btn {
