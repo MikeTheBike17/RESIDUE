@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 const cfg = window.env || {};
 const MANAGER_EMAIL = 'check.email@residue.com';
 const MANAGER_ACCESS_KEY = 'residue_manager_access';
+const INVOICING_ACCESS_KEY = 'residue_manager_invoicing_access';
 const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
 
 const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
@@ -20,6 +21,8 @@ const urlsBody = document.getElementById('card-urls-body');
 const invoiceBody = document.getElementById('invoice-rows-body');
 const refreshBtn = document.getElementById('card-urls-refresh');
 const invoiceRefreshBtn = document.getElementById('invoice-refresh');
+const isCardUrlsPage = !!urlsBody;
+const isInvoicingPage = !!invoiceBody && !urlsBody;
 
 function normalizeEmail(value) {
   return (value || '').trim().toLowerCase();
@@ -46,6 +49,20 @@ function ensureManagerFlag(email) {
 
 function clearManagerFlag() {
   localStorage.removeItem(MANAGER_ACCESS_KEY);
+}
+
+function grantInvoicingAccess() {
+  try {
+    sessionStorage.setItem(INVOICING_ACCESS_KEY, String(Date.now()));
+  } catch {}
+}
+
+function hasInvoicingAccess() {
+  try {
+    return !!sessionStorage.getItem(INVOICING_ACCESS_KEY);
+  } catch {
+    return false;
+  }
 }
 
 function renderUrlRows(rows) {
@@ -188,6 +205,11 @@ function renderInvoiceRows(rows) {
 }
 
 async function guardManagerAccess() {
+  if (isInvoicingPage && !hasInvoicingAccess()) {
+    window.location.href = 'card-urls.html';
+    return null;
+  }
+
   if (!supabase) {
     clearManagerFlag();
     window.location.href = 'access.html';
@@ -203,6 +225,7 @@ async function guardManagerAccess() {
   }
 
   ensureManagerFlag(sessionEmail);
+  if (isCardUrlsPage) grantInvoicingAccess();
   return session;
 }
 
@@ -255,20 +278,23 @@ async function fetchAllRows() {
 
   setStatus('Refreshing...', 'loading');
   if (refreshBtn) refreshBtn.disabled = true;
-   if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = true;
+  if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = true;
 
   try {
-    const [profileRows, invoiceRows] = await Promise.all([
-      fetchProfileRows(),
-      fetchInvoiceRows()
-    ]);
-
-    renderUrlRows(profileRows);
-    renderInvoiceRows(invoiceRows);
-    setStatus(`Loaded ${profileRows.length} URLs and ${invoiceRows.length} invoice rows.`, 'success');
+    if (isCardUrlsPage) {
+      const profileRows = await fetchProfileRows();
+      renderUrlRows(profileRows);
+      setStatus(`Loaded ${profileRows.length} URLs.`, 'success');
+    } else if (isInvoicingPage) {
+      const invoiceRows = await fetchInvoiceRows();
+      renderInvoiceRows(invoiceRows);
+      setStatus(`Loaded ${invoiceRows.length} invoice rows.`, 'success');
+    } else {
+      setStatus('', '');
+    }
   } catch (error) {
-    renderUrlRows([]);
-    renderInvoiceRows([]);
+    if (isCardUrlsPage) renderUrlRows([]);
+    if (isInvoicingPage) renderInvoiceRows([]);
     setStatus(error.message || 'Could not load manager data.', 'error');
   } finally {
     if (refreshBtn) refreshBtn.disabled = false;
@@ -301,6 +327,7 @@ refreshBtn?.addEventListener('click', fetchAllRows);
 invoiceRefreshBtn?.addEventListener('click', refreshInvoicesOnly);
 
 (async () => {
-  await guardManagerAccess();
+  const session = await guardManagerAccess();
+  if (!session) return;
   await fetchAllRows();
 })();
