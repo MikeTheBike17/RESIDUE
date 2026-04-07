@@ -14,8 +14,8 @@
     <nav class="nav admin-nav" aria-label="Admin navigation">
       <a class="brand" href="index.html">Residue</a>
       <div class="nav-links admin-nav-links">
-        <a class="admin-nav-link is-active" href="card-urls.html" aria-current="page">Card URLs</a>
-        <a class="admin-nav-link" href="invoicing.html">Invoicing</a>
+        <a class="admin-nav-link" href="card-urls.html">Card URLs</a>
+        <a class="admin-nav-link is-active" href="invoicing.html" aria-current="page">Invoicing</a>
         <a class="admin-nav-link admin-nav-exit" href="index.html">Exit</a>
       </div>
     </nav>
@@ -26,12 +26,12 @@
       <section class="panel reveal card-urls-panel">
         <div class="stack" style="gap:14px;">
           <div class="eyebrow">Manager Access</div>
-          <h1 class="h2" style="margin:0;">Card URLs</h1>
-          <p class="muted" style="margin:0;">Fetch user emails and their profile URLs from Supabase.</p>
+          <h1 class="h2" style="margin:0;">Invoicing</h1>
+          <p class="muted" style="margin:0;">Payment and shipping details for completed purchase attempts.</p>
         </div>
 
         <div class="card-urls-toolbar">
-          <button class="btn" id="card-urls-refresh" type="button">Refresh</button>
+          <button class="btn" id="invoice-refresh" type="button">Refresh</button>
           <div class="status" id="card-urls-status" aria-live="polite"></div>
         </div>
 
@@ -39,14 +39,21 @@
           <table class="card-urls-table">
             <thead>
               <tr>
+                <th scope="col">Invoice</th>
+                <th scope="col">Name</th>
                 <th scope="col">Email</th>
-                <th scope="col">URL</th>
-                <th scope="col" class="card-urls-copy-col">Copy</th>
+                <th scope="col">Number</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Config</th>
+                <th scope="col">Logo</th>
+                <th scope="col">File</th>
+                <th scope="col">Shipping</th>
+                <th scope="col">Payment</th>
               </tr>
             </thead>
-            <tbody id="card-urls-body">
+            <tbody id="invoice-rows-body">
               <tr>
-                <td colspan="3" class="card-urls-empty">Loading...</td>
+                <td colspan="10" class="card-urls-empty">Loading...</td>
               </tr>
             </tbody>
           </table>
