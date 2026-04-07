@@ -99,7 +99,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       finishOverlay();
       return;
     }
-    const { data, error } = await supabase.from('profiles').select('*').eq('slug', slug).single();
+    const { data, error } = await supabase.from('profiles').select('*').eq('slug', slug).maybeSingle();
     let profile = data;
     if (error || !data) {
       profile = localFallback?.profile;
@@ -922,10 +922,22 @@ async function ensureLocalDraftForUser(user) {
   }
 
   async function loadProfile(user) {
-    let { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    const { data: initialProfile, error: profileErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (profileErr) throw profileErr;
+    let profile = initialProfile;
     if (!profile) {
       await ensureProfileRow(user);
-      ({ data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single());
+      const { data: createdProfile, error: createdErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (createdErr) throw createdErr;
+      profile = createdProfile;
     }
     const adminSlug = resolveSlug(profile?.slug, profile?.auth_email, user?.email);
     updateAdminContextUrl(adminSlug);
