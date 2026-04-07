@@ -77,6 +77,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       fillPublic(localFallback.profile || {}, meta);
       renderLinks('lt-links', normalLinks || []);
       setupContactDownload(localFallback.profile || {}, normalLinks || []);
+      setupVirtualCard(localFallback.profile || {});
       finishOverlay();
       if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
       return;
@@ -88,6 +89,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
         fillPublic(localFallback.profile || {}, meta);
         renderLinks('lt-links', normalLinks || []);
         setupContactDownload(localFallback.profile || {}, normalLinks || []);
+        setupVirtualCard(localFallback.profile || {});
       } else {
         showPlaceholder('Run via http:// (not file://) or add data first.');
       }
@@ -118,6 +120,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     fillPublic(profile || {}, meta);
     renderLinks('lt-links', hydratedLinks || []);
     setupContactDownload(profile || {}, hydratedLinks || []);
+    setupVirtualCard(profile || {});
     finishOverlay();
     if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
   }
@@ -147,6 +150,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (avatar) avatar.src = 'https://placehold.co/200x200?text=Add+photo';
     renderLinks('lt-links', []);
     setupContactDownload({}, []);
+    setupVirtualCard({});
     showStatus('lt-status', message || '');
   }
 
@@ -158,7 +162,9 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
   let authStateSubscription = null;
   const contactDownloadState = { name: '', phone: '' };
+  const walletCardState = { name: '', slug: '' };
   let contactDownloadBound = false;
+  let walletCardBound = false;
   const DEFAULT_PROFILE_NAME = 'Your name';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
@@ -337,6 +343,137 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (saveBtn) saveBtn.disabled = !name || !phone;
     if (consentMsg) {
       consentMsg.textContent = 'You are requesting to save contact details to your device. Do you agree to continue?';
+    }
+  }
+
+  function openWalletModal() {
+    const modal = document.getElementById('lt-wallet-modal');
+    if (modal) modal.hidden = false;
+  }
+
+  function closeWalletModal() {
+    const modal = document.getElementById('lt-wallet-modal');
+    if (modal) modal.hidden = true;
+  }
+
+  function buildWalletFunctionUrl(fnName) {
+    const base = String(cfg.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+    if (!base) return '';
+    return `${base}/functions/v1/${fnName}`;
+  }
+
+  async function requestVirtualCard(platform) {
+    const slug = String(walletCardState.slug || '').trim().toLowerCase();
+    const name = String(walletCardState.name || '').trim();
+    if (!slug) {
+      showStatus('lt-status', 'Profile link is not ready yet.');
+      return;
+    }
+    const endpoint = buildWalletFunctionUrl('wallet-pass');
+    if (!endpoint) {
+      showStatus('lt-status', 'Wallet service is unavailable in this environment.');
+      return;
+    }
+
+    showStatus('lt-status', 'Preparing virtual card...');
+    const headers = { 'content-type': 'application/json' };
+    if (cfg.SUPABASE_ANON_KEY) {
+      headers.apikey = cfg.SUPABASE_ANON_KEY;
+      headers.Authorization = `Bearer ${cfg.SUPABASE_ANON_KEY}`;
+    }
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ slug, name, platform })
+    });
+
+    let payload = null;
+    try {
+      payload = await res.json();
+    } catch {}
+
+    if (!res.ok) {
+      const detail = payload?.error || payload?.detail || 'Failed to generate virtual card.';
+      showStatus('lt-status', detail);
+      return;
+    }
+
+    if (platform === 'apple') {
+      if (payload?.notReady || payload?.appleReady === false) {
+        showStatus('lt-status', payload?.detail || 'Apple Wallet is not configured yet.');
+        return;
+      }
+      if (payload?.applePassUrl) {
+        window.location.href = payload.applePassUrl;
+        return;
+      }
+    }
+
+    if (platform === 'google' && payload?.googleSaveUrl) {
+      window.open(payload.googleSaveUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (platform === 'google' && (payload?.notReady || payload?.googleReady === false)) {
+      showStatus('lt-status', payload?.detail || 'Google Wallet is not configured yet.');
+      return;
+    }
+
+    showStatus('lt-status', 'Virtual card generated, but no wallet link was returned.');
+  }
+
+  function bindVirtualCardOnce() {
+    if (walletCardBound) return;
+    const virtualBtn = document.getElementById('lt-virtual-card-btn');
+    const appleBtn = document.getElementById('lt-wallet-apple');
+    const googleBtn = document.getElementById('lt-wallet-google');
+    const cancelBtn = document.getElementById('lt-wallet-cancel');
+    const backdrop = document.getElementById('lt-wallet-backdrop');
+    const withBusy = async fn => {
+      const buttons = [appleBtn, googleBtn, cancelBtn].filter(Boolean);
+      buttons.forEach(btn => { btn.disabled = true; });
+      try {
+        await fn();
+      } finally {
+        buttons.forEach(btn => { btn.disabled = false; });
+      }
+    };
+
+    virtualBtn?.addEventListener('click', () => {
+      if (!walletCardState.slug) {
+        showStatus('lt-status', 'Profile link is not ready yet.');
+        return;
+      }
+      openWalletModal();
+    });
+    appleBtn?.addEventListener('click', () => withBusy(async () => {
+      closeWalletModal();
+      await requestVirtualCard('apple');
+    }));
+    googleBtn?.addEventListener('click', () => withBusy(async () => {
+      closeWalletModal();
+      await requestVirtualCard('google');
+    }));
+    cancelBtn?.addEventListener('click', closeWalletModal);
+    backdrop?.addEventListener('click', closeWalletModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeWalletModal();
+    });
+    walletCardBound = true;
+  }
+
+  function setupVirtualCard(profile = {}) {
+    bindVirtualCardOnce();
+    const virtualBtn = document.getElementById('lt-virtual-card-btn');
+    const walletMsg = document.getElementById('lt-wallet-message');
+    const slug = String(profile?.slug || '').trim().toLowerCase();
+    const name = String(profile?.name || '').trim();
+    walletCardState.slug = slug;
+    walletCardState.name = name;
+    if (virtualBtn) virtualBtn.disabled = !slug;
+    if (walletMsg) {
+      walletMsg.textContent = slug
+        ? `Choose your wallet type to save ${name || 'this'} virtual card.`
+        : 'Profile link is not ready yet.';
     }
   }
 
