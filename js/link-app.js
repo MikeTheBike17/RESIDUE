@@ -1613,9 +1613,11 @@ async function ensureLocalDraftForUser(user) {
     links.forEach(l => {
       if (!l.url) return;
       if (l.hidden) return;
+      const inferredLabel = inferLabel(l.url, l.label || l.url);
+      if (inferredLabel === 'Call' || /^tel:/i.test(l.url)) return;
       const a = document.createElement('a');
       a.href = l.url;
-      a.textContent = inferLabel(l.url, l.label || l.url);
+      a.textContent = inferredLabel;
       a.className = 'lt-link';
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
