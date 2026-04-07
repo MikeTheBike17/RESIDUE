@@ -52,6 +52,7 @@ window.addEventListener('DOMContentLoaded', () => {
     linksWrap.innerHTML = '';
     links.forEach(link => {
       if (!link?.url || link.hidden) return;
+      if (/^tel:/i.test(link.url) || String(link.label || '').trim().toLowerCase() === 'call') return;
       const a = document.createElement('a');
       a.href = link.url;
       a.textContent = link.label || link.url;
