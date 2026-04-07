@@ -243,6 +243,10 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   cursor: not-allowed;
 }
 
+.lt-virtual-card-btn {
+  margin-top: 10px;
+}
+
 .lt-contact-modal[hidden] { display: none !important; }
 
 .lt-contact-modal {
@@ -285,6 +289,10 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.lt-wallet-actions {
+  flex-wrap: wrap;
 }
 
 .lt-contact-btn {
