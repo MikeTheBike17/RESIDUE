@@ -6,6 +6,7 @@ const shippingFee = process.env.SHIPPING_FEE || '';
 const ordersTable = process.env.SUPABASE_ORDERS_TABLE || '';
 const invoicesTable = process.env.SUPABASE_INVOICES_TABLE || '';
 const payfastProcessUrl = process.env.PAYFAST_PROCESS_URL || '';
+const accessRequestFunctionUrl = process.env.ACCESS_REQUEST_FUNCTION_URL || '';
 
 // Only publish values that are safe to ship to every browser.
 // Never add merchant credentials, webhook secrets, or private API keys here.
@@ -15,7 +16,8 @@ const output = `window.env = {
   SHIPPING_FEE: '${shippingFee}',
   SUPABASE_ORDERS_TABLE: '${ordersTable}',
   SUPABASE_INVOICES_TABLE: '${invoicesTable}',
-  PAYFAST_PROCESS_URL: '${payfastProcessUrl}'
+  PAYFAST_PROCESS_URL: '${payfastProcessUrl}',
+  ACCESS_REQUEST_FUNCTION_URL: '${accessRequestFunctionUrl}'
 };`;
 writeFileSync('js/env.js', output);
 console.log('js/env.js written');

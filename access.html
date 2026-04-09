@@ -131,25 +131,21 @@
     <section class="panel reveal section-tight" style="margin-top: 28px;" id="request-access">
       <h3 style="margin-top: 0;">Request access</h3>
       <p class="small muted">No code? Tell us your intent. Team requests welcome.</p>
-        <form id="request-form" class="stack quote-form" style="gap:12px;" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com" action="#" method="post">
-          <input type="hidden" name="_subject" value="Residue Access Request">
-          <input type="hidden" name="_template" value="table">
-          <input type="hidden" name="_next" value="/thank-you.html">
-          <input type="text" name="_honey" style="display:none">
+        <form id="request-form" class="stack access-request-form" style="gap:12px;" action="#" method="post" novalidate>
         <label for="name">Name</label>
-        <input id="name" name="name" placeholder="Name" required>
+        <input id="name" name="name" placeholder="Name" maxlength="120" required>
 
         <label for="email">Email</label>
-        <input id="email" type="email" name="email" placeholder="email@domain" required>
+        <input id="email" type="email" name="email" placeholder="email@domain" maxlength="254" required>
 
-        <label for="social">Instagram / LinkedIn</label>
-        <input id="social" name="social" placeholder="@handle or link" required>
+        <label for="intent">Intent</label>
+        <textarea id="intent" name="intent" placeholder="What you need" maxlength="2000" required></textarea>
 
-        <label for="reason">Intent</label>
-        <textarea id="reason" name="reason" placeholder="What you need" required></textarea>
+        <label for="team_size">Team size (optional)</label>
+        <input id="team_size" name="team_size" type="number" min="1" max="10000" placeholder="10">
 
-        <label for="team">Team size (optional)</label>
-        <input id="team" name="team" type="number" min="1" placeholder="10">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;" aria-hidden="true">
+        <input type="hidden" id="turnstile-token" name="turnstile_token" value="">
 
         <button type="submit" class="btn">Request</button>
         <div class="status" id="request-status" aria-live="polite"></div>
@@ -165,6 +161,7 @@
 
   <script type="module" src="js/supabase-telemetry.js"></script>
   <script src="js/access-antigravity.js"></script>
+  <script src="js/access-request.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>
