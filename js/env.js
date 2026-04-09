@@ -4,5 +4,6 @@ window.env = {
   SHIPPING_FEE: '120',
   SUPABASE_ORDERS_TABLE: 'orders',
   SUPABASE_INVOICES_TABLE: 'purchase_invoices',
-  PAYFAST_PROCESS_URL: 'https://www.payfast.co.za/eng/process'
+  PAYFAST_PROCESS_URL: 'https://www.payfast.co.za/eng/process',
+  ACCESS_REQUEST_FUNCTION_URL: ''
 };
