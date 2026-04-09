@@ -26,15 +26,16 @@
   const mobileNav = document.querySelector('.mobile-nav');
 
   if (toggle && mobileNav) {
+    toggle.setAttribute('aria-expanded', toggle.getAttribute('aria-expanded') === 'true' ? 'true' : 'false');
     toggle.addEventListener('click', () => {
       const open = mobileNav.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
 
     mobileNav.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => {
         mobileNav.classList.remove('open');
-        toggle.setAttribute('aria-expanded', false);
+        toggle.setAttribute('aria-expanded', 'false');
       });
     });
   }
