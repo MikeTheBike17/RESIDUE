@@ -531,6 +531,13 @@ header.scrolled {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transform: rotate(0deg);
+  transition: transform 220ms ease, border-color var(--transition), background var(--transition);
+  transform-origin: center;
+}
+
+.menu-toggle[aria-expanded="true"] {
+  transform: rotate(180deg);
 }
 
 .theme-toggle {
