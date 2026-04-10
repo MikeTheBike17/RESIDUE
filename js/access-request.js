@@ -77,13 +77,18 @@
     setStatus('Submitting request...', 'loading');
 
     try {
+      const headers = {
+        'content-type': 'application/json',
+        'apikey': anonKey
+      };
+      // Only send Bearer when the key looks like a JWT (three dot-separated parts).
+      if ((anonKey.match(/\./g) || []).length === 2) {
+        headers.authorization = `Bearer ${anonKey}`;
+      }
+
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'apikey': anonKey,
-          'authorization': `Bearer ${anonKey}`
-        },
+        headers,
         body: JSON.stringify(payload)
       });
 
