@@ -300,7 +300,7 @@
     const cfg = window.env || {};
     const profileTableFromEnv = (cfg.SUPABASE_PROFILE_TABLE || "").trim().toLowerCase();
     const PROFILE_TABLES = [...new Set(
-      [profileTableFromEnv, "users", "profiles"].filter(Boolean)
+      [profileTableFromEnv, "profiles"].filter(Boolean)
     )];
     let supabaseClientPromise = null;
 
@@ -354,9 +354,6 @@
       if (!supabase || !user?.id) return { ok: false, reason: "missing_context" };
       const authEmail = normalizeEmail(user.email || fallbackEmail);
       const payloadFor = async (table) => {
-        if (table === "users") {
-          return { id: user.id, email: authEmail || null };
-        }
         const { data: existingProfile } = await supabase
           .from(table)
           .select("name, slug")
