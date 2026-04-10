@@ -192,34 +192,24 @@ Deno.serve(async req => {
   const safeEmail = escapeHtml(email);
   const safeIntent = escapeHtml(intent);
   const safeTeamSize = teamSize == null ? "Not provided" : String(teamSize);
-  const safeCreatedAt = escapeHtml(new Date(inserted.created_at).toISOString());
-  const safeId = escapeHtml(inserted.id);
 
   const textBody = [
     "New access request received.",
     "",
-    `ID: ${inserted.id}`,
     `Name: ${name}`,
     `Email: ${email}`,
     `Intent: ${intent}`,
-    `Team Size: ${safeTeamSize}`,
-    `Status: ${inserted.status}`,
-    `Created At: ${inserted.created_at}`,
-    ip ? `IP: ${ip}` : "IP: unavailable",
+    `Size: ${safeTeamSize}`,
   ].join("\n");
 
   const htmlBody = `
     <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111">
       <h2 style="margin-bottom:12px;">New access request received</h2>
       <table cellpadding="8" cellspacing="0" border="0" style="border-collapse:collapse;">
-        <tr><td><strong>ID</strong></td><td>${safeId}</td></tr>
         <tr><td><strong>Name</strong></td><td>${safeName}</td></tr>
         <tr><td><strong>Email</strong></td><td>${safeEmail}</td></tr>
         <tr><td><strong>Intent</strong></td><td>${safeIntent}</td></tr>
-        <tr><td><strong>Team Size</strong></td><td>${escapeHtml(safeTeamSize)}</td></tr>
-        <tr><td><strong>Status</strong></td><td>${escapeHtml(inserted.status)}</td></tr>
-        <tr><td><strong>Created At</strong></td><td>${safeCreatedAt}</td></tr>
-        <tr><td><strong>IP</strong></td><td>${escapeHtml(ip || "unavailable")}</td></tr>
+        <tr><td><strong>Size</strong></td><td>${escapeHtml(safeTeamSize)}</td></tr>
       </table>
     </div>
   `;
