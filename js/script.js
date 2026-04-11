@@ -660,10 +660,11 @@
   const galleryData = [
     // Curated set (kept product moments, removed industrial/architecture)
     { webp: "images/residue-card-iphone-edc-flatlay.webp", fallback: "images/residue-card-iphone-edc-flatlay.jpg", alt: "Residue card with iPhone flatlay" },
+    { webp: "images/residue-card-first-impressions-fade-message.webp", fallback: "images/residue-card-first-impressions-fade-message.jpg.jpg", alt: "First impressions fade message" },
     { webp: "images/residue-card-tap-interaction-hand..webp", fallback: "images/residue-card-tap-interaction-hand..jpg", alt: "Tap interaction close-up" },
+    { webp: "images/iphone-back-with-residue-card-wallet-insert.webp", fallback: "images/iphone-back-with-residue-card-wallet-insert.jpg", alt: "iPhone back with residue card wallet insert" }, 
     { webp: "images/residue-card-first-impressions-wallet-edc.webp", fallback: "images/residue-card-first-impressions-wallet-edc.jpg.jpg", alt: "Wallet EDC scene" },
     { webp: "images/leather-wallet-multitool-residue-card-edc.webp", fallback: "images/leather-wallet-multitool-residue-card-edc.jpg", alt: "Residue card multitool EDC" },
-    { webp: "images/residue-card-not-a-card-signal-clean-product.webp", fallback: "images/residue-card-not-a-card-signal-clean-product.jpg.jpg", alt: "Not a card clean product" },
     { webp: "images/residue-cards-fanned-macro-shallow-focus.webp", fallback: "images/residue-cards-fanned-macro-shallow-focus.jpg.jpg", alt: "Residue cards fanned, macro detail" },
     { webp: "images/residue-card-brand-leave-your-mark-edc-scene..webp", fallback: "images/residue-card-brand-leave-your-mark-edc-scene..jpg", alt: "Leave your mark scene" },
     { webp: "images/leather-wallet-multitool-overhead-residue-brand.webp", fallback: "images/leather-wallet-multitool-overhead-residue-brand.jpg.jpg", alt: "Residue card overhead in wallet" },
@@ -674,14 +675,8 @@
     { webp: "images/residue-card-not-a-card-a-signal-closeup.webp", fallback: "images/residue-card-not-a-card-a-signal-closeup.jpg.jpg", alt: "Not a card signal closeup" },
     { webp: "images/residue-card-leave-your-mark-closeup.webp", fallback: "images/residue-card-leave-your-mark-closeup.jpg.jpg", alt: "Leave your mark closeup" },
     { webp: "images/residue-card-on-leather-wallet-message-display.webp", fallback: "images/residue-card-on-leather-wallet-message-display.jpg.jpg", alt: "Card on leather wallet display" },
-    { webp: "images/residue-card-large-r-logo-product.webp", fallback: "images/residue-card-large-r-logo-product.jpg.jpg", alt: "Large R logo product" },
-    { webp: "images/residue-card-first-impressions-fade-product.webp", fallback: "images/residue-card-first-impressions-fade-product.jpg.jpg", alt: "First impressions product" },
-    { webp: "images/residue-card-not-a-card-a-signal-product.webp", fallback: "images/residue-card-not-a-card-a-signal-product.jpg.jpg", alt: "Not a card signal product" },
-    { webp: "images/residue-card-leave-your-mark-product.webp", fallback: "images/residue-card-leave-your-mark-product.jpg.jpg", alt: "Leave your mark product" },
-    { webp: "images/residue-card-nfc-window-feature.webp", fallback: "images/residue-card-nfc-window-feature.jpg.jpg", alt: "NFC window feature" },
     { webp: "images/multitool-wallet-residue-card-macro-detail.webp", fallback: "images/multitool-wallet-residue-card-macro-detail.jpg", alt: "Residue card macro detail" },
     { webp: "images/multitool-wallet-residue-card-edc-close.webp", fallback: "images/multitool-wallet-residue-card-edc-close.jpg.jpg", alt: "Multitool wallet EDC close" },
-    { webp: "images/residue-card-first-impressions-fade-message.webp", fallback: "images/residue-card-first-impressions-fade-message.jpg.jpg", alt: "First impressions fade message" },
     { webp: "images/residue-cards-fanned-dark-moody-composition.webp", fallback: "images/residue-cards-fanned-dark-moody-composition.jpg.jpg", alt: "Fanned cards dark composition" }
   ];
 
@@ -740,7 +735,7 @@
     let current = 0;
     const total = slides.length;
     let autoTimer = null;
-    const interval = 7000;
+    const interval = 4000;
     let swipeStartX = 0;
     let swipeStartY = 0;
     let swipePointerId = null;
