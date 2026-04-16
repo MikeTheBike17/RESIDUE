@@ -243,6 +243,18 @@
 .lt-btn.secondary { border-color: var(--lt-border); color: var(--lt-text); }
 .lt-btn.secondary:hover { border-color: var(--lt-accent); }
 
+.lt-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.lt-btn:disabled:hover {
+  background: transparent;
+  border-color: currentColor;
+  transform: none;
+}
+
 .lt-inline-link {
   display: inline-block;
   color: var(--lt-accent);
@@ -334,6 +346,14 @@
   gap: 12px;
 }
 
+.lt-admin-actions {
+  gap: 12px;
+}
+
+.lt-admin-virtual-card-btn {
+  margin-top: 0;
+}
+
 .lt-public-link {
   word-break: break-all;
 }
@@ -364,6 +384,90 @@
 
 .lt-code-block .lt-note {
   margin: 0;
+}
+
+.lt-contact-modal[hidden] {
+  display: none !important;
+}
+
+.lt-contact-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.lt-contact-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.lt-contact-modal__panel {
+  position: relative;
+  width: min(92vw, 420px);
+  padding: 18px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--lt-card-strong), var(--lt-card));
+  border: 1px solid var(--lt-border);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+
+.lt-contact-modal__panel h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.lt-contact-modal__panel p {
+  margin: 0;
+  color: var(--lt-text);
+  line-height: 1.45;
+}
+
+.lt-contact-modal__actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.lt-wallet-actions {
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.lt-wallet-choice {
+  min-width: 172px;
+}
+
+#lt-wallet-cancel {
+  flex: 0 1 180px;
+  width: 100%;
+  margin-inline: auto;
+  margin-top: 2px;
+}
+
+.lt-contact-btn {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lt-contact-btn--primary {
+  background: var(--lt-accent);
+  color: #111;
+}
+
+.lt-contact-btn--secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--lt-text);
+  border-color: var(--lt-border);
 }
 
 .lt-note {

@@ -481,8 +481,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function setupVirtualCard(profile = {}) {
-    bindVirtualCardOnce();
     const virtualBtn = document.getElementById('lt-virtual-card-btn');
+    const walletModal = document.getElementById('lt-wallet-modal');
+    if (!virtualBtn || !walletModal) return;
+
+    bindVirtualCardOnce();
     const walletMsg = document.getElementById('lt-wallet-message');
     const slug = String(profile?.slug || '').trim().toLowerCase();
     const name = String(profile?.name || '').trim();
@@ -1171,6 +1174,7 @@ async function ensureLocalDraftForUser(user) {
     const themeInput = document.querySelector(`input[name="lt-theme"][value="${savedTheme}"]`);
     if (themeInput) themeInput.checked = true;
     setTheme(savedTheme);
+    setupVirtualCard(profile || {});
     if (profile?.slug) updatePublicUrl(profile.slug);
     else syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
     const setToggle = (id, checked = true) => {
