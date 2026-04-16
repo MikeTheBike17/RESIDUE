@@ -194,9 +194,11 @@
           </div>
           <p class="lt-note" id="whatsapp-message-count">0 / 180</p>
         </div>
-        <div class="form-group">
+        <div class="form-group lt-admin-actions">
           <button class="lt-btn" id="lt-save" type="button">Save</button>
+          <button class="lt-btn secondary lt-admin-virtual-card-btn" id="lt-virtual-card-btn" type="button" disabled>Virtual Card</button>
           <div class="lt-status" id="lt-save-status"></div>
+          <div class="lt-status" id="lt-status"></div>
         </div>
       </form>
     </div>
@@ -217,6 +219,19 @@
       <div class="lt-cropper-actions">
         <button class="lt-btn secondary" type="button" id="lt-crop-cancel">Cancel</button>
         <button class="lt-btn" type="button" id="lt-crop-apply">Use Crop</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="lt-contact-modal" id="lt-wallet-modal" hidden>
+    <div class="lt-contact-modal__backdrop" id="lt-wallet-backdrop"></div>
+    <div class="lt-contact-modal__panel" role="dialog" aria-modal="true" aria-labelledby="lt-wallet-title">
+      <h2 id="lt-wallet-title">Save Virtual Card</h2>
+      <p id="lt-wallet-message">Choose your wallet type to save this card.</p>
+      <div class="lt-contact-modal__actions lt-wallet-actions">
+        <button class="lt-contact-btn lt-contact-btn--primary lt-wallet-choice" id="lt-wallet-apple" type="button">Apple Wallet</button>
+        <button class="lt-contact-btn lt-contact-btn--primary lt-wallet-choice" id="lt-wallet-google" type="button">Google Wallet</button>
+        <button class="lt-contact-btn lt-contact-btn--secondary" id="lt-wallet-cancel" type="button">Cancel</button>
       </div>
     </div>
   </div>
