@@ -57,9 +57,14 @@
 
     <!--CONFIGURE CARD-->
     <div class="admin-card lt-admin" id="lt-editor" hidden>
-      <div class="lt-row lt-center">
+      <div class="lt-row lt-center lt-profile-summary">
         <div class="lt-label">Profile</div>
-        <p class="lt-note">Public link: <span id="lt-public-url"></span></p>
+        <p class="lt-note">Public link: <a class="lt-inline-link lt-public-link" id="lt-public-url" href="#" target="_blank" rel="noreferrer noopener"></a></p>
+        <div class="lt-code-block" id="lt-code-block" hidden>
+          <div class="lt-code-block__label">Access code</div>
+          <div class="lt-code-block__value" id="lt-code-value"></div>
+          <p class="lt-note" id="lt-code-uses"></p>
+        </div>
       </div>
 
       <form class="configure-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">

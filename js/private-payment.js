@@ -156,6 +156,24 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return `Card configuration ${configNumber || ""}`.trim();
   }
 
+  function updatePurchaseButtonLabel() {
+    if (!els.purchaseBtn) return;
+
+    let label = "Purchase Now";
+
+    if (standardCardsEnabled()) {
+      label = selectedCardConfiguration
+        ? `Purchase Now - Card Type ${selectedCardConfiguration}`
+        : "Purchase Now - Select Card Type";
+    } else if (customLogoEnabled()) {
+      label = els.customLogoFile?.files?.length
+        ? "Purchase Now - Custom Logo"
+        : "Purchase Now - Insert Logo Image";
+    }
+
+    els.purchaseBtn.textContent = label;
+  }
+
   function splitName(fullName) {
     const parts = (fullName || "").trim().split(/\s+/).filter(Boolean);
     if (parts.length === 0) return { first: "", last: "" };
@@ -394,6 +412,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       }
       els.configurePriceNote.textContent = `${checkout.qty} card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each.`;
     }
+    updatePurchaseButtonLabel();
   }
 
   function setCardConfigurationSelection() {
@@ -414,6 +433,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function updateCustomLogoFileName() {
     if (!els.customLogoFileName) return;
     els.customLogoFileName.textContent = els.customLogoFile?.files?.[0]?.name || "No logo selected.";
+    updatePurchaseButtonLabel();
   }
 
   function setCardType(type) {
@@ -464,11 +484,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       updateCustomLogoFileName();
     });
 
-    document.addEventListener("pointerdown", (event) => {
-      if (!els.cardConfigurator || !activeCardType) return;
-      if (els.cardConfigurator.contains(event.target)) return;
-      resetCardTypeSelection();
-    });
   }
 
   function readFileAsDataUrl(file) {

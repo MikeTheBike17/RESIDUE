@@ -134,11 +134,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setText('lt-bio', includeBio ? (profile.bio || '') : '');
     const avatar = document.getElementById('lt-avatar');
     if (avatar) avatar.src = profile.avatar_url || 'https://placehold.co/200x200?text=Add+photo';
-    const pill = document.getElementById('lt-theme-pill');
-    if (pill) {
-      pill.hidden = false;
-      pill.textContent = (profile.theme || 'dark') === 'light' ? 'Light' : 'Dark';
-    }
   }
 
   function showPlaceholder(message) {
@@ -690,7 +685,7 @@ async function ensureLocalDraftForUser(user) {
 
   function deriveDisplayName(profileName, user) {
     const fromProfile = String(profileName || '').trim();
-    if (fromProfile && !fromProfile.includes('@')) return fromProfile;
+    if (fromProfile) return fromProfile;
     const fromMeta = String(user?.user_metadata?.full_name || user?.user_metadata?.name || '').trim();
     if (fromMeta && !isEmailLike(fromMeta)) return fromMeta;
     return DEFAULT_PROFILE_NAME;
@@ -748,11 +743,13 @@ async function ensureLocalDraftForUser(user) {
     if (!urlEl) return;
     const publicUrl = buildPublicProfileUrl(slug);
     urlEl.textContent = publicUrl;
+    if (urlEl instanceof HTMLAnchorElement) {
+      urlEl.href = publicUrl;
+    }
   }
 
   function syncAutoSlug(nameValue, fallbackSource = '') {
     const generatedSlug = resolveSlug(nameValue, fallbackSource);
-    setText('lt-slug-display', buildPublicProfileUrl(generatedSlug || ''));
     updatePublicUrl(generatedSlug || '');
     return generatedSlug;
   }
@@ -1157,13 +1154,20 @@ async function ensureLocalDraftForUser(user) {
   function fillEditor(profile, links, user = null, snapshot = null) {
     const snapshotFields = snapshot?.fields || {};
     const displayName = deriveDisplayName(profile?.name, user);
-    const savedTitle = typeof snapshotFields.role === 'string' ? snapshotFields.role : '';
-    const savedBio = typeof snapshotFields['lt-bio'] === 'string' ? snapshotFields['lt-bio'] : '';
+    const savedTitle = typeof profile?.title === 'string'
+      ? profile.title
+      : (typeof snapshotFields.role === 'string' ? snapshotFields.role : '');
+    const savedBio = typeof profile?.bio === 'string'
+      ? profile.bio
+      : (typeof snapshotFields['lt-bio'] === 'string' ? snapshotFields['lt-bio'] : '');
+    const savedEmail = Object.prototype.hasOwnProperty.call(snapshotFields, 'email-config')
+      ? String(snapshotFields['email-config'] ?? '')
+      : normalizeEmail(profile?.auth_email || user?.email || '');
     const savedTheme = profile?.theme === 'light' ? 'light' : 'dark';
     setValue('lt-avatar-url', profile.avatar_url || '');
     setValue('full-name', displayName || '');
-    setValue('role', savedTitle || profile.title || '');
-    setValue('lt-bio', savedBio || profile.bio || '');
+    setValue('role', savedTitle || '');
+    setValue('lt-bio', savedBio || '');
     const themeInput = document.querySelector(`input[name="lt-theme"][value="${savedTheme}"]`);
     if (themeInput) themeInput.checked = true;
     setTheme(savedTheme);
@@ -1178,7 +1182,7 @@ async function ensureLocalDraftForUser(user) {
     setValue('website', '');
     setValue('location-coordinates', '');
     setValue('phone', '');
-    setValue('email-config', '');
+    setValue('email-config', savedEmail || '');
     setValue('whatsapp-number', '');
     setValue('whatsapp-message', '');
 
@@ -1190,7 +1194,6 @@ async function ensureLocalDraftForUser(user) {
     const fallbackShowBio = snapshotFields['show-bio'];
     setToggle('show-role', hasMeta('show_role') ? parseBool(meta.show_role, true) : parseBool(fallbackShowRole, true));
     setToggle('show-bio', hasMeta('show_bio') ? parseBool(meta.show_bio, true) : parseBool(fallbackShowBio, true));
-    setToggle('show-slug', parseBool(meta.show_slug, true));
     setToggle('show-website', parseToggleMeta('show_website', true));
     setToggle('show-location', parseToggleMeta('show_location', true));
     setToggle('show-phone', parseToggleMeta('show_phone', true));
@@ -1322,7 +1325,6 @@ async function ensureLocalDraftForUser(user) {
 
     linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? true, linksOut.length));
     linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_slug', document.getElementById('show-slug')?.checked ?? true, linksOut.length));
     linksOut.push(metaLink('show_website', document.getElementById('show-website')?.checked ?? true, linksOut.length));
     linksOut.push(metaLink('show_location', document.getElementById('show-location')?.checked ?? true, linksOut.length));
     linksOut.push(metaLink('show_phone', document.getElementById('show-phone')?.checked ?? true, linksOut.length));
