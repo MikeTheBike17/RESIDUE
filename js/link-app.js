@@ -719,10 +719,8 @@ async function ensureLocalDraftForUser(user) {
     return `${url.origin}${url.pathname}`;
   }
 
-  function buildAdminRecoveryUrl() {
-    const recoveryUrl = new URL(buildAdminPageUrl());
-    recoveryUrl.searchParams.set('reset', '1');
-    return recoveryUrl.toString();
+  function buildResetPasswordPageUrl() {
+    return `${window.location.origin}/reset-password`;
   }
 
   function isRecoveryReturn() {
@@ -841,7 +839,7 @@ async function ensureLocalDraftForUser(user) {
       if (!supabase) return showStatusEl(resetStatus, 'Password reset requires Supabase auth.', 'error');
       showStatusEl(resetStatus, 'Sending reset email...', 'loading');
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: buildAdminRecoveryUrl()
+        redirectTo: buildResetPasswordPageUrl()
       });
       if (error) return showStatusEl(resetStatus, error.message, 'error');
       showStatusEl(resetStatus, `Reset email sent to ${email}.`, 'success');
