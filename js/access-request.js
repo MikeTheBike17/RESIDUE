@@ -73,6 +73,13 @@
       return;
     }
 
+    try {
+      payload.turnstile_token = await window.residueTurnstile?.requireToken?.(form) || payload.turnstile_token;
+    } catch (err) {
+      setStatus(err.message || 'Complete the security check.', 'error');
+      return;
+    }
+
     setBusy(true);
     setStatus('Submitting request...', 'loading');
 
@@ -99,7 +106,9 @@
 
       setStatus('Request submitted. Our team will review it shortly.', 'success');
       form.reset();
+      window.residueTurnstile?.reset?.(form);
     } catch (err) {
+      window.residueTurnstile?.reset?.(form);
       setStatus(err.message || 'Could not submit request.', 'error');
     } finally {
       setBusy(false);
