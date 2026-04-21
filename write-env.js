@@ -7,7 +7,7 @@ const ordersTable = process.env.SUPABASE_ORDERS_TABLE || '';
 const invoicesTable = process.env.SUPABASE_INVOICES_TABLE || '';
 const payfastProcessUrl = process.env.PAYFAST_PROCESS_URL || '';
 const accessRequestFunctionUrl = process.env.ACCESS_REQUEST_FUNCTION_URL || '';
-const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || '';
+const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || '0x4AAAAAADAvI_1p6cpg5G_F';
 
 // Only publish values that are safe to ship to every browser.
 // Never add merchant credentials, webhook secrets, or private API keys here.

@@ -52,10 +52,21 @@
     if (field) field.value = token;
   };
 
+  const showMessage = (container, message) => {
+    if (!container) return;
+    container.innerHTML = "";
+    const placeholder = document.createElement("span");
+    placeholder.className = "turnstile-placeholder";
+    placeholder.textContent = message;
+    container.appendChild(placeholder);
+  };
+
   const render = async container => {
     if (!container || widgets.has(container) || !isVisible(container)) return null;
     const turnstile = await loadApi();
     if (!turnstile || widgets.has(container) || !isVisible(container)) return null;
+
+    container.innerHTML = "";
 
     const widgetId = turnstile.render(container, {
       sitekey: getSiteKey(),
@@ -71,9 +82,12 @@
   };
 
   const renderAll = async (root = document) => {
-    if (!hasConfig()) return [];
-    await loadApi();
     const containers = Array.from(root.querySelectorAll("[data-turnstile-widget]"));
+    if (!hasConfig()) {
+      containers.forEach(container => showMessage(container, "Security check unavailable. Add TURNSTILE_SITE_KEY."));
+      return [];
+    }
+    await loadApi();
     return Promise.all(containers.map(render));
   };
 

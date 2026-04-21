@@ -1392,16 +1392,33 @@ textarea {
 .status.success { color: #8fb7a5; }
 .status.error { color: #d7928b; }
 
+.turnstile-field {
+  display: grid;
+  justify-items: center;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
 .turnstile-slot {
   display: flex;
+  align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 65px;
   margin-top: 14px;
 }
 
-.turnstile-slot:empty {
-  min-height: 0;
-  margin-top: 0;
+.turnstile-placeholder {
+  display: inline-flex;
+  justify-content: center;
+  width: min(300px, 100%);
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.92rem;
+  text-align: center;
+  background: rgba(255,255,255,0.02);
 }
 
 .turnstile-slot iframe {
