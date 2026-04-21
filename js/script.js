@@ -229,11 +229,18 @@
 
   const ACCESS_GRANTED_KEY = 'residue-access';
   const AUTH_INTENT_KEY = 'residue-auth-intent';
+  let signupUnlockedForAuth = false;
 
   function normalizeAuthIntent(value) {
     const intent = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+    if (intent === 'login') return 'login';
+    if (intent === 'signin' || intent === 'signup' || intent === 'create' || intent === 'createaccount') return 'signup';
+    return '';
+  }
+
+  function modalModeForAuthIntent(intent) {
     if (intent === 'login') return 'signin';
-    if (intent === 'signin' || intent === 'signup' || intent === 'create' || intent === 'createaccount') return 'create';
+    if (intent === 'signup') return 'create';
     return '';
   }
 
@@ -284,9 +291,11 @@
     clearAuthIntentFromUrl();
   }
 
-  const requestedAuthMode = readAuthIntentFromUrl();
+  const requestedAuthIntent = readAuthIntentFromUrl();
+  const requestedAuthMode = modalModeForAuthIntent(requestedAuthIntent);
   const isAccessPage = /\/access(?:\.html)?$/i.test(window.location.pathname || '');
-  if (requestedAuthMode) storePendingAuthMode(requestedAuthMode);
+  if (requestedAuthIntent === 'signup') storePendingAuthMode('create');
+  else if (requestedAuthIntent === 'login') clearPendingAuthMode();
   else if (isAccessPage) clearPendingAuthMode();
 
   // Access gate
@@ -323,8 +332,9 @@
           });
           statusEl.textContent = 'Access granted.';
           statusEl.className = 'status success';
+          signupUnlockedForAuth = true;
           if (typeof window.openAuthModal === 'function') {
-            window.openAuthModal(getPendingAuthMode('signin'));
+            window.openAuthModal(getPendingAuthMode('create'));
             clearPendingAuthMode();
           }
         } else {
@@ -349,7 +359,7 @@
     // already in premium
   }
 
-  // ===== AUTH MODAL (Log in / Sign in) =====
+  // ===== AUTH MODAL (Log in / Sign up) =====
     const $ = (sel, root = document) => root.querySelector(sel);
 
     const CURRENT_USER_KEY = "residue_current_user";
@@ -532,10 +542,11 @@
 
     function openAuthModal(defaultMode = "signin") {
       if (!modal) return;
+      const safeMode = defaultMode === "create" && !signupUnlockedForAuth ? "signin" : defaultMode;
       modal.classList.add("is-open");
       modal.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
-      setMode(defaultMode);
+      setMode(safeMode);
     }
 
     function closeAuthModal() {
@@ -545,6 +556,16 @@
       document.body.style.overflow = "";
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
+    }
+
+    function directSignupToAccessGate() {
+      storePendingAuthMode("create");
+      closeAuthModal();
+      const target = gateForm?.closest("section") || gateForm;
+      target?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+      window.setTimeout(() => {
+        $("#access-code")?.focus();
+      }, prefersReducedMotion ? 0 : 220);
     }
 
     // expose so your access gate can call it
@@ -579,10 +600,10 @@
         createForm.tabIndex = isSignin ? -1 : 0;
       }
 
-      if (title) title.textContent = isSignin ? "Log in" : "Sign in";
+      if (title) title.textContent = isSignin ? "Log in" : "Sign up";
       if (subtitle) subtitle.textContent = isSignin
         ? "Enter your credentials to continue."
-        : "Set your email and password to continue.";
+        : "Create your account to continue.";
 
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
@@ -595,15 +616,21 @@
     }
 
     tabSignin?.addEventListener("click", () => setMode("signin"));
-    tabCreate?.addEventListener("click", () => setMode("create"));
+    tabCreate?.addEventListener("click", () => {
+      if (!signupUnlockedForAuth) {
+        directSignupToAccessGate();
+        return;
+      }
+      setMode("create");
+    });
 
     // Backfill legacy users missing app rows when an auth session already exists.
     syncProfileForCurrentSession();
     enforceProtectedRouteSession();
 
-    if (modal && requestedAuthMode && localStorage.getItem(ACCESS_GRANTED_KEY) === 'granted') {
+    if (modal && requestedAuthIntent === 'login') {
       setTimeout(() => {
-        openAuthModal(getPendingAuthMode(requestedAuthMode));
+        openAuthModal(requestedAuthMode || 'signin');
         clearPendingAuthMode();
       }, 80);
     }
@@ -633,8 +660,8 @@
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        logAuth({ action: 'signin', outcome: 'failure', email, detail: error.message || 'Supabase sign in failed.' });
-        return setStatus(signinStatus, error.message || "Could not sign in.", true);
+        logAuth({ action: 'signin', outcome: 'failure', email, detail: error.message || 'Supabase log in failed.' });
+        return setStatus(signinStatus, error.message || "Could not log in.", true);
       }
 
       if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);
@@ -654,9 +681,9 @@
         action: 'signin',
         outcome: 'success',
         email,
-            detail: isManager ? 'Logged in via Supabase auth as manager.' : 'Logged in via Supabase auth.'
+        detail: isManager ? 'Logged in via Supabase auth as manager.' : 'Logged in via Supabase auth.'
       });
-      setStatus(signinStatus, "Signed in.", true);
+      setStatus(signinStatus, "Logged in.", true);
 
       setTimeout(() => {
         closeAuthModal();
@@ -665,14 +692,14 @@
       }, 500);
     });
 
-    // CREATE submit
+    // SIGN UP submit
     createForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const email = normalizeEmail($("#create-email")?.value || "");
       const password = $("#create-password")?.value || "";
       const confirm = $("#create-confirm")?.value || "";
-      logAuth({ action: 'signup', outcome: 'attempt', email, detail: 'Create account submitted.' });
+      logAuth({ action: 'signup', outcome: 'attempt', email, detail: 'Sign up submitted.' });
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Invalid email format.' });
@@ -706,7 +733,7 @@
 
       if (data?.user && !data?.session) {
         logAuth({ action: 'signup', outcome: 'success', email, detail: 'Supabase signup created; awaiting email confirmation.' });
-        return setStatus(createStatus, "Account created. Check your email to confirm and sign in.", true);
+        return setStatus(createStatus, "Account created. Check your email to confirm and log in.", true);
       }
 
       if (data?.user?.id) await ensureProfileRow(supabase, data.user, email);

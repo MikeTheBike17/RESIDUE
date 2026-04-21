@@ -27,7 +27,7 @@
       <div class="nav-actions">
         <div class="nav-auth-actions" aria-label="Account">
           <a class="nav-auth-button nav-auth-button-login" href="access.html?auth=login">Log in</a>
-          <a class="nav-auth-button nav-auth-button-signin" href="access.html?auth=signin">Sign in</a>
+          <a class="nav-auth-button nav-auth-button-signin" href="access.html?auth=signup">Sign up</a>
         </div>
         <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
           <span class="dot" aria-hidden="true"></span>
@@ -47,7 +47,7 @@
       <a href="contact.html">Contact</a>
       <div class="mobile-auth-actions" aria-label="Account">
         <a class="nav-auth-button nav-auth-button-login" href="access.html?auth=login">Log in</a>
-        <a class="nav-auth-button nav-auth-button-signin" href="access.html?auth=signin">Sign in</a>
+        <a class="nav-auth-button nav-auth-button-signin" href="access.html?auth=signup">Sign up</a>
       </div>
       <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme (mobile)">
         <span class="dot" aria-hidden="true"></span>
@@ -76,7 +76,7 @@
       </div>
     </section>
 
-    <!-- AUTH MODAL (Log in / Sign in) -->
+    <!-- AUTH MODAL (Log in / Sign up) -->
     <div class="modal" id="authModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <div class="modal-backdrop" data-close></div>
 
@@ -91,7 +91,7 @@
             Log in
           </button>
           <button class="auth-tab" type="button" id="tab-create" role="tab" aria-selected="false" aria-controls="panel-create">
-            Sign in
+            Sign up
           </button>
         </div>
 
@@ -114,7 +114,7 @@
           </div>
         </form>
 
-        <!-- SIGN IN -->
+        <!-- SIGN UP -->
         <form class="modal-form" id="createForm" autocomplete="off" aria-labelledby="tab-create" role="tabpanel" aria-hidden="true" tabindex="-1" style="display:none;">
           <label class="muted" for="create-email" style="margin-top:12px;">Email</label>
           <input id="create-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
@@ -129,7 +129,7 @@
 
           <div class="modal-actions">
             <button class="btn btn-outline" type="button" data-close>Cancel</button>
-            <button class="btn" type="submit">Sign in</button>
+            <button class="btn" type="submit">Sign up</button>
           </div>
         </form>
       </div>
