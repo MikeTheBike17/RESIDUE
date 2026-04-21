@@ -787,6 +787,7 @@ async function ensureLocalDraftForUser(user) {
     const resetModal = document.getElementById('lt-reset-modal');
     const resetCloseEls = resetModal?.querySelectorAll('[data-reset-close]');
     const resetEmail = document.getElementById('lt-reset-email');
+    const resetEmailDisplay = document.getElementById('lt-reset-email-display');
     const sendOtpBtn = document.getElementById('lt-send-otp');
     const otpInput = document.getElementById('lt-reset-otp');
     const resetPass = document.getElementById('lt-reset-pass');
@@ -798,6 +799,7 @@ async function ensureLocalDraftForUser(user) {
     const setResetMode = mode => {
       const isRecovery = mode === 'recovery';
       if (resetEmail) resetEmail.hidden = isRecovery;
+      if (resetEmailDisplay) resetEmailDisplay.hidden = isRecovery;
       if (sendOtpBtn) {
         sendOtpBtn.hidden = isRecovery;
         sendOtpBtn.textContent = 'Send reset email';
@@ -808,15 +810,23 @@ async function ensureLocalDraftForUser(user) {
       if (resetSubmit) resetSubmit.hidden = !isRecovery;
     };
 
-    const openResetModal = () => {
+    const openResetModal = async () => {
       if (!resetModal) return;
       resetModal.hidden = false;
       document.body.style.overflow = 'hidden';
       setResetMode('request');
       showStatusEl(resetStatus, '', '');
-      const currentEmail = emailInput?.value?.trim() || '';
-      if (resetEmail && currentEmail) resetEmail.value = currentEmail;
-      setTimeout(() => resetEmail?.focus(), 0);
+      let currentEmail = normalizeEmail(emailInput?.value || '');
+      if (!currentEmail && supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        currentEmail = normalizeEmail(session?.user?.email || '');
+      }
+      if (resetEmail) resetEmail.value = currentEmail;
+      if (resetEmailDisplay) {
+        resetEmailDisplay.textContent = currentEmail
+          ? `Send email to ${currentEmail}`
+          : 'Send email to your account email';
+      }
     };
 
     const openRecoveryModal = email => {
