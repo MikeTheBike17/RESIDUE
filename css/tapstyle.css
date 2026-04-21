@@ -231,6 +231,24 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   filter: brightness(1.04);
 }
 
+body.lt-page[data-theme="dark"] .lt-links a {
+  color: #fff;
+  background:
+    linear-gradient(135deg, rgba(214, 178, 107, 0.22), rgba(34, 40, 56, 0.72) 42%, rgba(10, 10, 14, 0.96) 100%);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 14px 28px rgba(0,0,0,0.24);
+}
+
+body.lt-page[data-theme="dark"] .lt-links a:hover {
+  border-color: rgba(214,178,107,0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 18px 34px rgba(0,0,0,0.32),
+    0 0 24px rgba(214,178,107,0.12);
+}
+
 .lt-links .lt-gallery-btn {
   border-color: rgba(214, 178, 107, 0.72);
   color: #f6ddb0;
