@@ -204,62 +204,29 @@ body.lt-page.preview-mode::-webkit-scrollbar {
 }
 
 .lt-links a {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   text-align: center;
-  min-height: 56px;
-  padding: 15px 54px;
+  padding: 15px 18px;
   border-radius: 12px;
   text-decoration: none;
-  color: #fff;
+  color: #000;
   background:
-    linear-gradient(135deg, rgba(214, 178, 107, 0.22), rgba(34, 40, 56, 0.72) 42%, rgba(10, 10, 14, 0.96) 100%);
-  border: 1px solid rgba(255,255,255,0.12);
+    linear-gradient(135deg, rgba(232, 218, 182, 0.72) 0%, rgba(226, 224, 216, 0.86) 42%, rgba(178, 178, 170, 0.84) 100%);
+  border: 1px solid rgba(206, 195, 162, 0.78);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    0 14px 28px rgba(0,0,0,0.24);
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -1px 0 rgba(130, 128, 118, 0.22),
+    0 12px 24px rgba(82, 74, 61, 0.16);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
 }
 
-.lt-link-icon,
-.lt-link-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  line-height: 1;
-  pointer-events: none;
-}
-
-.lt-link-icon {
-  left: 18px;
-  color: #343d46;
-  font-size: 22px;
-}
-
-.lt-link-icon::before {
-  display: block;
-}
-
-.lt-link-label {
-  min-width: 0;
-  color: inherit;
-}
-
-.lt-link-arrow {
-  right: 18px;
-  color: #d6b26b;
-  font-weight: 700;
-  font-size: 22px;
-}
-
 .lt-links a:hover {
-  border-color: rgba(214,178,107,0.52);
+  border-color: rgba(214, 178, 107, 0.78);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.12),
-    0 18px 34px rgba(0,0,0,0.32),
-    0 0 24px rgba(214,178,107,0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.84),
+    inset 0 -1px 0 rgba(130, 128, 118, 0.26),
+    0 16px 30px rgba(82, 74, 61, 0.2),
+    0 0 20px rgba(214, 178, 107, 0.13);
   transform: translateY(-2px);
   filter: brightness(1.04);
 }
