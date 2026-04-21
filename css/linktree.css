@@ -732,7 +732,7 @@
 .lt-overlay {
   position: fixed;
   inset: 0;
-  background: #000;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -747,16 +747,150 @@
   pointer-events: all;
 }
 
+.lt-overlay.hide {
+  opacity: 0;
+  pointer-events: none;
+  display: none !important;
+}
+
 .lt-overlay-box {
-  background: #000;
-  color: #f6f7fb;
-  padding: 18px 28px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.18);
-  box-shadow: 0 20px 70px -40px rgba(0,0,0,0.9);
+  --loader-card-width: clamp(150px, 46vw, 230px);
+  --loader-card-height: calc(var(--loader-card-width) * 0.6294);
+  --loader-card-stage-height: calc(var(--loader-card-width) * 1.16);
+  --loader-card-radius: clamp(8px, 2.5vw, 14px);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #000;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: none;
+  transform: translateY(-6vh);
+}
+
+.lt-loader-card {
+  width: var(--loader-card-width);
+  height: var(--loader-card-stage-height);
+  display: grid;
+  place-items: center;
+  perspective: 1200px;
+  perspective-origin: 50% 45%;
+}
+
+.lt-loader-spin {
+  position: relative;
+  width: var(--loader-card-width);
+  height: var(--loader-card-height);
+  transform-style: preserve-3d;
+  animation: ltLoaderWorldSpin 9s linear infinite;
+}
+
+.lt-loader-tilt {
+  position: absolute;
+  inset: 0;
+  transform: rotateZ(45deg);
+  transform-style: preserve-3d;
+}
+
+.lt-loader-card-3d {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.lt-loader-card-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--loader-card-radius);
+  background: #000;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  box-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.18),
+    0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.lt-loader-card-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.lt-loader-front {
+  transform: translateZ(1px);
+}
+
+.lt-loader-back {
+  transform: rotateY(180deg) translateZ(1px);
+}
+
+.lt-loader-text {
+  margin-top: 4px;
+  font-size: clamp(22px, 6vw, 34px);
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.lt-loader-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  min-height: 11px;
+}
+
+.lt-loader-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  animation: ltLoaderDot 1.2s steps(1, end) infinite;
+}
+
+.lt-loader-dots span:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.lt-loader-dots span:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+@keyframes ltLoaderWorldSpin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+@keyframes ltLoaderDot {
+  0%, 33.33% {
+    opacity: 1;
+  }
+  33.34%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lt-loader-spin,
+  .lt-loader-dots span {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+  }
 }
 
 @media (max-width: 768px) {

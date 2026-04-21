@@ -1038,7 +1038,7 @@ async function ensureLocalDraftForUser(user) {
     if (!session) {
       toggleEditor(false);
       setAuthOnly(true);
-    } else if (forceLoad) {
+    } else {
       persistCurrentUser(session.user);
       toggleEditor(true);
       setAuthOnly(false);
@@ -1049,13 +1049,10 @@ async function ensureLocalDraftForUser(user) {
         showStatusEl(document.getElementById('lt-save-status'), 'Signed in, but profile data failed to load.', 'error');
         loadLocalDraft();
       }
-    } else {
-      persistCurrentUser(session.user);
-      toggleEditor(false);
-      setAuthOnly(true);
     }
     if (authStateSubscription) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessionNow) => {
+      if (event === 'INITIAL_SESSION') return;
       if (event === 'PASSWORD_RECOVERY') {
         document.dispatchEvent(new CustomEvent('lt-password-recovery', {
           detail: { email: normalizeEmail(sessionNow?.user?.email || '') }
@@ -1901,7 +1898,18 @@ async function ensureLocalDraftForUser(user) {
   // Expose
   window.linktree = {
     renderPublicProfile,
-    renderAdmin: () => {
+    renderAdmin: async () => {
+      const overlay = document.getElementById('lt-overlay');
+      const finishOverlay = () => {
+        overlay?.classList.remove('active');
+        overlay?.classList.add('hide');
+        if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 240);
+      };
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.remove('hide');
+        overlay.classList.add('active');
+      }
       if (isFileProtocol) {
         showStatusEl(document.getElementById('lt-auth-status'), 'Run over http://, not file://', 'error');
       }
@@ -1913,8 +1921,12 @@ async function ensureLocalDraftForUser(user) {
       setAuthOnly(true);
       toggleEditor(false);
       bindAuth();
-      initSession(false);
       bindEditorActions();
+      try {
+        await initSession(false);
+      } finally {
+        finishOverlay();
+      }
     }
   };
 })();
