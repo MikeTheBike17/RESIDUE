@@ -227,6 +227,68 @@
   const observer = new MutationObserver(() => prepImages());
   observer.observe(document.body, { childList: true, subtree: true });
 
+  const ACCESS_GRANTED_KEY = 'residue-access';
+  const AUTH_INTENT_KEY = 'residue-auth-intent';
+
+  function normalizeAuthIntent(value) {
+    const intent = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+    if (intent === 'login') return 'signin';
+    if (intent === 'signin' || intent === 'signup' || intent === 'create' || intent === 'createaccount') return 'create';
+    return '';
+  }
+
+  function readAuthIntentFromUrl() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return normalizeAuthIntent(params.get('auth') || params.get('mode'));
+    } catch {
+      return '';
+    }
+  }
+
+  function storePendingAuthMode(mode) {
+    if (!mode) return;
+    try {
+      sessionStorage.setItem(AUTH_INTENT_KEY, mode);
+    } catch {
+      window.__residuePendingAuthMode = mode;
+    }
+  }
+
+  function getPendingAuthMode(fallback = 'signin') {
+    try {
+      return sessionStorage.getItem(AUTH_INTENT_KEY) || fallback;
+    } catch {
+      return window.__residuePendingAuthMode || fallback;
+    }
+  }
+
+  function clearAuthIntentFromUrl() {
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('auth') && !url.searchParams.has('mode')) return;
+      url.searchParams.delete('auth');
+      url.searchParams.delete('mode');
+      window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+    } catch {
+      // URL cleanup is cosmetic; keep the auth flow moving if it fails.
+    }
+  }
+
+  function clearPendingAuthMode() {
+    try {
+      sessionStorage.removeItem(AUTH_INTENT_KEY);
+    } catch {
+      window.__residuePendingAuthMode = '';
+    }
+    clearAuthIntentFromUrl();
+  }
+
+  const requestedAuthMode = readAuthIntentFromUrl();
+  const isAccessPage = /\/access(?:\.html)?$/i.test(window.location.pathname || '');
+  if (requestedAuthMode) storePendingAuthMode(requestedAuthMode);
+  else if (isAccessPage) clearPendingAuthMode();
+
   // Access gate
   const validCodes = ['FOUNDER-001'];
   const gateForm = document.querySelector('.gate-form');
@@ -252,7 +314,7 @@
 
       setTimeout(() => {
         if (validCodes.includes(code)) {
-          localStorage.setItem('residue-access', 'granted');
+          localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
           logAuth({
             action: 'access_code_check',
             outcome: 'success',
@@ -262,7 +324,8 @@
           statusEl.textContent = 'Access granted.';
           statusEl.className = 'status success';
           if (typeof window.openAuthModal === 'function') {
-            window.openAuthModal('signin');
+            window.openAuthModal(getPendingAuthMode('signin'));
+            clearPendingAuthMode();
           }
         } else {
           logAuth({
@@ -282,11 +345,11 @@
   }
 
   // Auto-redirect if already unlocked
-  if (localStorage.getItem('residue-access') === 'granted' && window.location.pathname.endsWith('residue-private.html')) {
+  if (localStorage.getItem(ACCESS_GRANTED_KEY) === 'granted' && window.location.pathname.endsWith('residue-private.html')) {
     // already in premium
   }
 
-  // ===== AUTH MODAL (Sign in / Create) =====
+  // ===== AUTH MODAL (Log in / Sign in) =====
     const $ = (sel, root = document) => root.querySelector(sel);
 
     const CURRENT_USER_KEY = "residue_current_user";
@@ -516,7 +579,7 @@
         createForm.tabIndex = isSignin ? -1 : 0;
       }
 
-      if (title) title.textContent = isSignin ? "Sign in" : "Create account";
+      if (title) title.textContent = isSignin ? "Log in" : "Sign in";
       if (subtitle) subtitle.textContent = isSignin
         ? "Enter your credentials to continue."
         : "Set your email and password to continue.";
@@ -538,13 +601,20 @@
     syncProfileForCurrentSession();
     enforceProtectedRouteSession();
 
-    // SIGN IN submit
+    if (modal && requestedAuthMode && localStorage.getItem(ACCESS_GRANTED_KEY) === 'granted') {
+      setTimeout(() => {
+        openAuthModal(getPendingAuthMode(requestedAuthMode));
+        clearPendingAuthMode();
+      }, 80);
+    }
+
+    // LOG IN submit
     signinForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
 
       const email = normalizeEmail($("#signin-email")?.value || "");
       const password = $("#signin-password")?.value || "";
-      logAuth({ action: 'signin', outcome: 'attempt', email, detail: 'Sign in submitted.' });
+      logAuth({ action: 'signin', outcome: 'attempt', email, detail: 'Log in submitted.' });
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         logAuth({ action: 'signin', outcome: 'failure', email, detail: 'Invalid email format.' });
@@ -584,7 +654,7 @@
         action: 'signin',
         outcome: 'success',
         email,
-        detail: isManager ? 'Signed in via Supabase auth as manager.' : 'Signed in via Supabase auth.'
+            detail: isManager ? 'Logged in via Supabase auth as manager.' : 'Logged in via Supabase auth.'
       });
       setStatus(signinStatus, "Signed in.", true);
 

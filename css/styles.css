@@ -520,6 +520,63 @@ header.scrolled {
   color: var(--text);
 }
 
+.nav-auth-actions,
+.mobile-auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-auth-actions {
+  display: none;
+}
+
+.nav-auth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 9px 14px;
+  border: 1px solid var(--text);
+  border-radius: var(--radius);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    transform 200ms ease;
+}
+
+.nav-auth-button:hover {
+  transform: translateY(-1px);
+}
+
+.nav-auth-button-login {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.nav-auth-button-signin {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.mobile-nav .nav-auth-button-login,
+.mobile-nav.open .nav-auth-button-login {
+  color: var(--text);
+}
+
+.mobile-nav .nav-auth-button-signin,
+.mobile-nav.open .nav-auth-button-signin {
+  color: var(--bg);
+}
+
 .menu-toggle {
   display: none;
   width: 42px;
@@ -2974,8 +3031,38 @@ footer {
   }
 }
 
+@media (min-width: 841px) and (max-width: 1040px) {
+  .nav {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .nav-links {
+    gap: 14px;
+  }
+
+  .nav-links a {
+    font-size: 0.86rem;
+  }
+
+  .nav-actions {
+    gap: 8px;
+    margin-left: 8px;
+  }
+
+  .nav-auth-button {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 0.68rem;
+  }
+}
+
 @media (max-width: 840px) {
   .nav-links {
+    display: none;
+  }
+
+  .nav-auth-actions {
     display: none;
   }
 
@@ -2993,6 +3080,23 @@ footer {
     padding: 16px 24px 24px;
     background: var(--nav-glass-strong);
     border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-nav.open > a {
+    width: 100%;
+    justify-self: center;
+    text-align: center;
+  }
+
+  .mobile-nav.open .mobile-auth-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  .mobile-auth-actions .nav-auth-button {
+    flex: 1 1 132px;
   }
 
   header {

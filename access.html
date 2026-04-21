@@ -25,6 +25,10 @@
         <a href="contact.html">Contact</a>
       </div>
       <div class="nav-actions">
+        <div class="nav-auth-actions" aria-label="Account">
+          <a class="nav-auth-button nav-auth-button-login" href="access.html?auth=login">Log in</a>
+          <a class="nav-auth-button nav-auth-button-signin" href="access.html?auth=signin">Sign in</a>
+        </div>
         <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
           <span class="dot" aria-hidden="true"></span>
           <span class="theme-label">Dark</span>
@@ -41,6 +45,10 @@
       <a href="how-it-works.html">How it works</a>
       <a href="drop.html">Configuration</a>
       <a href="contact.html">Contact</a>
+      <div class="mobile-auth-actions" aria-label="Account">
+        <a class="nav-auth-button nav-auth-button-login" href="access.html?auth=login">Log in</a>
+        <a class="nav-auth-button nav-auth-button-signin" href="access.html?auth=signin">Sign in</a>
+      </div>
       <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme (mobile)">
         <span class="dot" aria-hidden="true"></span>
         <span class="theme-label">Dark</span>
@@ -68,7 +76,7 @@
       </div>
     </section>
 
-    <!-- AUTH MODAL (Sign in / Create account) -->
+    <!-- AUTH MODAL (Log in / Sign in) -->
     <div class="modal" id="authModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <div class="modal-backdrop" data-close></div>
 
@@ -80,17 +88,17 @@
         <!-- Toggle -->
         <div class="auth-toggle" role="tablist" aria-label="Authentication mode" style="margin-left: 5rem;">
           <button class="auth-tab is-active" type="button" id="tab-signin" role="tab" aria-selected="true" aria-controls="panel-signin">
-            Sign in
+            Log in
           </button>
           <button class="auth-tab" type="button" id="tab-create" role="tab" aria-selected="false" aria-controls="panel-create">
-            Create account
+            Sign in
           </button>
         </div>
 
-        <h2 class="h2" id="authTitle" style="margin:10px 0 6px;">Sign in</h2>
+        <h2 class="h2" id="authTitle" style="margin:10px 0 6px;">Log in</h2>
         <p class="muted" id="authSubtitle" style="margin-bottom:18px;">Enter your credentials to continue.</p>
 
-        <!-- SIGN IN -->
+        <!-- LOG IN -->
         <form class="modal-form" id="signinForm" autocomplete="off" aria-labelledby="tab-signin" role="tabpanel" aria-hidden="false" tabindex="0">
           <label class="muted" for="signin-email">Email</label>
           <input id="signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
@@ -102,11 +110,11 @@
 
           <div class="modal-actions">
             <button class="btn btn-outline" type="button" data-close>Cancel</button>
-            <button class="btn" type="submit">Sign in</button>
+            <button class="btn" type="submit">Log in</button>
           </div>
         </form>
 
-        <!-- CREATE ACCOUNT -->
+        <!-- SIGN IN -->
         <form class="modal-form" id="createForm" autocomplete="off" aria-labelledby="tab-create" role="tabpanel" aria-hidden="true" tabindex="-1" style="display:none;">
           <label class="muted" for="create-email" style="margin-top:12px;">Email</label>
           <input id="create-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
@@ -121,7 +129,7 @@
 
           <div class="modal-actions">
             <button class="btn btn-outline" type="button" data-close>Cancel</button>
-            <button class="btn" type="submit">Create</button>
+            <button class="btn" type="submit">Sign in</button>
           </div>
         </form>
       </div>
