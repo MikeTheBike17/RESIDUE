@@ -6,5 +6,5 @@ window.env = {
   SUPABASE_INVOICES_TABLE: 'purchase_invoices',
   PAYFAST_PROCESS_URL: 'https://www.payfast.co.za/eng/process',
   ACCESS_REQUEST_FUNCTION_URL: '',
-  TURNSTILE_SITE_KEY: ''
+  TURNSTILE_SITE_KEY: '0x4AAAAAADAvI_1p6cpg5G_F'
 };

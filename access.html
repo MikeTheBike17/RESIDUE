@@ -155,7 +155,11 @@
 
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;" aria-hidden="true">
         <input type="hidden" id="turnstile-token" name="turnstile_token" value="">
-        <div class="turnstile-slot" data-turnstile-widget data-turnstile-token="#turnstile-token" data-turnstile-theme="dark"></div>
+        <div class="turnstile-field" aria-label="Security check">
+          <div class="turnstile-slot" data-turnstile-widget data-turnstile-token="#turnstile-token" data-turnstile-theme="dark">
+            <span class="turnstile-placeholder">Security check loading...</span>
+          </div>
+        </div>
 
         <button type="submit" class="btn">Request</button>
         <div class="status" id="request-status" aria-live="polite"></div>
