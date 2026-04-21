@@ -14,8 +14,29 @@
 </head>
 
 <body class="lt-page" data-theme="dark">
-  <div class="lt-overlay" id="lt-overlay">
-    <div class="lt-overlay-box">Loading</div>
+  <div class="lt-overlay active" id="lt-overlay" aria-live="polite" aria-busy="true">
+    <div class="lt-overlay-box">
+      <div class="lt-loader-card" aria-hidden="true">
+        <div class="lt-loader-spin">
+          <div class="lt-loader-tilt">
+            <div class="lt-loader-card-3d">
+              <div class="lt-loader-card-face lt-loader-front">
+                <img src="images/card-images/card-front-1.jpeg" alt="">
+              </div>
+              <div class="lt-loader-card-face lt-loader-back">
+                <img src="images/card-images/card-back.jpeg" alt="">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="lt-loader-text">Fetching Data</div>
+      <div class="lt-loader-dots" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
   </div>
 
   <!--CARD LAYOUT-->
