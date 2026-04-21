@@ -204,9 +204,13 @@ body.lt-page.preview-mode::-webkit-scrollbar {
 }
 
 .lt-links a {
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 15px 18px;
+  min-height: 56px;
+  padding: 15px 54px;
   border-radius: 12px;
   text-decoration: none;
   color: #fff;
@@ -217,6 +221,37 @@ body.lt-page.preview-mode::-webkit-scrollbar {
     inset 0 1px 0 rgba(255,255,255,0.08),
     0 14px 28px rgba(0,0,0,0.24);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
+}
+
+.lt-link-icon,
+.lt-link-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.lt-link-icon {
+  left: 18px;
+  color: #343d46;
+  font-size: 22px;
+}
+
+.lt-link-icon::before {
+  display: block;
+}
+
+.lt-link-label {
+  min-width: 0;
+  color: inherit;
+}
+
+.lt-link-arrow {
+  right: 18px;
+  color: #d6b26b;
+  font-weight: 700;
+  font-size: 22px;
 }
 
 .lt-links a:hover {

@@ -1953,6 +1953,43 @@ async function ensureLocalDraftForUser(user) {
       empty.hidden = false;
     }
   }
+  function getPublicLinkIconClass(label = '', url = '') {
+    const value = `${label} ${url}`.toLowerCase();
+    if (value.includes('facebook')) return 'fi fi-brands-facebook';
+    if (value.includes('instagram')) return 'fi fi-brands-instagram';
+    if (value.includes('whatsapp') || value.includes('wa.me')) return 'fi fi-brands-whatsapp';
+    if (value.includes('linkedin')) return 'fi fi-brands-linkedin';
+    if (value.includes('youtube') || value.includes('youtu.be')) return 'fi fi-brands-youtube';
+    if (value.includes('tiktok')) return 'fi fi-brands-tik-tok';
+    if (value.includes('twitter') || value.includes('x.com')) return 'fi fi-brands-twitter-alt';
+    if (value.includes('telegram')) return 'fi fi-brands-telegram';
+    if (value.includes('github')) return 'fi fi-brands-github';
+    if (value.includes('spotify')) return 'fi fi-brands-spotify';
+    if (value.includes('email') || value.includes('mailto:')) return 'fi fi-rr-envelope';
+    if (value.includes('location') || value.includes('maps')) return 'fi fi-rr-marker';
+    return 'fi fi-rr-globe';
+  }
+
+  function populatePublicLinkButton(anchor, label, url) {
+    anchor.classList.add('lt-link');
+    anchor.textContent = '';
+
+    const icon = document.createElement('i');
+    icon.className = `lt-link-icon ${getPublicLinkIconClass(label, url)}`;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.className = 'lt-link-label';
+    text.textContent = label;
+
+    const arrow = document.createElement('span');
+    arrow.className = 'lt-link-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '>';
+
+    anchor.append(icon, text, arrow);
+  }
+
   function renderLinks(containerId, links) {
     const wrap = document.getElementById(containerId);
     wrap.innerHTML = '';
@@ -1967,8 +2004,7 @@ async function ensureLocalDraftForUser(user) {
       if (inferredLabel === 'Call' || /^tel:/i.test(l.url)) return;
       const a = document.createElement('a');
       a.href = l.url;
-      a.textContent = inferredLabel;
-      a.className = 'lt-link';
+      populatePublicLinkButton(a, inferredLabel, l.url);
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       wrap.appendChild(a);

@@ -41,6 +41,41 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
+  const getPublicLinkIconClass = (label = '', url = '') => {
+    const value = `${label} ${url}`.toLowerCase();
+    if (value.includes('facebook')) return 'fi fi-brands-facebook';
+    if (value.includes('instagram')) return 'fi fi-brands-instagram';
+    if (value.includes('whatsapp') || value.includes('wa.me')) return 'fi fi-brands-whatsapp';
+    if (value.includes('linkedin')) return 'fi fi-brands-linkedin';
+    if (value.includes('youtube') || value.includes('youtu.be')) return 'fi fi-brands-youtube';
+    if (value.includes('tiktok')) return 'fi fi-brands-tik-tok';
+    if (value.includes('twitter') || value.includes('x.com')) return 'fi fi-brands-twitter-alt';
+    if (value.includes('telegram')) return 'fi fi-brands-telegram';
+    if (value.includes('github')) return 'fi fi-brands-github';
+    if (value.includes('spotify')) return 'fi fi-brands-spotify';
+    if (value.includes('email') || value.includes('mailto:')) return 'fi fi-rr-envelope';
+    if (value.includes('location') || value.includes('maps')) return 'fi fi-rr-marker';
+    return 'fi fi-rr-globe';
+  };
+  const populatePublicLinkButton = (anchor, label, url) => {
+    anchor.classList.add('lt-link');
+    anchor.textContent = '';
+
+    const icon = document.createElement('i');
+    icon.className = `lt-link-icon ${getPublicLinkIconClass(label, url)}`;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const text = document.createElement('span');
+    text.className = 'lt-link-label';
+    text.textContent = label;
+
+    const arrow = document.createElement('span');
+    arrow.className = 'lt-link-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '>';
+
+    anchor.append(icon, text, arrow);
+  };
   setText('lt-name', profile?.name || 'Your name');
   setText('lt-title', parseBool(meta.show_role, true) ? (profile?.title || '') : '');
   setText('lt-bio', parseBool(meta.show_bio, true) ? (profile?.bio || '') : '');
@@ -55,7 +90,7 @@ window.addEventListener('DOMContentLoaded', () => {
       if (/^tel:/i.test(link.url) || String(link.label || '').trim().toLowerCase() === 'call') return;
       const a = document.createElement('a');
       a.href = link.url;
-      a.textContent = link.label || link.url;
+      populatePublicLinkButton(a, link.label || link.url, link.url);
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       linksWrap.appendChild(a);
