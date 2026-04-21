@@ -1392,6 +1392,22 @@ textarea {
 .status.success { color: #8fb7a5; }
 .status.error { color: #d7928b; }
 
+.turnstile-slot {
+  display: flex;
+  justify-content: center;
+  min-height: 65px;
+  margin-top: 14px;
+}
+
+.turnstile-slot:empty {
+  min-height: 0;
+  margin-top: 0;
+}
+
+.turnstile-slot iframe {
+  max-width: 100%;
+}
+
 .loading-dots::after {
   content: '...';
   display: inline-block;
