@@ -68,7 +68,8 @@
         <button class="reset-password-modal__close" type="button" aria-label="Close reset password" data-reset-close>x</button>
         <div class="form-group" id="lt-forgot-panel">
           <div class="lt-label" id="lt-reset-title">Reset password</div>
-          <input class="lt-input" type="email" id="lt-reset-email" placeholder="Account email">
+          <div class="lt-reset-email-display" id="lt-reset-email-display">Send email to</div>
+          <input class="lt-input" type="hidden" id="lt-reset-email">
           <button class="lt-btn secondary" id="lt-send-otp" type="button">Send OTP</button>
           <input class="lt-input" type="text" id="lt-reset-otp" placeholder="6-digit OTP" inputmode="numeric" maxlength="6">
           <input class="lt-input" type="password" id="lt-reset-pass" placeholder="New password (min 6)">
