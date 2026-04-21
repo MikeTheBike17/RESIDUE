@@ -173,7 +173,9 @@ import { residueTelemetry } from './supabase-telemetry.js';
     { id: 'social-3', label: 'WhatsApp Social', toggle: 'show-social-3' },
     { id: 'social-4', label: 'YouTube', toggle: 'show-social-4' },
     { id: 'social-5', label: 'Facebook', toggle: 'show-social-5' },
-    { id: 'social-6', label: 'X', toggle: 'show-social-6' }
+    { id: 'social-6', label: 'X', toggle: 'show-social-6' },
+    { id: 'social-7', label: 'Pinterest', toggle: 'show-social-7' },
+    { id: 'social-8', label: 'TikTok', toggle: 'show-social-8' }
   ];
 
   function showAdminLoader() {
@@ -240,24 +242,28 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function buildLocationUrl(raw) {
+    const value = String(raw || '').trim();
+    if (!value) return '';
+    if (/^https?:\/\//i.test(value)) return value;
     const coords = normalizeCoordinates(raw);
-    if (!coords) return '';
-    return `https://www.google.com/maps?q=${encodeURIComponent(coords)}`;
+    return `https://www.google.com/maps?q=${encodeURIComponent(coords || value)}`;
   }
 
-  function extractCoordinatesFromUrl(raw) {
+  function extractLocationFromUrl(raw) {
     const value = String(raw || '').trim();
     if (!value) return '';
     const direct = normalizeCoordinates(value);
     if (direct) return direct;
     try {
       const url = new URL(value);
-      const queryCoords = normalizeCoordinates(url.searchParams.get('q') || url.searchParams.get('query') || '');
+      const query = url.searchParams.get('q') || url.searchParams.get('query') || '';
+      const queryCoords = normalizeCoordinates(query);
       if (queryCoords) return queryCoords;
+      if (query) return query;
       const atMatch = decodeURIComponent(url.href).match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
       if (atMatch) return normalizeCoordinates(`${atMatch[1]},${atMatch[2]}`);
     } catch {}
-    return '';
+    return value;
   }
 
   function isEmailLike(value) {
@@ -561,6 +567,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
       const host = new URL(u.startsWith('http') ? u : `https://${u}`).hostname.toLowerCase();
       if (host.includes('linkedin')) return 'LinkedIn';
       if (host.includes('instagram')) return 'Instagram';
+      if (host.includes('pinterest')) return 'Pinterest';
+      if (host.includes('tiktok')) return 'TikTok';
       if (host.includes('whatsapp') || host.includes('wa.me')) return 'WhatsApp';
       if (host.includes('youtube')) return 'YouTube';
       if (host.includes('facebook')) return 'Facebook';
@@ -1246,7 +1254,7 @@ async function ensureLocalDraftForUser(user) {
         return;
       }
       if (label === 'location') {
-        setValue('location-coordinates', extractCoordinatesFromUrl(link.url || ''));
+        setValue('location-coordinates', extractLocationFromUrl(link.url || ''));
         if (!hasMeta('show_location')) setToggle('show-location', !link.hidden);
         return;
       }
@@ -1645,8 +1653,8 @@ async function ensureLocalDraftForUser(user) {
       return false;
     }
     const locationCoordinates = getValue('location-coordinates');
-    if (locationCoordinates && !normalizeCoordinates(locationCoordinates)) {
-      if (!silent) showStatusEl(statusEl, 'Location must be decimal "latitude, longitude" or DMS like 25Â°56\'06.9"S 28Â°08\'41.3"E.', 'error');
+    if (locationCoordinates && !buildLocationUrl(locationCoordinates)) {
+      if (!silent) showStatusEl(statusEl, 'Location must be an address or coordinates.', 'error');
       return false;
     }
 
@@ -1854,8 +1862,8 @@ async function ensureLocalDraftForUser(user) {
         const profile = await collectProfilePayload(session?.user || null);
         if (!profile.name) return showStatusEl(statusEl, 'Name is required.', 'error');
         const locationCoordinates = getValue('location-coordinates');
-        if (locationCoordinates && !normalizeCoordinates(locationCoordinates)) {
-          return showStatusEl(statusEl, 'Location must be decimal "latitude, longitude" or DMS like 25°56\'06.9"S 28°08\'41.3"E.', 'error');
+        if (locationCoordinates && !buildLocationUrl(locationCoordinates)) {
+          return showStatusEl(statusEl, 'Location must be an address or coordinates.', 'error');
         }
         const links = collectLinks();
         showStatusEl(statusEl, 'Saving...', 'loading');
