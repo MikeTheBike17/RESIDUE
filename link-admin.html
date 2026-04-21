@@ -11,7 +11,7 @@
   <script src="js/env.js"></script>
 </head>
 <body class="lt-page" data-theme="dark">
-  <div class="lt-overlay active" id="lt-overlay" aria-live="polite" aria-busy="true">
+  <div class="lt-overlay" id="lt-overlay" aria-live="polite" aria-busy="true">
     <div class="lt-overlay-box">
       <div class="lt-loader-card" aria-hidden="true">
         <div class="lt-loader-spin">
@@ -99,7 +99,15 @@
         <input type="text" name="_honey" style="display:none">
 
         <label for="logo">Upload Company or Personal logo (Profile Image)</label>
-        <input id="logo" name="logo" type="file" accept="image/*" required>
+        <div class="lt-logo-upload-row">
+          <label class="lt-file-button" for="logo">Choose File</label>
+          <input class="lt-file-input" id="logo" name="logo" type="file" accept="image/*">
+          <div class="lt-current-photo" id="lt-current-photo" hidden>
+            <img id="lt-current-photo-img" alt="Current profile photo">
+            <span id="lt-current-photo-text">Current photo saved</span>
+          </div>
+          <span class="lt-current-photo-empty" id="lt-current-photo-empty">No photo selected</span>
+        </div>
         <input id="lt-avatar-url" name="lt-avatar-url" type="hidden">
 
         <label for="full-name">Full name</label>
@@ -109,7 +117,7 @@
         <div class="input-toggle-row">
           <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
           <label class="include-toggle" for="show-role">
-            <input class="lt-include-checkbox" type="checkbox" id="show-role" checked>
+            <input class="lt-include-checkbox" type="checkbox" id="show-role">
           </label>
         </div>
 
@@ -117,7 +125,7 @@
         <div class="input-toggle-row">
           <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
           <label class="include-toggle" for="show-website">
-            <input class="lt-include-checkbox" type="checkbox" id="show-website" checked>
+            <input class="lt-include-checkbox" type="checkbox" id="show-website">
           </label>
         </div>
 
@@ -125,7 +133,7 @@
         <div class="input-toggle-row">
           <input id="location-coordinates" name="location-coordinates" type="text" placeholder="-26.2041, 28.0473 or 25°56'06.9&quot;S 28°08'41.3&quot;E" inputmode="text">
           <label class="include-toggle" for="show-location">
-            <input class="lt-include-checkbox" type="checkbox" id="show-location" checked>
+            <input class="lt-include-checkbox" type="checkbox" id="show-location">
           </label>
         </div>
 
@@ -133,7 +141,7 @@
         <div class="input-toggle-row">
           <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
           <label class="include-toggle" for="show-phone">
-            <input class="lt-include-checkbox" type="checkbox" id="show-phone" checked>
+            <input class="lt-include-checkbox" type="checkbox" id="show-phone">
           </label>
         </div>
 
@@ -141,7 +149,7 @@
         <div class="input-toggle-row">
           <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com">
           <label class="include-toggle" for="show-email">
-            <input class="lt-include-checkbox" type="checkbox" id="show-email" checked>
+            <input class="lt-include-checkbox" type="checkbox" id="show-email">
           </label>
         </div>
 
@@ -150,7 +158,7 @@
           <div class="input-toggle-row">
             <textarea class="lt-textarea" id="lt-bio" maxlength="320" placeholder="Short description"></textarea>
             <label class="include-toggle" for="show-bio">
-              <input class="lt-include-checkbox" type="checkbox" id="show-bio" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-bio">
             </label>
           </div>
         </div>
@@ -172,31 +180,31 @@
           <div class="input-toggle-row">
             <input id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you (optional)" data-auto-url>
             <label class="include-toggle" for="show-social">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-social">
             </label>
           </div>
           <div class="input-toggle-row">
             <input id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you (optional)" data-auto-url>
             <label class="include-toggle" for="show-social-2">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-2" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-2">
             </label>
           </div>
           <div class="input-toggle-row">
             <input id="social-4" name="youtube" type="url" placeholder="https://youtube.com/in/you (optional)" data-auto-url>
             <label class="include-toggle" for="show-social-4">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-4" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-4">
             </label>
           </div>
           <div class="input-toggle-row">
             <input id="social-5" name="facebook" type="url" placeholder="https://facebook.com/in/you (optional)" data-auto-url>
             <label class="include-toggle" for="show-social-5">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-5" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-5">
             </label>
           </div>
           <div class="input-toggle-row">
             <input id="social-6" name="x" type="url" placeholder="https://x.com/in/you (optional)" data-auto-url>
             <label class="include-toggle" for="show-social-6">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-6" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-social-6">
             </label>
           </div>
         </div>
@@ -207,14 +215,14 @@
           <div class="input-toggle-row">
             <input class="lt-input" id="whatsapp-number" name="whatsapp-number" type="tel" placeholder="+27 82 123 4567" inputmode="tel">
             <label class="include-toggle" for="show-whatsapp">
-              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp">
             </label>
           </div>
           <label class="lt-note" for="whatsapp-message" style="margin-top:10px;">Custom first message (max 180 chars)</label>
           <div class="input-toggle-row">
             <textarea class="lt-textarea" id="whatsapp-message" name="whatsapp-message" placeholder="Write the first WhatsApp message users will see..." maxlength="180"></textarea>
             <label class="include-toggle" for="show-whatsapp-message">
-              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-message" checked>
+              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-message">
             </label>
           </div>
           <p class="lt-note" id="whatsapp-message-count">0 / 180</p>
