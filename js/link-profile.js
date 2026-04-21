@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
   setText('lt-name', profile?.name || 'Your name');
   setText('lt-title', parseBool(meta.show_role, true) ? (profile?.title || '') : '');
   setText('lt-bio', parseBool(meta.show_bio, true) ? (profile?.bio || '') : '');
-  document.body?.setAttribute('data-theme', profile?.theme === 'light' ? 'light' : 'dark');
+  document.body?.setAttribute('data-theme', profile?.theme === 'dark' ? 'dark' : 'light');
   const avatar = document.getElementById('lt-avatar');
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';
   const linksWrap = document.getElementById('lt-links');

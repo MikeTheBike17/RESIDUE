@@ -17,7 +17,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
         }
       });
 
-  const setTheme = theme => document.body.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+  const setTheme = theme => document.body.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
   const setAuthOnly = flag => {
     if (flag) document.body.classList.add('auth-only');
     else document.body.classList.remove('auth-only');
@@ -126,7 +126,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function fillPublic(profile, meta = {}) {
-    setTheme(profile.theme || 'dark');
+    setTheme(profile.theme || 'light');
     setText('lt-name', deriveDisplayName(profile?.name, null));
     const includeRole = parseBool(meta.show_role, false);
     const includeBio = parseBool(meta.show_bio, false);
@@ -137,7 +137,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function showPlaceholder(message) {
-    setTheme('dark');
+    setTheme('light');
     setText('lt-name', 'Your name');
     setText('lt-title', 'Your title');
     setText('lt-bio', 'Add a short description.');
@@ -658,7 +658,7 @@ async function ensureLocalDraftForUser(user) {
     title: '',
     bio: '',
     avatar_url: '',
-    theme: 'dark',
+    theme: 'light',
     slug,
     links: [
       { label: 'Call', url: 'tel:+', sort: 1, hidden: true },
@@ -1044,7 +1044,7 @@ async function ensureLocalDraftForUser(user) {
       auth_email: authEmail || null,
       name: DEFAULT_PROFILE_NAME,
       slug: fallbackSlug,
-      theme: 'dark'
+      theme: 'light'
     });
   }
 
@@ -1178,7 +1178,7 @@ async function ensureLocalDraftForUser(user) {
     const savedEmail = Object.prototype.hasOwnProperty.call(snapshotFields, 'email-config')
       ? String(snapshotFields['email-config'] ?? '')
       : normalizeEmail(profile?.auth_email || user?.email || '');
-    const savedTheme = profile?.theme === 'light' ? 'light' : 'dark';
+    const savedTheme = profile?.theme === 'dark' ? 'dark' : 'light';
     setValue('lt-avatar-url', profile.avatar_url || '');
     updateLogoPreview(profile.avatar_url || '');
     setValue('full-name', displayName || '');
@@ -1917,7 +1917,7 @@ async function ensureLocalDraftForUser(user) {
     const title = getValue('role') || getValue('lt-title');
     const bio = getValue('lt-bio');
     const avatar_url = getValue('lt-avatar-url');
-    const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'dark';
+    const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'light';
     const id = user?.id || CURRENT_USER_KEY;
     return { id, auth_email: auth_email || null, name, slug, title, bio, avatar_url, theme };
   }
