@@ -17,7 +17,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
         }
       });
 
-  const setTheme = theme => document.body.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+  const setTheme = theme => document.body.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
   const setAuthOnly = flag => {
     if (flag) document.body.classList.add('auth-only');
     else document.body.classList.remove('auth-only');
@@ -126,10 +126,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function fillPublic(profile, meta = {}) {
-    setTheme(profile.theme || 'dark');
+    setTheme(profile.theme || 'light');
     setText('lt-name', deriveDisplayName(profile?.name, null));
-    const includeRole = parseBool(meta.show_role, true);
-    const includeBio = parseBool(meta.show_bio, true);
+    const includeRole = parseBool(meta.show_role, false);
+    const includeBio = parseBool(meta.show_bio, false);
     setText('lt-title', includeRole ? (profile.title || '') : '');
     setText('lt-bio', includeBio ? (profile.bio || '') : '');
     const avatar = document.getElementById('lt-avatar');
@@ -137,7 +137,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function showPlaceholder(message) {
-    setTheme('dark');
+    setTheme('light');
     setText('lt-name', 'Your name');
     setText('lt-title', 'Your title');
     setText('lt-bio', 'Add a short description.');
@@ -155,11 +155,17 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const LOCAL_PROFILE_KEY_PREFIX = 'residue_link_profile_';
   const META_PREFIX = '__meta__';
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
+  const AUTOSAVE_DELAY_MS = 900;
   let authStateSubscription = null;
   const contactDownloadState = { name: '', phone: '' };
   const walletCardState = { name: '', slug: '' };
   let contactDownloadBound = false;
   let walletCardBound = false;
+  let editorActionsBound = false;
+  let isFillingEditor = false;
+  let autosaveTimer = null;
+  let autosaveInFlight = false;
+  let autosaveQueued = false;
   const DEFAULT_PROFILE_NAME = 'Your name';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
@@ -169,6 +175,22 @@ import { residueTelemetry } from './supabase-telemetry.js';
     { id: 'social-5', label: 'Facebook', toggle: 'show-social-5' },
     { id: 'social-6', label: 'X', toggle: 'show-social-6' }
   ];
+
+  function showAdminLoader() {
+    const overlay = document.getElementById('lt-overlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    overlay.classList.remove('hide');
+    overlay.classList.add('active');
+  }
+
+  function hideAdminLoader() {
+    const overlay = document.getElementById('lt-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.classList.add('hide');
+    setTimeout(() => { overlay.style.display = 'none'; }, 240);
+  }
 
   function normalizeCoordinates(raw) {
     const value = String(raw || '').trim();
@@ -636,7 +658,7 @@ async function ensureLocalDraftForUser(user) {
     title: '',
     bio: '',
     avatar_url: '',
-    theme: 'dark',
+    theme: 'light',
     slug,
     links: [
       { label: 'Call', url: 'tel:+', sort: 1, hidden: true },
@@ -889,26 +911,36 @@ async function ensureLocalDraftForUser(user) {
     }
 
   async function startLocalSession(user, statusEl) {
+    showAdminLoader();
     persistCurrentUser(user);
-    showStatusEl(statusEl, 'Signed in (local)', 'success');
-    toggleEditor(true);
-    await ensureLocalDraftForUser(user);
-    loadLocalDraft();
-    setAuthOnly(false);
+    try {
+      await ensureLocalDraftForUser(user);
+      loadLocalDraft();
+      toggleEditor(true);
+      setAuthOnly(false);
+      showStatusEl(statusEl, 'Signed in (local)', 'success');
+    } finally {
+      hideAdminLoader();
+    }
   }
 
   async function startSupabaseSession(user, statusEl) {
     if (!user) throw new Error('Signed in, but no user was returned.');
+    showAdminLoader();
     persistCurrentUser(user);
-    toggleEditor(true);
-    setAuthOnly(false);
-    showStatusEl(statusEl, 'Signed in.', 'success');
     try {
       await loadProfile(user);
+      toggleEditor(true);
+      setAuthOnly(false);
+      showStatusEl(statusEl, 'Signed in.', 'success');
     } catch (err) {
       console.error('Profile load failed after direct sign-in', err);
       showStatusEl(document.getElementById('lt-save-status'), 'Signed in, but profile data failed to load.', 'error');
       loadLocalDraft();
+      toggleEditor(true);
+      setAuthOnly(false);
+    } finally {
+      hideAdminLoader();
     }
   }
 
@@ -956,9 +988,6 @@ async function ensureLocalDraftForUser(user) {
             detail: `Supabase ${mode} succeeded on link-admin.`
           });
           await startSupabaseSession(data?.user || data?.session?.user, statusEl);
-          initSession(true).catch(err => {
-            console.error('Session refresh failed after direct sign-in', err);
-          });
           return;
         }
 
@@ -1015,31 +1044,24 @@ async function ensureLocalDraftForUser(user) {
       auth_email: authEmail || null,
       name: DEFAULT_PROFILE_NAME,
       slug: fallbackSlug,
-      theme: 'dark'
+      theme: 'light'
     });
   }
 
   async function initSession(forceLoad = false) {
     if (!supabase) {
-      // Local/demo mode: if a local user exists, show editor with local draft
-      const localUser = readStoredCurrentUser();
-      if (localUser) {
-        toggleEditor(true);
-        loadLocalDraft();
-        setAuthOnly(false);
-        return;
-      }
       toggleEditor(false);
       setAuthOnly(true);
       return;
     }
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!session || !forceLoad) {
       toggleEditor(false);
       setAuthOnly(true);
-    } else if (forceLoad) {
+    } else {
       persistCurrentUser(session.user);
+      showAdminLoader();
       toggleEditor(true);
       setAuthOnly(false);
       try {
@@ -1048,30 +1070,21 @@ async function ensureLocalDraftForUser(user) {
         console.error('Profile load failed after session init', err);
         showStatusEl(document.getElementById('lt-save-status'), 'Signed in, but profile data failed to load.', 'error');
         loadLocalDraft();
+      } finally {
+        hideAdminLoader();
       }
-    } else {
-      persistCurrentUser(session.user);
-      toggleEditor(false);
-      setAuthOnly(true);
     }
     if (authStateSubscription) return;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sessionNow) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') return;
       if (event === 'PASSWORD_RECOVERY') {
         document.dispatchEvent(new CustomEvent('lt-password-recovery', {
           detail: { email: normalizeEmail(sessionNow?.user?.email || '') }
         }));
         return;
       }
-      if (sessionNow) {
-        persistCurrentUser(sessionNow.user);
-        toggleEditor(true);
-        setAuthOnly(false);
-        loadProfile(sessionNow.user).catch(err => {
-          console.error('Profile load failed on auth state change', err);
-          showStatusEl(document.getElementById('lt-save-status'), 'Signed in, but profile data failed to load.', 'error');
-          loadLocalDraft();
-        });
-      } else {
+      if (event !== 'SIGNED_OUT' && sessionNow) return;
+      if (!sessionNow) {
         persistCurrentUser(null);
         toggleEditor(false);
         setAuthOnly(true);
@@ -1153,6 +1166,7 @@ async function ensureLocalDraftForUser(user) {
   }
 
   function fillEditor(profile, links, user = null, snapshot = null) {
+    isFillingEditor = true;
     const snapshotFields = snapshot?.fields || {};
     const displayName = deriveDisplayName(profile?.name, user);
     const savedTitle = typeof profile?.title === 'string'
@@ -1164,8 +1178,9 @@ async function ensureLocalDraftForUser(user) {
     const savedEmail = Object.prototype.hasOwnProperty.call(snapshotFields, 'email-config')
       ? String(snapshotFields['email-config'] ?? '')
       : normalizeEmail(profile?.auth_email || user?.email || '');
-    const savedTheme = profile?.theme === 'light' ? 'light' : 'dark';
+    const savedTheme = profile?.theme === 'dark' ? 'dark' : 'light';
     setValue('lt-avatar-url', profile.avatar_url || '');
+    updateLogoPreview(profile.avatar_url || '');
     setValue('full-name', displayName || '');
     setValue('role', savedTitle || '');
     setValue('lt-bio', savedBio || '');
@@ -1175,7 +1190,7 @@ async function ensureLocalDraftForUser(user) {
     setupVirtualCard(profile || {});
     if (profile?.slug) updatePublicUrl(profile.slug);
     else syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
-    const setToggle = (id, checked = true) => {
+    const setToggle = (id, checked = false) => {
       const el = document.getElementById(id);
       if (el) el.checked = !!checked;
     };
@@ -1190,23 +1205,23 @@ async function ensureLocalDraftForUser(user) {
 
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
     const hasMeta = key => Object.prototype.hasOwnProperty.call(meta, key);
-    const parseToggleMeta = (key, fallback = true) => parseBool(meta[key], fallback);
+    const parseToggleMeta = (key, fallback = false) => parseBool(meta[key], fallback);
 
     const fallbackShowRole = snapshotFields['show-role'];
     const fallbackShowBio = snapshotFields['show-bio'];
-    setToggle('show-role', hasMeta('show_role') ? parseBool(meta.show_role, true) : parseBool(fallbackShowRole, true));
-    setToggle('show-bio', hasMeta('show_bio') ? parseBool(meta.show_bio, true) : parseBool(fallbackShowBio, true));
-    setToggle('show-website', parseToggleMeta('show_website', true));
-    setToggle('show-location', parseToggleMeta('show_location', true));
-    setToggle('show-phone', parseToggleMeta('show_phone', true));
-    setToggle('show-email', parseToggleMeta('show_email', true));
-    setToggle('show-whatsapp', parseToggleMeta('show_whatsapp', true));
-    const legacyShowTemplate = parseToggleMeta('show_whatsapp_template', true);
-    const legacyShowCustom = parseToggleMeta('show_whatsapp_custom', true);
+    setToggle('show-role', hasMeta('show_role') ? parseBool(meta.show_role, false) : parseBool(fallbackShowRole, false));
+    setToggle('show-bio', hasMeta('show_bio') ? parseBool(meta.show_bio, false) : parseBool(fallbackShowBio, false));
+    setToggle('show-website', parseToggleMeta('show_website', false));
+    setToggle('show-location', parseToggleMeta('show_location', false));
+    setToggle('show-phone', parseToggleMeta('show_phone', false));
+    setToggle('show-email', parseToggleMeta('show_email', false));
+    setToggle('show-whatsapp', parseToggleMeta('show_whatsapp', false));
+    const legacyShowTemplate = parseToggleMeta('show_whatsapp_template', false);
+    const legacyShowCustom = parseToggleMeta('show_whatsapp_custom', false);
     setToggle('show-whatsapp-message', parseToggleMeta('show_whatsapp_message', legacyShowTemplate && legacyShowCustom));
     socialConfig.forEach(s => {
       const toggleKey = s.toggle.replace(/-/g, '_');
-      setToggle(s.toggle, parseToggleMeta(toggleKey, true));
+      setToggle(s.toggle, parseToggleMeta(toggleKey, false));
     });
     if (hasMeta('whatsapp_number')) setValue('whatsapp-number', meta.whatsapp_number || '');
     const legacyMessage = meta.whatsapp_custom || meta.whatsapp_template || '';
@@ -1259,6 +1274,7 @@ async function ensureLocalDraftForUser(user) {
     if (waMessage && waCount) {
       waCount.textContent = `${(waMessage.value || '').length} / ${WHATSAPP_MESSAGE_MAX_CHARS}`;
     }
+    isFillingEditor = false;
   }
 
   function buildWhatsappLink() {
@@ -1325,17 +1341,17 @@ async function ensureLocalDraftForUser(user) {
       });
     });
 
-    linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_website', document.getElementById('show-website')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_location', document.getElementById('show-location')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_phone', document.getElementById('show-phone')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_email', document.getElementById('show-email')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_whatsapp', document.getElementById('show-whatsapp')?.checked ?? true, linksOut.length));
-    linksOut.push(metaLink('show_whatsapp_message', document.getElementById('show-whatsapp-message')?.checked ?? true, linksOut.length));
+    linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_website', document.getElementById('show-website')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_location', document.getElementById('show-location')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_phone', document.getElementById('show-phone')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_email', document.getElementById('show-email')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp', document.getElementById('show-whatsapp')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_whatsapp_message', document.getElementById('show-whatsapp-message')?.checked ?? false, linksOut.length));
     socialConfig.forEach(social => {
       const toggleKey = social.toggle.replace(/-/g, '_');
-      linksOut.push(metaLink(toggleKey, document.getElementById(social.toggle)?.checked ?? true, linksOut.length));
+      linksOut.push(metaLink(toggleKey, document.getElementById(social.toggle)?.checked ?? false, linksOut.length));
     });
     linksOut.push(metaLink('whatsapp_number', getValue('whatsapp-number'), linksOut.length));
     linksOut.push(metaLink('whatsapp_message', getValue('whatsapp-message').slice(0, WHATSAPP_MESSAGE_MAX_CHARS), linksOut.length));
@@ -1603,7 +1619,122 @@ async function ensureLocalDraftForUser(user) {
     });
   }
 
+  async function persistEditorState({ statusEl = document.getElementById('lt-save-status'), redirect = false, silent = false } = {}) {
+    let session = null;
+    if (supabase) {
+      ({ data: { session } } = await supabase.auth.getSession());
+      if (!session) {
+        if (!silent) showStatusEl(statusEl, 'Not signed in.', 'error');
+        return false;
+      }
+    }
+
+    const profile = await collectProfilePayload(session?.user || null);
+    if (!profile.name) {
+      if (!silent) showStatusEl(statusEl, 'Name is required.', 'error');
+      return false;
+    }
+    const locationCoordinates = getValue('location-coordinates');
+    if (locationCoordinates && !normalizeCoordinates(locationCoordinates)) {
+      if (!silent) showStatusEl(statusEl, 'Location must be decimal "latitude, longitude" or DMS like 25Â°56\'06.9"S 28Â°08\'41.3"E.', 'error');
+      return false;
+    }
+
+    const links = collectLinks();
+    if (!silent) showStatusEl(statusEl, 'Saving...', 'loading');
+
+    if (supabase && session) {
+      const { error: pErr } = await supabase.from('profiles').upsert(profile);
+      if (pErr) {
+        if (!silent) showStatusEl(statusEl, pErr.message, 'error');
+        return false;
+      }
+      await supabase.from('links').delete().eq('profile_id', session.user.id);
+      if (links.length) {
+        const supaLinks = applyHiddenMeta(links).map(l => ({
+          label: l.label,
+          url: l.url,
+          sort: l.sort,
+          profile_id: session.user.id
+        }));
+        const { error: lErr } = await supabase.from('links').insert(supaLinks);
+        if (lErr) {
+          if (!silent) showStatusEl(statusEl, lErr.message, 'error');
+          return false;
+        }
+      }
+      const snapshot = collectConfigureSnapshot(session.user, profile, applyHiddenMeta(links));
+      const { error: cErr } = await supabase.from('card_configs').upsert({
+        profile_id: session.user.id,
+        auth_email: normalizeEmail(session.user.email) || null,
+        config_data: snapshot,
+        updated_at: new Date().toISOString()
+      });
+      if (cErr) {
+        if (!silent) showStatusEl(statusEl, cErr.message, 'error');
+        return false;
+      }
+    }
+
+    const localProfile = {
+      id: profile.id,
+      name: profile.name,
+      title: profile.title,
+      bio: profile.bio,
+      avatar_url: profile.avatar_url,
+      theme: profile.theme,
+      slug: profile.slug,
+      links: applyHiddenMeta(links)
+    };
+    const draftKey = localProfileKey(profile.slug);
+    localStorage.setItem(draftKey, JSON.stringify(localProfile));
+    localStorage.setItem('residue_link_last_profile_key', draftKey);
+    updatePublicUrl(profile.slug);
+    setupVirtualCard(profile);
+    updateLogoPreview(profile.avatar_url || '');
+
+    if (!silent) {
+      showStatusEl(statusEl, redirect ? 'Saved. Redirecting...' : 'Saved.', 'success');
+    }
+    if (redirect) {
+      const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
+      setTimeout(() => { window.location.href = target; }, 500);
+    }
+    return true;
+  }
+
+  function scheduleEditorAutosave(delay = AUTOSAVE_DELAY_MS) {
+    if (isFillingEditor) return;
+    const editor = document.getElementById('lt-editor');
+    if (!editor || editor.hidden) return;
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(runEditorAutosave, delay);
+  }
+
+  async function runEditorAutosave() {
+    if (isFillingEditor) return;
+    if (autosaveInFlight) {
+      autosaveQueued = true;
+      return;
+    }
+    autosaveInFlight = true;
+    try {
+      await persistEditorState({ statusEl: document.getElementById('lt-save-status'), redirect: false, silent: false });
+    } catch (err) {
+      console.error('Autosave failed', err);
+      showStatusEl(document.getElementById('lt-save-status'), err.message || 'Autosave failed.', 'error');
+    } finally {
+      autosaveInFlight = false;
+      if (autosaveQueued) {
+        autosaveQueued = false;
+        scheduleEditorAutosave();
+      }
+    }
+  }
+
   function bindEditorActions() {
+    if (editorActionsBound) return;
+    editorActionsBound = true;
     const fullNameInput = document.getElementById('full-name');
     const logoInput = document.getElementById('logo');
     const avatarUrlInput = document.getElementById('lt-avatar-url');
@@ -1627,6 +1758,8 @@ async function ensureLocalDraftForUser(user) {
       const file = logoInput?.files?.[0];
       if (!file) {
         if (avatarUrlInput) avatarUrlInput.value = '';
+        updateLogoPreview('');
+        scheduleEditorAutosave(0);
         return;
       }
       if (!(file.type || '').startsWith('image/')) {
@@ -1643,13 +1776,24 @@ async function ensureLocalDraftForUser(user) {
         }
         const optimized = await compressDataUrl(cropped, 700 * 1024, 900);
         if (avatarUrlInput) avatarUrlInput.value = optimized;
+        updateLogoPreview(optimized, 'New photo ready');
         showStatusEl(saveStatusEl, 'Logo optimized.', 'success');
+        scheduleEditorAutosave(0);
       } catch (err) {
         showStatusEl(saveStatusEl, err.message || 'Could not process logo.', 'error');
         logoInput.value = '';
       }
     };
     logoInput?.addEventListener('change', handleLogoChange);
+    const editorForm = document.querySelector('#lt-editor form.configure-form');
+    editorForm?.addEventListener('input', evt => {
+      if (evt.target?.id === 'logo') return;
+      scheduleEditorAutosave();
+    });
+    editorForm?.addEventListener('change', evt => {
+      if (evt.target?.id === 'logo') return;
+      scheduleEditorAutosave(0);
+    });
     const updateWaMessageCount = () => {
       if (!waMessage || !waMessageCount) return;
       waMessageCount.textContent = `${waMessage.value.length} / ${WHATSAPP_MESSAGE_MAX_CHARS}`;
@@ -1677,6 +1821,17 @@ async function ensureLocalDraftForUser(user) {
 
     const saveBtn = document.getElementById('lt-save');
     const statusEl = document.getElementById('lt-save-status');
+    saveBtn?.addEventListener('click', async evt => {
+      evt.preventDefault();
+      evt.stopImmediatePropagation();
+      clearTimeout(autosaveTimer);
+      try {
+        await persistEditorState({ statusEl, redirect: true, silent: false });
+      } catch (err) {
+        console.error(err);
+        showStatusEl(statusEl, err.message || 'Save failed.', 'error');
+      }
+    }, { capture: true });
     saveBtn?.addEventListener('click', async evt => {
       evt.preventDefault();
       try {
@@ -1762,7 +1917,7 @@ async function ensureLocalDraftForUser(user) {
     const title = getValue('role') || getValue('lt-title');
     const bio = getValue('lt-bio');
     const avatar_url = getValue('lt-avatar-url');
-    const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'dark';
+    const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'light';
     const id = user?.id || CURRENT_USER_KEY;
     return { id, auth_email: auth_email || null, name, slug, title, bio, avatar_url, theme };
   }
@@ -1779,6 +1934,24 @@ async function ensureLocalDraftForUser(user) {
   function getValue(id) {
     const el = document.getElementById(id);
     return el ? el.value.trim() : '';
+  }
+  function updateLogoPreview(url, label = 'Current photo saved') {
+    const preview = document.getElementById('lt-current-photo');
+    const image = document.getElementById('lt-current-photo-img');
+    const text = document.getElementById('lt-current-photo-text');
+    const empty = document.getElementById('lt-current-photo-empty');
+    const value = String(url || '').trim();
+    if (!preview || !image || !empty) return;
+    if (value) {
+      image.src = value;
+      if (text) text.textContent = label;
+      preview.hidden = false;
+      empty.hidden = true;
+    } else {
+      image.removeAttribute('src');
+      preview.hidden = true;
+      empty.hidden = false;
+    }
   }
   function renderLinks(containerId, links) {
     const wrap = document.getElementById(containerId);
@@ -1901,7 +2074,8 @@ async function ensureLocalDraftForUser(user) {
   // Expose
   window.linktree = {
     renderPublicProfile,
-    renderAdmin: () => {
+    renderAdmin: async () => {
+      hideAdminLoader();
       if (isFileProtocol) {
         showStatusEl(document.getElementById('lt-auth-status'), 'Run over http://, not file://', 'error');
       }
@@ -1913,8 +2087,8 @@ async function ensureLocalDraftForUser(user) {
       setAuthOnly(true);
       toggleEditor(false);
       bindAuth();
-      initSession(false);
       bindEditorActions();
+      await initSession(false);
     }
   };
 })();
