@@ -131,7 +131,6 @@
                   <input class="lt-input" id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
                   <label class="include-toggle lt-visibility-toggle" for="show-role">
                     <input class="lt-include-checkbox" type="checkbox" id="show-role">
-                    <span>Show on public card</span>
                   </label>
                 </div>
               </div>
@@ -142,7 +141,6 @@
                   <input class="lt-input" id="location-coordinates" name="location-coordinates" type="text" placeholder="123 Street Name, City or -26.2041, 28.0473" inputmode="text">
                   <label class="include-toggle lt-visibility-toggle" for="show-location">
                     <input class="lt-include-checkbox" type="checkbox" id="show-location">
-                    <span>Show on public card</span>
                   </label>
                 </div>
               </div>
@@ -153,7 +151,6 @@
                   <input class="lt-input" id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
                   <label class="include-toggle lt-visibility-toggle" for="show-phone">
                     <input class="lt-include-checkbox" type="checkbox" id="show-phone">
-                    <span>Show on public card</span>
                   </label>
                 </div>
               </div>
@@ -164,7 +161,6 @@
                   <input class="lt-input" id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com">
                   <label class="include-toggle lt-visibility-toggle" for="show-email">
                     <input class="lt-include-checkbox" type="checkbox" id="show-email">
-                    <span>Show on public card</span>
                   </label>
                 </div>
               </div>
@@ -175,7 +171,6 @@
                   <textarea class="lt-textarea" id="lt-bio" maxlength="180" placeholder="Short description"></textarea>
                   <label class="include-toggle lt-visibility-toggle" for="show-bio">
                     <input class="lt-include-checkbox" type="checkbox" id="show-bio">
-                    <span>Show on public card</span>
                   </label>
                 </div>
                 <p class="lt-note lt-count-note" id="lt-bio-count">0 / 180</p>
@@ -189,26 +184,45 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="profile-link" data-section-fields="full-name" data-required-fields="full-name">
-          <button class="lt-accordion-trigger" id="lt-section-profile-link-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-link-panel">
+        <section class="lt-accordion-card" data-admin-section="company-info" data-section-fields="company-name lt-company-bio">
+          <button class="lt-accordion-trigger" id="lt-section-company-info-trigger" type="button" aria-expanded="false" aria-controls="lt-section-company-info-panel">
             <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"></path></svg>
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9h.01"></path><path d="M9 13h.01"></path><path d="M9 17h.01"></path></svg>
             </span>
             <span class="lt-section-copy">
-              <span class="lt-section-title">Profile Link</span>
-              <span class="lt-section-subtitle">Generated from your profile details.</span>
+              <span class="lt-section-title">Company Information</span>
+              <span class="lt-section-subtitle">Company name and short company bio.</span>
             </span>
-            <span class="lt-section-badge" data-section-badge>Missing</span>
+            <span class="lt-section-badge" data-section-badge>Optional</span>
             <span class="lt-section-chevron" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
             </span>
           </button>
-          <div class="lt-accordion-panel" id="lt-section-profile-link-panel" role="region" aria-labelledby="lt-section-profile-link-trigger">
+          <div class="lt-accordion-panel" id="lt-section-company-info-panel" role="region" aria-labelledby="lt-section-company-info-trigger">
             <div class="lt-accordion-panel__inner">
-              <p class="lt-empty-state" data-empty-for="profile-link">Complete your profile information, then save to keep the profile link in sync.</p>
+              <p class="lt-empty-state" data-empty-for="company-info">No company information added yet.</p>
+              <div class="lt-field">
+                <label class="lt-field-label" for="company-name">Company Name</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="company-name" name="company-name" type="text" autocomplete="organization" placeholder="Company name">
+                  <label class="include-toggle lt-visibility-toggle" for="show-company-name">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-company-name">
+                  </label>
+                </div>
+              </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="lt-company-bio">Company Bio</label>
+                <div class="input-toggle-row">
+                  <textarea class="lt-textarea" id="lt-company-bio" name="lt-company-bio" maxlength="180" placeholder="Short company description"></textarea>
+                  <label class="include-toggle lt-visibility-toggle" for="show-company-bio">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-company-bio">
+                  </label>
+                </div>
+                <p class="lt-note lt-count-note" id="lt-company-bio-count">0 / 180</p>
+              </div>
               <details class="lt-more-info">
                 <summary>More info</summary>
-                <p>The link itself is kept off this setup page. It updates behind the scenes from your saved profile name and account details.</p>
+                <p>Use this when the card should lead with a company identity above the personal profile image.</p>
               </details>
             </div>
           </div>
@@ -273,7 +287,6 @@
                   <input class="lt-input" id="whatsapp-number" name="whatsapp-number" type="tel" placeholder="+27 82 123 4567" inputmode="tel">
                   <label class="include-toggle lt-visibility-toggle" for="show-whatsapp">
                     <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp">
-                    <span>Show on public card</span>
                   </label>
                 </div>
               </div>
@@ -283,7 +296,6 @@
                   <textarea class="lt-textarea" id="whatsapp-message" name="whatsapp-message" placeholder="Write the first Whatsapp message users will see..." maxlength="180"></textarea>
                   <label class="include-toggle lt-visibility-toggle" for="show-whatsapp-message">
                     <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-message">
-                    <span>Show on public card</span>
                   </label>
                 </div>
                 <p class="lt-note lt-count-note" id="whatsapp-message-count">0 / 180</p>
@@ -319,7 +331,6 @@
                   <input class="lt-input" id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
                   <label class="include-toggle lt-visibility-toggle" for="show-website">
                     <input class="lt-include-checkbox" type="checkbox" id="show-website">
-                    <span>Show on public card</span>
                   </label>
                 </div>
               </div>
@@ -355,8 +366,7 @@
                     <input class="lt-input" id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
                 <div class="lt-field">
@@ -365,8 +375,7 @@
                     <input class="lt-input" id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social-2">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social-2">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
                 <div class="lt-field">
@@ -375,8 +384,7 @@
                     <input class="lt-input" id="social-4" name="youtube" type="url" placeholder="https://youtube.com/@you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social-4">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social-4">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
                 <div class="lt-field">
@@ -385,8 +393,7 @@
                     <input class="lt-input" id="social-5" name="facebook" type="url" placeholder="https://facebook.com/you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social-5">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social-5">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
                 <div class="lt-field">
@@ -395,8 +402,7 @@
                     <input class="lt-input" id="social-6" name="x" type="url" placeholder="https://x.com/you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social-6">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social-6">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
                 <div class="lt-field">
@@ -405,8 +411,7 @@
                     <input class="lt-input" id="social-7" name="pinterest" type="url" placeholder="https://pinterest.com/you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social-7">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social-7">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
                 <div class="lt-field">
@@ -415,8 +420,7 @@
                     <input class="lt-input" id="social-8" name="tiktok" type="url" placeholder="https://tiktok.com/@you" data-auto-url>
                     <label class="include-toggle lt-visibility-toggle" for="show-social-8">
                       <input class="lt-include-checkbox" type="checkbox" id="show-social-8">
-                      <span>Show on public card</span>
-                    </label>
+                  </label>
                   </div>
                 </div>
               </div>
@@ -638,6 +642,10 @@
           closeOthers(card);
           setOpen(card, nextOpen);
         });
+      });
+
+      document.querySelectorAll('.lt-visibility-toggle .lt-include-checkbox').forEach(input => {
+        input.setAttribute('aria-label', 'Show on public card');
       });
 
       const form = editor.querySelector('.configure-form');
