@@ -1,11 +1,24 @@
 (() => {
   const SCRIPT_ID = "residue-turnstile-api";
   const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  const WIDGET_SELECTOR = "[data-turnstile-widget]";
   const widgets = new Map();
   let scriptPromise = null;
 
   const getSiteKey = () => String(window.env?.TURNSTILE_SITE_KEY || "").trim();
-  const hasConfig = () => Boolean(getSiteKey());
+  const siteKeyFor = container => String(container?.getAttribute("data-sitekey") || getSiteKey()).trim();
+
+  const widgetContainers = (root = document) => {
+    const containers = [];
+    if (root?.matches?.(WIDGET_SELECTOR)) containers.push(root);
+    root?.querySelectorAll?.(WIDGET_SELECTOR).forEach(container => containers.push(container));
+    return [...new Set(containers)];
+  };
+
+  const hasConfig = (root = document) => {
+    const containers = widgetContainers(root);
+    return containers.length ? containers.some(container => Boolean(siteKeyFor(container))) : Boolean(getSiteKey());
+  };
 
   const isVisible = el => {
     if (!el) return false;
@@ -14,13 +27,16 @@
   };
 
   const loadApi = () => {
-    if (!hasConfig()) return Promise.resolve(null);
     if (window.turnstile) return Promise.resolve(window.turnstile);
     if (scriptPromise) return scriptPromise;
 
     scriptPromise = new Promise((resolve, reject) => {
       const existing = document.getElementById(SCRIPT_ID);
       if (existing) {
+        if (window.turnstile) {
+          resolve(window.turnstile);
+          return;
+        }
         existing.addEventListener("load", () => resolve(window.turnstile), { once: true });
         existing.addEventListener("error", () => reject(new Error("Could not load security check.")), { once: true });
         return;
@@ -32,7 +48,10 @@
       script.async = true;
       script.defer = true;
       script.onload = () => resolve(window.turnstile);
-      script.onerror = () => reject(new Error("Could not load security check."));
+      script.onerror = () => {
+        scriptPromise = null;
+        reject(new Error("Could not load security check."));
+      };
       document.head.appendChild(script);
     });
 
@@ -61,43 +80,80 @@
     container.appendChild(placeholder);
   };
 
+  const showError = (container, message) => {
+    widgets.delete(container);
+    setToken(container, "");
+    showMessage(container, message);
+  };
+
+  const hasVisibleFrame = container => {
+    const frame = container?.querySelector("iframe");
+    return Boolean(frame && frame.offsetWidth > 0 && frame.offsetHeight > 0);
+  };
+
   const render = async container => {
     if (!container || widgets.has(container) || !isVisible(container)) return null;
-    const turnstile = await loadApi();
+    const siteKey = siteKeyFor(container);
+    if (!siteKey) {
+      showError(container, "Security check unavailable. Add TURNSTILE_SITE_KEY.");
+      return null;
+    }
+
+    let turnstile;
+    try {
+      turnstile = await loadApi();
+    } catch (err) {
+      showError(container, "Security check could not load. Refresh and try again.");
+      return null;
+    }
+
     if (!turnstile || widgets.has(container) || !isVisible(container)) return null;
 
-    container.innerHTML = "";
+    try {
+      container.innerHTML = "";
+      const widgetId = turnstile.render(container, {
+        sitekey: siteKey,
+        theme: container.getAttribute("data-theme") || "auto",
+        size: container.getAttribute("data-size") || "normal",
+        appearance: container.getAttribute("data-appearance") || "always",
+        callback: token => setToken(container, token),
+        "expired-callback": () => setToken(container, ""),
+        "timeout-callback": () => setToken(container, ""),
+        "unsupported-callback": () => {
+          showError(container, "Security check is not supported in this browser.");
+          return true;
+        },
+        "error-callback": errorCode => {
+          showError(container, `Security check could not render (${errorCode}). Check the Turnstile site key and allowed hostname.`);
+          return true;
+        }
+      });
 
-    const widgetId = turnstile.render(container, {
-      sitekey: getSiteKey(),
-      theme: container.getAttribute("data-turnstile-theme") || "auto",
-      size: container.getAttribute("data-turnstile-size") || "normal",
-      callback: token => setToken(container, token),
-      "expired-callback": () => setToken(container, ""),
-      "error-callback": () => setToken(container, "")
-    });
-
-    widgets.set(container, widgetId);
-    return widgetId;
+      widgets.set(container, widgetId);
+      window.setTimeout(() => {
+        if (widgets.get(container) === widgetId && !hasVisibleFrame(container) && !container.dataset.turnstileToken) {
+          showError(container, "Security check is not visible. Check the Turnstile site key and allowed hostname.");
+        }
+      }, 6000);
+      return widgetId;
+    } catch (err) {
+      showError(container, "Security check could not render. Refresh and try again.");
+      return null;
+    }
   };
 
   const renderAll = async (root = document) => {
-    const containers = Array.from(root.querySelectorAll("[data-turnstile-widget]"));
-    if (!hasConfig()) {
-      containers.forEach(container => showMessage(container, "Security check unavailable. Add TURNSTILE_SITE_KEY."));
-      return [];
-    }
-    await loadApi();
+    const containers = widgetContainers(root);
     return Promise.all(containers.map(render));
   };
 
   const getWidget = root => {
     if (!root) return null;
-    return root.matches?.("[data-turnstile-widget]") ? root : root.querySelector?.("[data-turnstile-widget]");
+    return widgetContainers(root)[0] || null;
   };
 
   const requireToken = async root => {
-    if (!hasConfig()) return "";
+    if (!hasConfig(root || document)) return "";
     await renderAll(root || document);
     const container = getWidget(root || document);
     if (!container) return "";
