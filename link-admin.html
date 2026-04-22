@@ -82,171 +82,415 @@
 
 
     <!--CONFIGURE CARD-->
-    <div class="admin-card lt-admin" id="lt-editor" hidden>
-      <div class="lt-row lt-center lt-profile-summary">
-        <div class="lt-label">Profile</div>
-        <p class="lt-note">Public link: <a class="lt-inline-link lt-public-link" id="lt-public-url" href="#" target="_blank" rel="noreferrer noopener"></a></p>
-        <div class="lt-code-block" id="lt-code-block" hidden>
-          <div class="lt-code-block__label">Access code</div>
-          <div class="lt-code-block__value" id="lt-code-value"></div>
-          <p class="lt-note" id="lt-code-uses"></p>
+    <div class="admin-card lt-admin lt-admin-remodel" id="lt-editor" hidden>
+      <div class="lt-admin-topbar" aria-label="Profile actions">
+        <div class="lt-admin-topbar__copy">
+          <div class="lt-label">Profile Setup</div>
+          <p class="lt-note">Update your card details in focused sections.</p>
         </div>
+        <div class="lt-admin-topbar__actions">
+          <button class="lt-btn" id="lt-save" type="button">Save Changes</button>
+          <button class="lt-btn secondary lt-admin-virtual-card-btn" id="lt-virtual-card-btn" type="button" disabled hidden>Virtual Card</button>
+        </div>
+        <div class="lt-status" id="lt-save-status" aria-live="polite"></div>
+        <div class="lt-status" id="lt-status" aria-live="polite"></div>
       </div>
 
-      <form class="configure-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">
+      <form class="configure-form lt-accordion-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">
         <input type="hidden" name="_subject" value="Residue Configure Submission">
         <input type="hidden" name="_template" value="table">
         <input type="hidden" name="_next" value="/thank-you.html">
         <input type="text" name="_honey" style="display:none">
-
-        <label for="logo">Upload Company or Personal logo (Profile Image)</label>
-        <div class="lt-logo-upload-row">
-          <label class="lt-file-button" for="logo">Choose File</label>
-          <input class="lt-file-input" id="logo" name="logo" type="file" accept="image/*">
-          <div class="lt-current-photo" id="lt-current-photo" hidden>
-            <img id="lt-current-photo-img" alt="Current profile photo">
-            <span id="lt-current-photo-text">Current photo saved</span>
-          </div>
-          <span class="lt-current-photo-empty" id="lt-current-photo-empty">No photo selected</span>
-        </div>
         <input id="lt-avatar-url" name="lt-avatar-url" type="hidden">
+        <a class="lt-inline-link lt-public-link" id="lt-public-url" href="#" target="_blank" rel="noreferrer noopener" hidden></a>
 
-        <label for="full-name">Full name</label>
-        <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
+        <section class="lt-accordion-card" data-admin-section="profile-info" data-section-fields="full-name role location-coordinates phone email-config lt-bio" data-required-fields="full-name">
+          <button class="lt-accordion-trigger" id="lt-section-profile-info-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-info-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Profile Information</span>
+              <span class="lt-section-subtitle">Name, title, contact details, and bio.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Missing</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-profile-info-panel" role="region" aria-labelledby="lt-section-profile-info-trigger">
+            <div class="lt-accordion-panel__inner">
+              <div class="lt-field">
+                <label class="lt-field-label" for="full-name">Full name</label>
+                <input class="lt-input" id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
+              </div>
 
-        <label for="role">Title / Role</label>
-        <div class="input-toggle-row">
-          <input id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
-          <label class="include-toggle" for="show-role">
-            <input class="lt-include-checkbox" type="checkbox" id="show-role">
-          </label>
-        </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="role">Title / Role</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="role" name="role" type="text" autocomplete="organization-title" placeholder="Founder, Designer, etc.">
+                  <label class="include-toggle lt-visibility-toggle" for="show-role">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-role">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+              </div>
 
-        <label for="website">Website URL (optional, include https://)</label>
-        <div class="input-toggle-row">
-          <input id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
-          <label class="include-toggle" for="show-website">
-            <input class="lt-include-checkbox" type="checkbox" id="show-website">
-          </label>
-        </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="location-coordinates">Location address or coordinates</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="location-coordinates" name="location-coordinates" type="text" placeholder="123 Street Name, City or -26.2041, 28.0473" inputmode="text">
+                  <label class="include-toggle lt-visibility-toggle" for="show-location">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-location">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+              </div>
 
-        <label for="location-coordinates">Location address or coordinates (optional)</label>
-        <div class="input-toggle-row">
-          <input id="location-coordinates" name="location-coordinates" type="text" placeholder="123 Street Name, City or -26.2041, 28.0473" inputmode="text">
-          <label class="include-toggle" for="show-location">
-            <input class="lt-include-checkbox" type="checkbox" id="show-location">
-          </label>
-        </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="phone">Phone number</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
+                  <label class="include-toggle lt-visibility-toggle" for="show-phone">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-phone">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+              </div>
 
-        <label for="phone">Phone number</label>
-        <div class="input-toggle-row">
-          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567">
-          <label class="include-toggle" for="show-phone">
-            <input class="lt-include-checkbox" type="checkbox" id="show-phone">
-          </label>
-        </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="email-config">Email</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com">
+                  <label class="include-toggle lt-visibility-toggle" for="show-email">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-email">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+              </div>
 
-        <label for="email-config">Email</label>
-        <div class="input-toggle-row">
-          <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com">
-          <label class="include-toggle" for="show-email">
-            <input class="lt-include-checkbox" type="checkbox" id="show-email">
-          </label>
-        </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="lt-bio">Bio</label>
+                <div class="input-toggle-row">
+                  <textarea class="lt-textarea" id="lt-bio" maxlength="180" placeholder="Short description"></textarea>
+                  <label class="include-toggle lt-visibility-toggle" for="show-bio">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-bio">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+                <p class="lt-note lt-count-note" id="lt-bio-count">0 / 180</p>
+              </div>
 
-        <div class="form-group">
-          <div class="lt-label">Bio (optional, max 180 chars)</div>
-          <div class="input-toggle-row">
-            <textarea class="lt-textarea" id="lt-bio" maxlength="180" placeholder="Short description"></textarea>
-            <label class="include-toggle" for="show-bio">
-              <input class="lt-include-checkbox" type="checkbox" id="show-bio">
-            </label>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>Keep this concise and polished. Optional fields can stay private until their visibility toggle is enabled.</p>
+              </details>
+            </div>
           </div>
-          <p class="lt-note" id="lt-bio-count">0 / 180</p>
-        </div>
+        </section>
 
-        <div class="form-group">
-          <div class="lt-label">Card preset</div>
-          <div class="lt-theme-toggle" role="radiogroup" aria-label="Card theme preset">
-            <input type="radio" id="lt-theme-dark" name="lt-theme" value="dark">
-            <input type="radio" id="lt-theme-light" name="lt-theme" value="light" checked>
-            <div class="lt-theme-toggle__track" aria-hidden="true"></div>
-            <label class="lt-theme-toggle__option" for="lt-theme-dark">Dark</label>
-            <label class="lt-theme-toggle__option" for="lt-theme-light">Light</label>
+        <section class="lt-accordion-card" data-admin-section="profile-link" data-section-fields="full-name" data-required-fields="full-name">
+          <button class="lt-accordion-trigger" id="lt-section-profile-link-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-link-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"></path><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Profile Link</span>
+              <span class="lt-section-subtitle">Generated from your profile details.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Missing</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-profile-link-panel" role="region" aria-labelledby="lt-section-profile-link-trigger">
+            <div class="lt-accordion-panel__inner">
+              <p class="lt-empty-state" data-empty-for="profile-link">Complete your profile information, then save to keep the profile link in sync.</p>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>The link itself is kept off this setup page. It updates behind the scenes from your saved profile name and account details.</p>
+              </details>
+            </div>
           </div>
-          <p class="lt-note">This saves the light or dark look used on your public card.</p>
-        </div>
+        </section>
 
-        <label for="social">Social links (optional, include https://)</label>
-        <div class="stack" style="gap:10px;">
-          <div class="input-toggle-row">
-            <input id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social">
-            </label>
+        <section class="lt-accordion-card" data-admin-section="profile-image" data-section-fields="lt-avatar-url logo">
+          <button class="lt-accordion-trigger" id="lt-section-profile-image-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-image-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Profile Image / Logo</span>
+              <span class="lt-section-subtitle">Upload the image shown on your card.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Optional</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-profile-image-panel" role="region" aria-labelledby="lt-section-profile-image-trigger">
+            <div class="lt-accordion-panel__inner">
+              <div class="lt-field">
+                <label class="lt-field-label" for="logo">Upload company or personal logo</label>
+                <div class="lt-logo-upload-row">
+                  <label class="lt-file-button" for="logo">Choose File</label>
+                  <input class="lt-file-input" id="logo" name="logo" type="file" accept="image/*">
+                  <div class="lt-current-photo" id="lt-current-photo" hidden>
+                    <img id="lt-current-photo-img" alt="Current profile photo">
+                    <span id="lt-current-photo-text">Current photo saved</span>
+                  </div>
+                  <span class="lt-current-photo-empty" id="lt-current-photo-empty">No photo selected</span>
+                </div>
+              </div>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>Square, high-contrast images crop best and keep the card feeling sharp on mobile screens.</p>
+              </details>
+            </div>
           </div>
-          <div class="input-toggle-row">
-            <input id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social-2">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-2">
-            </label>
-          </div>
-          <div class="input-toggle-row">
-            <input id="social-4" name="youtube" type="url" placeholder="https://youtube.com/in/you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social-4">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-4">
-            </label>
-          </div>
-          <div class="input-toggle-row">
-            <input id="social-5" name="facebook" type="url" placeholder="https://facebook.com/in/you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social-5">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-5">
-            </label>
-          </div>
-          <div class="input-toggle-row">
-            <input id="social-6" name="x" type="url" placeholder="https://x.com/in/you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social-6">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-6">
-            </label>
-          </div>
-          <div class="input-toggle-row">
-            <input id="social-7" name="pinterest" type="url" placeholder="https://pinterest.com/you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social-7">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-7">
-            </label>
-          </div>
-          <div class="input-toggle-row">
-            <input id="social-8" name="tiktok" type="url" placeholder="https://tiktok.com/@you (optional)" data-auto-url>
-            <label class="include-toggle" for="show-social-8">
-              <input class="lt-include-checkbox" type="checkbox" id="show-social-8">
-            </label>
-          </div>
-        </div>
+        </section>
 
-        <div class="form-group" style="margin-top: 12px;">
-          <div class="lt-label">WhatsApp quick link</div>
-          <p class="lt-note">Enter your mobile with country code(+27** *** ****). We'll build the WhatsApp click-to-chat URL for you.</p>
-          <div class="input-toggle-row">
-            <input class="lt-input" id="whatsapp-number" name="whatsapp-number" type="tel" placeholder="+27 82 123 4567" inputmode="tel">
-            <label class="include-toggle" for="show-whatsapp">
-              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp">
-            </label>
+        <section class="lt-accordion-card" data-admin-section="whatsapp" data-section-fields="whatsapp-number whatsapp-message">
+          <button class="lt-accordion-trigger" id="lt-section-whatsapp-trigger" type="button" aria-expanded="false" aria-controls="lt-section-whatsapp-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 8.5 8.5 0 0 1-4-1l-5 1.5 1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"></path><path d="M8.5 9.5c.5 2 2 3.5 4 4l1.2-1.2 2 .5-.2 1.8c-.1.7-.7 1.1-1.4 1A7 7 0 0 1 6.4 8c-.1-.7.3-1.3 1-1.4l1.8-.2.5 2-1.2 1.1Z"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Whatsapp Information</span>
+              <span class="lt-section-subtitle">Number and custom first message.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Optional</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-whatsapp-panel" role="region" aria-labelledby="lt-section-whatsapp-trigger">
+            <div class="lt-accordion-panel__inner">
+              <p class="lt-empty-state" data-empty-for="whatsapp">No Whatsapp quick link added yet.</p>
+              <div class="lt-field">
+                <label class="lt-field-label" for="whatsapp-number">Whatsapp number</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="whatsapp-number" name="whatsapp-number" type="tel" placeholder="+27 82 123 4567" inputmode="tel">
+                  <label class="include-toggle lt-visibility-toggle" for="show-whatsapp">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+              </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="whatsapp-message">Custom first message</label>
+                <div class="input-toggle-row">
+                  <textarea class="lt-textarea" id="whatsapp-message" name="whatsapp-message" placeholder="Write the first Whatsapp message users will see..." maxlength="180"></textarea>
+                  <label class="include-toggle lt-visibility-toggle" for="show-whatsapp-message">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-message">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+                <p class="lt-note lt-count-note" id="whatsapp-message-count">0 / 180</p>
+              </div>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>Use a country code for the number. The message is optional and limited to 180 characters.</p>
+              </details>
+            </div>
           </div>
-          <label class="lt-note" for="whatsapp-message" style="margin-top:10px;">Custom first message (max 180 chars)</label>
-          <div class="input-toggle-row">
-            <textarea class="lt-textarea" id="whatsapp-message" name="whatsapp-message" placeholder="Write the first WhatsApp message users will see..." maxlength="180"></textarea>
-            <label class="include-toggle" for="show-whatsapp-message">
-              <input class="lt-include-checkbox" type="checkbox" id="show-whatsapp-message">
-            </label>
+        </section>
+
+        <section class="lt-accordion-card" data-admin-section="website" data-section-fields="website">
+          <button class="lt-accordion-trigger" id="lt-section-website-trigger" type="button" aria-expanded="false" aria-controls="lt-section-website-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 0 20"></path><path d="M12 2a15.3 15.3 0 0 0 0 20"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Website</span>
+              <span class="lt-section-subtitle">Add your primary website URL.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Optional</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-website-panel" role="region" aria-labelledby="lt-section-website-trigger">
+            <div class="lt-accordion-panel__inner">
+              <p class="lt-empty-state" data-empty-for="website">No website added yet.</p>
+              <div class="lt-field">
+                <label class="lt-field-label" for="website">Website URL</label>
+                <div class="input-toggle-row">
+                  <input class="lt-input" id="website" name="website" type="url" placeholder="https://yourdomain.com" data-auto-url>
+                  <label class="include-toggle lt-visibility-toggle" for="show-website">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-website">
+                    <span>Show on public card</span>
+                  </label>
+                </div>
+              </div>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>Include your full domain. The page can add https:// automatically when saving if needed.</p>
+              </details>
+            </div>
           </div>
-          <p class="lt-note" id="whatsapp-message-count">0 / 180</p>
-        </div>
-        <div class="form-group lt-admin-actions">
-          <button class="lt-btn" id="lt-save" type="button">Save</button>
-          <button class="lt-btn secondary lt-admin-virtual-card-btn" id="lt-virtual-card-btn" type="button" disabled>Virtual Card</button>
-          <div class="lt-status" id="lt-save-status"></div>
-          <div class="lt-status" id="lt-status"></div>
-        </div>
+        </section>
+
+        <section class="lt-accordion-card" data-admin-section="social-links" data-section-fields="social social-2 social-4 social-5 social-6 social-7 social-8">
+          <button class="lt-accordion-trigger" id="lt-section-social-links-trigger" type="button" aria-expanded="false" aria-controls="lt-section-social-links-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 13.5 6.8 4"></path><path d="m15.4 6.5-6.8 4"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Social Links</span>
+              <span class="lt-section-subtitle">Keep every social profile in one place.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Optional</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-social-links-panel" role="region" aria-labelledby="lt-section-social-links-trigger">
+            <div class="lt-accordion-panel__inner">
+              <p class="lt-empty-state" data-empty-for="social-links">No social links added yet.</p>
+              <div class="lt-social-grid">
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social">LinkedIn</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social" name="linkedin" type="url" placeholder="https://linkedin.com/in/you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social-2">Instagram</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social-2" name="instagram" type="url" placeholder="https://instagram.com/you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social-2">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social-2">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social-4">YouTube</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social-4" name="youtube" type="url" placeholder="https://youtube.com/@you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social-4">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social-4">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social-5">Facebook</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social-5" name="facebook" type="url" placeholder="https://facebook.com/you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social-5">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social-5">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social-6">X</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social-6" name="x" type="url" placeholder="https://x.com/you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social-6">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social-6">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social-7">Pinterest</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social-7" name="pinterest" type="url" placeholder="https://pinterest.com/you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social-7">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social-7">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="lt-field">
+                  <label class="lt-field-label" for="social-8">TikTok</label>
+                  <div class="input-toggle-row">
+                    <input class="lt-input" id="social-8" name="tiktok" type="url" placeholder="https://tiktok.com/@you" data-auto-url>
+                    <label class="include-toggle lt-visibility-toggle" for="show-social-8">
+                      <input class="lt-include-checkbox" type="checkbox" id="show-social-8">
+                      <span>Show on public card</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>Add only the profiles you actively use. Empty links stay hidden and are ignored when saving.</p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <section class="lt-accordion-card" data-admin-section="card-appearance" data-section-fields="lt-theme-light lt-theme-dark">
+          <button class="lt-accordion-trigger" id="lt-section-card-appearance-trigger" type="button" aria-expanded="false" aria-controls="lt-section-card-appearance-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 3a9 9 0 1 0 9 9 6 6 0 0 1-9-9Z"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Card Appearance</span>
+              <span class="lt-section-subtitle">Choose the light or dark card look.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Completed</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-card-appearance-panel" role="region" aria-labelledby="lt-section-card-appearance-trigger">
+            <div class="lt-accordion-panel__inner">
+              <div class="lt-field">
+                <div class="lt-field-label">Card Appearance</div>
+                <div class="lt-theme-toggle" role="radiogroup" aria-label="Card appearance">
+                  <input type="radio" id="lt-theme-dark" name="lt-theme" value="dark">
+                  <input type="radio" id="lt-theme-light" name="lt-theme" value="light" checked>
+                  <div class="lt-theme-toggle__track" aria-hidden="true"></div>
+                  <label class="lt-theme-toggle__option" for="lt-theme-dark">Dark</label>
+                  <label class="lt-theme-toggle__option" for="lt-theme-light">Light</label>
+                </div>
+              </div>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>This saves the light or dark look used on your card.</p>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        <section class="lt-accordion-card" data-admin-section="share-access-code" data-section-fields="lt-code-value">
+          <button class="lt-accordion-trigger" id="lt-section-share-access-code-trigger" type="button" aria-expanded="false" aria-controls="lt-section-share-access-code-panel">
+            <span class="lt-section-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M9 15h.01"></path><path d="M15 15h.01"></path></svg>
+            </span>
+            <span class="lt-section-copy">
+              <span class="lt-section-title">Share Access Code</span>
+              <span class="lt-section-subtitle">Code used for sharing access.</span>
+            </span>
+            <span class="lt-section-badge" data-section-badge>Missing</span>
+            <span class="lt-section-chevron" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div class="lt-accordion-panel" id="lt-section-share-access-code-panel" role="region" aria-labelledby="lt-section-share-access-code-trigger">
+            <div class="lt-accordion-panel__inner">
+              <p class="lt-empty-state" data-empty-for="share-access-code">Your access code will appear after your profile loads.</p>
+              <div class="lt-code-block" id="lt-code-block" hidden>
+                <div class="lt-code-block__label">Access code</div>
+                <div class="lt-code-block__value" id="lt-code-value"></div>
+                <p class="lt-note" id="lt-code-uses"></p>
+              </div>
+              <details class="lt-more-info">
+                <summary>More info</summary>
+                <p>Use this code only where access sharing is required. It is separate from the profile link.</p>
+              </details>
+            </div>
+          </div>
+        </section>
       </form>
     </div>
   </div>
@@ -286,6 +530,147 @@
   <script type="module" src="js/link-app.js"></script>
   <script type="module">
     window.linktree?.renderAdmin();
+
+    const initAdminAccordions = () => {
+      const editor = document.getElementById('lt-editor');
+      const cards = Array.from(document.querySelectorAll('[data-admin-section]'));
+      if (!editor || !cards.length) return;
+
+      let userInteracted = false;
+      let updateTimer = 0;
+
+      const splitIds = value => String(value || '')
+        .split(/\s+/)
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      const fieldValue = id => {
+        const el = document.getElementById(id);
+        if (!el) return '';
+        if (el instanceof HTMLInputElement) {
+          if (el.type === 'file') return el.files?.length ? 'selected' : '';
+          if (el.type === 'radio' || el.type === 'checkbox') return el.checked ? 'checked' : '';
+          return el.value.trim();
+        }
+        if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+          return el.value.trim();
+        }
+        return (el.textContent || '').trim();
+      };
+
+      const hasAnyValue = ids => ids.some(id => fieldValue(id));
+      const isOpen = card => card.classList.contains('is-open');
+
+      const setOpen = (card, open) => {
+        const trigger = card.querySelector('.lt-accordion-trigger');
+        const panel = card.querySelector('.lt-accordion-panel');
+        card.classList.toggle('is-open', open);
+        trigger?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        panel?.setAttribute('aria-hidden', open ? 'false' : 'true');
+        if (panel && 'inert' in panel) panel.inert = !open;
+      };
+
+      const closeOthers = activeCard => {
+        cards.forEach(card => {
+          if (card !== activeCard) setOpen(card, false);
+        });
+      };
+
+      const sectionStatus = card => {
+        const section = card.dataset.adminSection;
+        const fields = splitIds(card.dataset.sectionFields);
+        const required = splitIds(card.dataset.requiredFields);
+        const missingRequired = required.some(id => !fieldValue(id));
+
+        if (section === 'card-appearance') return 'completed';
+        if (section === 'share-access-code') return fieldValue('lt-code-value') ? 'completed' : 'missing';
+        if (missingRequired) return 'missing';
+        if (section === 'profile-link') return 'completed';
+        return hasAnyValue(fields) ? 'completed' : 'optional';
+      };
+
+      const updateEmptyState = card => {
+        const section = card.dataset.adminSection;
+        const emptyState = card.querySelector('.lt-empty-state');
+        if (!emptyState) return;
+
+        let hasContent = hasAnyValue(splitIds(card.dataset.sectionFields));
+        if (section === 'share-access-code') hasContent = !!fieldValue('lt-code-value');
+        if (section === 'profile-link') hasContent = !!fieldValue('full-name');
+
+        emptyState.hidden = hasContent;
+      };
+
+      const updateSectionStates = ({ autoOpen = false } = {}) => {
+        cards.forEach(card => {
+          const status = sectionStatus(card);
+          const badge = card.querySelector('[data-section-badge]');
+          card.dataset.status = status;
+          if (badge) {
+            badge.textContent = status === 'completed'
+              ? 'Completed'
+              : status === 'missing'
+                ? 'Missing'
+                : 'Optional';
+          }
+          updateEmptyState(card);
+        });
+
+        if (autoOpen && !userInteracted) {
+          cards.forEach(card => setOpen(card, false));
+          const firstMissing = cards.find(card => card.dataset.status === 'missing');
+          if (firstMissing) setOpen(firstMissing, true);
+        }
+      };
+
+      const scheduleUpdate = options => {
+        window.clearTimeout(updateTimer);
+        updateTimer = window.setTimeout(() => updateSectionStates(options), 80);
+      };
+
+      cards.forEach(card => {
+        const trigger = card.querySelector('.lt-accordion-trigger');
+        const panel = card.querySelector('.lt-accordion-panel');
+        if (panel && 'inert' in panel) panel.inert = true;
+        trigger?.addEventListener('click', () => {
+          userInteracted = true;
+          const nextOpen = !isOpen(card);
+          closeOthers(card);
+          setOpen(card, nextOpen);
+        });
+      });
+
+      const form = editor.querySelector('.configure-form');
+      form?.addEventListener('input', () => scheduleUpdate());
+      form?.addEventListener('change', () => scheduleUpdate());
+
+      const editorObserver = new MutationObserver(() => {
+        if (!editor.hidden && editor.style.display !== 'none') {
+          scheduleUpdate({ autoOpen: true });
+        }
+      });
+      editorObserver.observe(editor, { attributes: true, attributeFilter: ['hidden', 'style'] });
+
+      const codeBlock = document.getElementById('lt-code-block');
+      const codeValue = document.getElementById('lt-code-value');
+      if (codeBlock) {
+        new MutationObserver(() => scheduleUpdate()).observe(codeBlock, {
+          attributes: true,
+          attributeFilter: ['hidden']
+        });
+      }
+      if (codeValue) {
+        new MutationObserver(() => scheduleUpdate()).observe(codeValue, {
+          childList: true,
+          characterData: true,
+          subtree: true
+        });
+      }
+
+      updateSectionStates({ autoOpen: true });
+    };
+
+    initAdminAccordions();
   </script>
 </body>
 </html>
