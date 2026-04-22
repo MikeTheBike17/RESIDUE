@@ -54,7 +54,7 @@
       email: normalizeEmail(form.elements.email?.value),
       intent: normalizeIntent(form.elements.intent?.value),
       team_size: parseTeamSize(form.elements.team_size?.value),
-      turnstile_token: String(form.elements.turnstile_token?.value || '').trim()
+      turnstile_token: String(form.elements.turnstile_token?.value || form.elements['cf-turnstile-response']?.value || '').trim()
     };
 
     if (!payload.name || !payload.email || !payload.intent) {
