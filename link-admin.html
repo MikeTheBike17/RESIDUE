@@ -155,13 +155,14 @@
         </div>
 
         <div class="form-group">
-          <div class="lt-label">Bio (optional, <= 50 words)</div>
+          <div class="lt-label">Bio (optional, max 180 chars)</div>
           <div class="input-toggle-row">
-            <textarea class="lt-textarea" id="lt-bio" maxlength="320" placeholder="Short description"></textarea>
+            <textarea class="lt-textarea" id="lt-bio" maxlength="180" placeholder="Short description"></textarea>
             <label class="include-toggle" for="show-bio">
               <input class="lt-include-checkbox" type="checkbox" id="show-bio">
             </label>
           </div>
+          <p class="lt-note" id="lt-bio-count">0 / 180</p>
         </div>
 
         <div class="form-group">
