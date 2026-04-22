@@ -1394,18 +1394,16 @@ textarea {
 
 .turnstile-field {
   display: grid;
-  justify-items: stretch;
+  justify-items: start;
   width: 100%;
   margin-top: 4px;
   margin-bottom: 2px;
 }
 
 .turnstile-slot {
-  display: flex;
-  align-items: center;
-  justify-content: stretch;
-  width: 100%;
-  min-height: 74px;
+  display: block;
+  width: min(100%, 300px);
+  min-height: 65px;
   margin-top: 14px;
   overflow: visible;
 }
@@ -1424,12 +1422,11 @@ textarea {
 }
 
 .turnstile-slot > div {
-  width: 100% !important;
+  max-width: 100%;
 }
 
 .turnstile-slot iframe {
   display: block;
-  width: 100% !important;
   max-width: 100%;
   border: 0;
 }
