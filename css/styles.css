@@ -3003,6 +3003,53 @@ body.inside-page.hero-settled .inside-hero {
   align-items: center;
 }
 
+.password-reveal-field {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+}
+
+.password-reveal-field input {
+  padding-right: 52px;
+}
+
+.password-reveal-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid rgba(216,176,122,0.42);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.password-reveal-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.password-reveal-toggle:hover,
+.password-reveal-toggle:focus-visible {
+  border-color: rgba(216,176,122,0.78);
+  color: var(--text);
+  background: rgba(216,176,122,0.08);
+  outline: none;
+}
+
 .quote-form input::placeholder,
 .quote-form textarea::placeholder {
   color: rgba(255,255,255,0.35);
