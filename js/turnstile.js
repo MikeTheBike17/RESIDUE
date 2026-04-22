@@ -84,11 +84,8 @@
 
   const showMessage = (container, message) => {
     if (!container) return;
-    container.innerHTML = "";
-    const placeholder = document.createElement("span");
-    placeholder.className = "turnstile-placeholder";
-    placeholder.textContent = message;
-    container.appendChild(placeholder);
+    container.replaceChildren();
+    if (message) console.warn(message);
   };
 
   const showError = (container, message) => {
