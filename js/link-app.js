@@ -127,6 +127,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function fillPublic(profile, meta = {}) {
     setTheme(profile.theme || 'light');
+    const includeCompanyName = parseBool(meta.show_company_name, false);
+    const includeCompanyBio = parseBool(meta.show_company_bio, false);
+    setText('lt-company-name', includeCompanyName ? (meta.company_name || '') : '');
+    setText('lt-company-bio', includeCompanyBio ? (meta.company_bio || '') : '');
     setText('lt-name', deriveDisplayName(profile?.name, null));
     const includeRole = parseBool(meta.show_role, false);
     const includeBio = parseBool(meta.show_bio, false);
@@ -138,6 +142,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function showPlaceholder(message) {
     setTheme('light');
+    setText('lt-company-name', '');
+    setText('lt-company-bio', '');
     setText('lt-name', 'Your name');
     setText('lt-title', 'Your title');
     setText('lt-bio', 'Add a short description.');
@@ -1234,6 +1240,8 @@ async function ensureLocalDraftForUser(user) {
     setValue('email-config', savedEmail || '');
     setValue('whatsapp-number', '');
     setValue('whatsapp-message', '');
+    setValue('company-name', '');
+    setValue('lt-company-bio', '');
 
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
     const hasMeta = key => Object.prototype.hasOwnProperty.call(meta, key);
@@ -1244,6 +1252,8 @@ async function ensureLocalDraftForUser(user) {
     const fallbackShowBio = snapshotFields['show-bio'];
     setToggle('show-role', hasMeta('show_role') ? parseBool(meta.show_role, false) : parseBool(fallbackShowRole, false));
     setToggle('show-bio', hasMeta('show_bio') ? parseBool(meta.show_bio, false) : parseBool(fallbackShowBio, false));
+    setToggle('show-company-name', parseToggleMeta('show_company_name', hasSnapshotField('show-company-name') ? parseBool(snapshotFields['show-company-name'], false) : false));
+    setToggle('show-company-bio', parseToggleMeta('show_company_bio', hasSnapshotField('show-company-bio') ? parseBool(snapshotFields['show-company-bio'], false) : false));
     setToggle('show-website', parseToggleMeta('show_website', false));
     setToggle('show-location', parseToggleMeta('show_location', false));
     setToggle('show-phone', parseToggleMeta('show_phone', false));
@@ -1270,6 +1280,10 @@ async function ensureLocalDraftForUser(user) {
     if (hasMeta('whatsapp_message')) setValue('whatsapp-message', String(meta.whatsapp_message || '').slice(0, WHATSAPP_MESSAGE_MAX_CHARS));
     else if (legacyMessage) setValue('whatsapp-message', String(legacyMessage).slice(0, WHATSAPP_MESSAGE_MAX_CHARS));
     else if (snapshotMessage) setValue('whatsapp-message', snapshotMessage.slice(0, WHATSAPP_MESSAGE_MAX_CHARS));
+    if (hasMeta('company_name')) setValue('company-name', String(meta.company_name || ''));
+    else if (hasSnapshotField('company-name')) setValue('company-name', String(snapshotFields['company-name'] || ''));
+    if (hasMeta('company_bio')) setValue('lt-company-bio', String(meta.company_bio || '').slice(0, BIO_MAX_CHARS));
+    else if (hasSnapshotField('lt-company-bio')) setValue('lt-company-bio', String(snapshotFields['lt-company-bio'] || '').slice(0, BIO_MAX_CHARS));
 
     normalLinks.forEach(link => {
       const label = (link.label || '').toLowerCase();
@@ -1313,6 +1327,7 @@ async function ensureLocalDraftForUser(user) {
     });
 
     updateCharacterCount('lt-bio', 'lt-bio-count', BIO_MAX_CHARS);
+    updateCharacterCount('lt-company-bio', 'lt-company-bio-count', BIO_MAX_CHARS);
     updateCharacterCount('whatsapp-message', 'whatsapp-message-count', WHATSAPP_MESSAGE_MAX_CHARS);
     isFillingEditor = false;
   }
@@ -1383,6 +1398,8 @@ async function ensureLocalDraftForUser(user) {
 
     linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_company_name', document.getElementById('show-company-name')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_company_bio', document.getElementById('show-company-bio')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_website', document.getElementById('show-website')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_location', document.getElementById('show-location')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_phone', document.getElementById('show-phone')?.checked ?? false, linksOut.length));
@@ -1393,6 +1410,8 @@ async function ensureLocalDraftForUser(user) {
       const toggleKey = social.toggle.replace(/-/g, '_');
       linksOut.push(metaLink(toggleKey, document.getElementById(social.toggle)?.checked ?? false, linksOut.length));
     });
+    linksOut.push(metaLink('company_name', getValue('company-name'), linksOut.length));
+    linksOut.push(metaLink('company_bio', getValue('lt-company-bio').slice(0, BIO_MAX_CHARS), linksOut.length));
     linksOut.push(metaLink('whatsapp_number', getValue('whatsapp-number'), linksOut.length));
     linksOut.push(metaLink('whatsapp_message', getValue('whatsapp-message').slice(0, WHATSAPP_MESSAGE_MAX_CHARS), linksOut.length));
 
@@ -1781,6 +1800,8 @@ async function ensureLocalDraftForUser(user) {
     const saveStatusEl = document.getElementById('lt-save-status');
     const bioInput = document.getElementById('lt-bio');
     const bioCount = document.getElementById('lt-bio-count');
+    const companyBioInput = document.getElementById('lt-company-bio');
+    const companyBioCount = document.getElementById('lt-company-bio-count');
     const waMessage = document.getElementById('whatsapp-message');
     const waMessageCount = document.getElementById('whatsapp-message-count');
     const themeInputs = Array.from(document.querySelectorAll('input[name="lt-theme"]'));
@@ -1837,6 +1858,7 @@ async function ensureLocalDraftForUser(user) {
       scheduleEditorAutosave(0);
     });
     bindCharacterLimit(bioInput, bioCount, BIO_MAX_CHARS, 'Bio');
+    bindCharacterLimit(companyBioInput, companyBioCount, BIO_MAX_CHARS, 'Company bio');
     bindCharacterLimit(waMessage, waMessageCount, WHATSAPP_MESSAGE_MAX_CHARS, 'WhatsApp message');
 
     const saveBtn = document.getElementById('lt-save');
