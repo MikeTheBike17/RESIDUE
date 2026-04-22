@@ -154,6 +154,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const CURRENT_USER_KEY = 'residue_current_user';
   const LOCAL_PROFILE_KEY_PREFIX = 'residue_link_profile_';
   const META_PREFIX = '__meta__';
+  const BIO_MAX_CHARS = 180;
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
   const AUTOSAVE_DELAY_MS = 900;
   let authStateSubscription = null;
@@ -542,6 +543,20 @@ import { residueTelemetry } from './supabase-telemetry.js';
       }
     });
     return { meta, normalLinks };
+  }
+
+  function hydrateStoredLinks(links) {
+    const storedLinks = Array.isArray(links) ? links : [];
+    const { meta } = extractMetaFromLinks(storedLinks);
+    return storedLinks.map((link, index) => {
+      const label = (link.label || '').trim();
+      if (label.startsWith(META_PREFIX)) return link;
+      const hiddenKey = `hidden_${link.sort ?? index}`;
+      return {
+        ...link,
+        hidden: parseBool(meta[hiddenKey], parseBool(link.hidden, false))
+      };
+    });
   }
 
   const metaLink = (key, value, sort) => ({
@@ -1145,8 +1160,7 @@ async function ensureLocalDraftForUser(user) {
       ...(snapshot?.profile || {}),
       ...(profile || {})
     };
-    const { meta, normalLinks } = extractMetaFromLinks(effectiveLinks || []);
-    const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
+    const hydratedLinks = hydrateStoredLinks(effectiveLinks || []);
     fillEditor(mergedProfile || {}, hydratedLinks, user, snapshot);
     const codeRow = await fetchOrCreateCode(user.id);
     renderCodePanel(codeRow);
@@ -1179,7 +1193,7 @@ async function ensureLocalDraftForUser(user) {
     }
     if (profile) {
       const links = Array.isArray(profile.links) ? profile.links : [];
-      fillEditor(profile, links);
+      fillEditor(profile, hydrateStoredLinks(links));
     }
   }
 
@@ -1201,7 +1215,7 @@ async function ensureLocalDraftForUser(user) {
     updateLogoPreview(profile.avatar_url || '');
     setValue('full-name', displayName || '');
     setValue('role', savedTitle || '');
-    setValue('lt-bio', savedBio || '');
+    setValue('lt-bio', (savedBio || '').slice(0, BIO_MAX_CHARS));
     const themeInput = document.querySelector(`input[name="lt-theme"][value="${savedTheme}"]`);
     if (themeInput) themeInput.checked = true;
     setTheme(savedTheme);
@@ -1223,6 +1237,7 @@ async function ensureLocalDraftForUser(user) {
 
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
     const hasMeta = key => Object.prototype.hasOwnProperty.call(meta, key);
+    const hasSnapshotField = key => Object.prototype.hasOwnProperty.call(snapshotFields, key);
     const parseToggleMeta = (key, fallback = false) => parseBool(meta[key], fallback);
 
     const fallbackShowRole = snapshotFields['show-role'];
@@ -1233,18 +1248,28 @@ async function ensureLocalDraftForUser(user) {
     setToggle('show-location', parseToggleMeta('show_location', false));
     setToggle('show-phone', parseToggleMeta('show_phone', false));
     setToggle('show-email', parseToggleMeta('show_email', false));
-    setToggle('show-whatsapp', parseToggleMeta('show_whatsapp', false));
+    const snapshotShowWhatsapp = hasSnapshotField('show-whatsapp')
+      ? parseBool(snapshotFields['show-whatsapp'], false)
+      : false;
+    setToggle('show-whatsapp', parseToggleMeta('show_whatsapp', snapshotShowWhatsapp));
     const legacyShowTemplate = parseToggleMeta('show_whatsapp_template', false);
     const legacyShowCustom = parseToggleMeta('show_whatsapp_custom', false);
-    setToggle('show-whatsapp-message', parseToggleMeta('show_whatsapp_message', legacyShowTemplate && legacyShowCustom));
+    const snapshotShowWhatsappMessage = hasSnapshotField('show-whatsapp-message')
+      ? parseBool(snapshotFields['show-whatsapp-message'], false)
+      : (legacyShowTemplate && legacyShowCustom);
+    setToggle('show-whatsapp-message', parseToggleMeta('show_whatsapp_message', snapshotShowWhatsappMessage));
     socialConfig.forEach(s => {
       const toggleKey = s.toggle.replace(/-/g, '_');
       setToggle(s.toggle, parseToggleMeta(toggleKey, false));
     });
+    const snapshotWhatsappNumber = hasSnapshotField('whatsapp-number') ? String(snapshotFields['whatsapp-number'] || '') : '';
     if (hasMeta('whatsapp_number')) setValue('whatsapp-number', meta.whatsapp_number || '');
+    else if (snapshotWhatsappNumber) setValue('whatsapp-number', snapshotWhatsappNumber);
     const legacyMessage = meta.whatsapp_custom || meta.whatsapp_template || '';
-    if (hasMeta('whatsapp_message')) setValue('whatsapp-message', meta.whatsapp_message || '');
-    else if (legacyMessage) setValue('whatsapp-message', legacyMessage);
+    const snapshotMessage = hasSnapshotField('whatsapp-message') ? String(snapshotFields['whatsapp-message'] || '') : '';
+    if (hasMeta('whatsapp_message')) setValue('whatsapp-message', String(meta.whatsapp_message || '').slice(0, WHATSAPP_MESSAGE_MAX_CHARS));
+    else if (legacyMessage) setValue('whatsapp-message', String(legacyMessage).slice(0, WHATSAPP_MESSAGE_MAX_CHARS));
+    else if (snapshotMessage) setValue('whatsapp-message', snapshotMessage.slice(0, WHATSAPP_MESSAGE_MAX_CHARS));
 
     normalLinks.forEach(link => {
       const label = (link.label || '').toLowerCase();
@@ -1287,11 +1312,8 @@ async function ensureLocalDraftForUser(user) {
       }
     });
 
-    const waMessage = document.getElementById('whatsapp-message');
-    const waCount = document.getElementById('whatsapp-message-count');
-    if (waMessage && waCount) {
-      waCount.textContent = `${(waMessage.value || '').length} / ${WHATSAPP_MESSAGE_MAX_CHARS}`;
-    }
+    updateCharacterCount('lt-bio', 'lt-bio-count', BIO_MAX_CHARS);
+    updateCharacterCount('whatsapp-message', 'whatsapp-message-count', WHATSAPP_MESSAGE_MAX_CHARS);
     isFillingEditor = false;
   }
 
@@ -1757,6 +1779,8 @@ async function ensureLocalDraftForUser(user) {
     const logoInput = document.getElementById('logo');
     const avatarUrlInput = document.getElementById('lt-avatar-url');
     const saveStatusEl = document.getElementById('lt-save-status');
+    const bioInput = document.getElementById('lt-bio');
+    const bioCount = document.getElementById('lt-bio-count');
     const waMessage = document.getElementById('whatsapp-message');
     const waMessageCount = document.getElementById('whatsapp-message-count');
     const themeInputs = Array.from(document.querySelectorAll('input[name="lt-theme"]'));
@@ -1812,30 +1836,8 @@ async function ensureLocalDraftForUser(user) {
       if (evt.target?.id === 'logo') return;
       scheduleEditorAutosave(0);
     });
-    const updateWaMessageCount = () => {
-      if (!waMessage || !waMessageCount) return;
-      waMessageCount.textContent = `${waMessage.value.length} / ${WHATSAPP_MESSAGE_MAX_CHARS}`;
-    };
-    waMessage?.addEventListener('beforeinput', e => {
-      if (!waMessage) return;
-      if (e.inputType && e.inputType.startsWith('delete')) return;
-      const start = waMessage.selectionStart ?? waMessage.value.length;
-      const end = waMessage.selectionEnd ?? waMessage.value.length;
-      const nextLength = waMessage.value.length - (end - start) + (e.data?.length || 0);
-      if (nextLength > WHATSAPP_MESSAGE_MAX_CHARS) {
-        e.preventDefault();
-        alert(`WhatsApp message cannot exceed ${WHATSAPP_MESSAGE_MAX_CHARS} characters.`);
-      }
-    });
-    waMessage?.addEventListener('input', () => {
-      if (!waMessage) return;
-      if (waMessage.value.length > WHATSAPP_MESSAGE_MAX_CHARS) {
-        waMessage.value = waMessage.value.slice(0, WHATSAPP_MESSAGE_MAX_CHARS);
-        alert(`WhatsApp message cannot exceed ${WHATSAPP_MESSAGE_MAX_CHARS} characters.`);
-      }
-      updateWaMessageCount();
-    });
-    updateWaMessageCount();
+    bindCharacterLimit(bioInput, bioCount, BIO_MAX_CHARS, 'Bio');
+    bindCharacterLimit(waMessage, waMessageCount, WHATSAPP_MESSAGE_MAX_CHARS, 'WhatsApp message');
 
     const saveBtn = document.getElementById('lt-save');
     const statusEl = document.getElementById('lt-save-status');
@@ -1933,7 +1935,7 @@ async function ensureLocalDraftForUser(user) {
       fallbackSlug
     });
     const title = getValue('role') || getValue('lt-title');
-    const bio = getValue('lt-bio');
+    const bio = getValue('lt-bio').slice(0, BIO_MAX_CHARS);
     const avatar_url = getValue('lt-avatar-url');
     const theme = document.querySelector('input[name="lt-theme"]:checked')?.value || 'light';
     const id = user?.id || CURRENT_USER_KEY;
@@ -1952,6 +1954,34 @@ async function ensureLocalDraftForUser(user) {
   function getValue(id) {
     const el = document.getElementById(id);
     return el ? el.value.trim() : '';
+  }
+  function updateCharacterCount(inputId, countId, maxChars) {
+    const input = document.getElementById(inputId);
+    const count = document.getElementById(countId);
+    if (input && count) count.textContent = `${(input.value || '').length} / ${maxChars}`;
+  }
+  function bindCharacterLimit(input, count, maxChars, label) {
+    const update = () => {
+      if (input && count) count.textContent = `${(input.value || '').length} / ${maxChars}`;
+    };
+    input?.addEventListener('beforeinput', e => {
+      if (e.inputType && e.inputType.startsWith('delete')) return;
+      const start = input.selectionStart ?? input.value.length;
+      const end = input.selectionEnd ?? input.value.length;
+      const nextLength = input.value.length - (end - start) + (e.data?.length || 0);
+      if (nextLength > maxChars) {
+        e.preventDefault();
+        alert(`${label} cannot exceed ${maxChars} characters.`);
+      }
+    });
+    input?.addEventListener('input', () => {
+      if (input.value.length > maxChars) {
+        input.value = input.value.slice(0, maxChars);
+        alert(`${label} cannot exceed ${maxChars} characters.`);
+      }
+      update();
+    });
+    update();
   }
   function updateLogoPreview(url, label = 'Current photo saved') {
     const preview = document.getElementById('lt-current-photo');
