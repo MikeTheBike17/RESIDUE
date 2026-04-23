@@ -29,6 +29,7 @@ body.lt-page[data-theme="dark"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.13),
     inset 0 -1px 0 rgba(0, 0, 0, 0.48),
     0 12px 24px rgba(0, 0, 0, 0.24);
+  --lt-bio-bg: rgba(255, 255, 255, 0.08);
 }
 
 body.lt-page[data-theme="light"] {
@@ -51,6 +52,7 @@ body.lt-page[data-theme="light"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     inset 0 -1px 0 rgba(82, 74, 61, 0.16),
     0 12px 22px rgba(82, 74, 61, 0.13);
+  --lt-bio-bg: rgba(255, 255, 255, 0.42);
 }
 
 body.lt-page {
@@ -176,14 +178,13 @@ body.lt-page.preview-mode::-webkit-scrollbar {
 .lt-bio {
   margin: 16px auto 18px;
   width: 100%;
-  padding: 14px 18px;
+  padding: 0 18px;
   border-radius: 12px;
   color: var(--lt-muted, rgba(255,255,255,0.7));
-  background: transparent;
-  border: 1px solid var(--lt-bio-border, rgba(255,255,255,0.18));
-  box-shadow: var(--lt-bio-shadow);
-  outline: 1px solid var(--lt-bio-edge, rgba(214, 178, 107, 0.24));
-  outline-offset: -4px;
+  background: var(--lt-bio-bg, rgba(255, 255, 255, 0.12));
+  border: 0;
+  box-shadow: none;
+  outline: none;
   line-height: 1.5;
 }
 
