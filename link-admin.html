@@ -6,8 +6,9 @@
   <title>Residue — NFC Cards</title>
   <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
   <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
-  <link rel="stylesheet" href="css/linktree.css">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css">
+  <link rel="stylesheet" href="css/linktree.css">
   <script src="js/env.js"></script>
 </head>
 <body class="lt-page" data-theme="light">
@@ -85,15 +86,20 @@
     <div class="admin-card lt-admin lt-admin-remodel" id="lt-editor" hidden>
       <div class="lt-admin-topbar" aria-label="Profile actions">
         <div class="lt-admin-topbar__copy">
-          <div class="lt-label">Profile Setup</div>
+          <div class="lt-admin-topbar__row">
+            <div class="lt-label lt-admin-topbar__title">Profile Setup</div>
+            <section class="lt-admin-priority-card lt-admin-priority-card--theme" aria-label="Display mode">
+              <div class="lt-theme-toggle" role="radiogroup" aria-label="Card appearance">
+                <input type="radio" id="lt-theme-dark" name="lt-theme" value="dark">
+                <input type="radio" id="lt-theme-light" name="lt-theme" value="light" checked>
+                <div class="lt-theme-toggle__track" aria-hidden="true"></div>
+                <label class="lt-theme-toggle__option" for="lt-theme-dark">Dark</label>
+                <label class="lt-theme-toggle__option" for="lt-theme-light">Light</label>
+              </div>
+            </section>
+          </div>
           <p class="lt-note">Update your card details in focused sections.</p>
         </div>
-        <div class="lt-admin-topbar__actions">
-          <button class="lt-btn" id="lt-save" type="button">Save Changes</button>
-          <button class="lt-btn secondary lt-admin-virtual-card-btn" id="lt-virtual-card-btn" type="button" disabled hidden>Virtual Card</button>
-        </div>
-        <div class="lt-status" id="lt-save-status" aria-live="polite"></div>
-        <div class="lt-status" id="lt-status" aria-live="polite"></div>
       </div>
 
       <form class="configure-form lt-accordion-form" action="#" method="post" data-external="true" data-endpoint="https://formsubmit.co/ajax/limrik.swanepoel@icloud.com">
@@ -102,16 +108,36 @@
         <input type="hidden" name="_next" value="/thank-you.html">
         <input type="text" name="_honey" style="display:none">
         <input id="lt-avatar-url" name="lt-avatar-url" type="hidden">
-        <a class="lt-inline-link lt-public-link" id="lt-public-url" href="#" target="_blank" rel="noreferrer noopener" hidden></a>
 
-        <section class="lt-accordion-card" data-admin-section="profile-info" data-section-fields="full-name role location-coordinates phone email-config lt-bio" data-required-fields="full-name">
+        
+
+        <section class="lt-admin-priority-card lt-admin-priority-card--identity" aria-label="Profile image and name">
+          <div class="lt-field">
+            <label class="lt-field-label" for="logo">Upload company or personal logo</label>
+            <div class="lt-logo-upload-row">
+              <label class="lt-file-button" for="logo">Choose File</label>
+              <input class="lt-file-input" id="logo" name="logo" type="file" accept="image/*">
+              <div class="lt-current-photo" id="lt-current-photo" hidden>
+                <img id="lt-current-photo-img" alt="Current profile photo">
+                <span id="lt-current-photo-text">Current photo saved</span>
+              </div>
+              <span class="lt-current-photo-empty" id="lt-current-photo-empty">No photo selected</span>
+            </div>
+          </div>
+          <div class="lt-field">
+            <label class="lt-field-label" for="full-name">Full name</label>
+            <input class="lt-input" id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
+          </div>
+        </section>
+
+        <section class="lt-accordion-card" data-admin-section="profile-info" data-section-fields="role location-coordinates phone email-config lt-bio">
           <button class="lt-accordion-trigger" id="lt-section-profile-info-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-info-panel">
             <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <i class="fi fi-rr-user-gear"></i>
             </span>
             <span class="lt-section-copy">
               <span class="lt-section-title">Profile Information</span>
-              <span class="lt-section-subtitle">Name, title, contact details, and bio.</span>
+              <span class="lt-section-subtitle">Title, contact details, location, and bio.</span>
             </span>
             <span class="lt-section-badge" data-section-badge>Missing</span>
             <span class="lt-section-chevron" aria-hidden="true">
@@ -120,11 +146,6 @@
           </button>
           <div class="lt-accordion-panel" id="lt-section-profile-info-panel" role="region" aria-labelledby="lt-section-profile-info-trigger">
             <div class="lt-accordion-panel__inner">
-              <div class="lt-field">
-                <label class="lt-field-label" for="full-name">Full name</label>
-                <input class="lt-input" id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
-              </div>
-
               <div class="lt-field">
                 <label class="lt-field-label" for="role">Title / Role</label>
                 <div class="input-toggle-row">
@@ -178,7 +199,7 @@
 
               <details class="lt-more-info">
                 <summary>More info</summary>
-                <p>Keep this concise and polished. Optional fields can stay private until their visibility toggle is enabled.</p>
+                <p>Keep this concise and polished. Fields can stay private until their visibility toggle is enabled. <i>Note that for the Save Contact button to work, the contact number must be filled in and toggled on.</i></p>
               </details>
             </div>
           </div>
@@ -228,46 +249,10 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="profile-image" data-section-fields="lt-avatar-url logo">
-          <button class="lt-accordion-trigger" id="lt-section-profile-image-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-image-panel">
-            <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"></path></svg>
-            </span>
-            <span class="lt-section-copy">
-              <span class="lt-section-title">Profile Image / Logo</span>
-              <span class="lt-section-subtitle">Upload the image shown on your card.</span>
-            </span>
-            <span class="lt-section-badge" data-section-badge>Optional</span>
-            <span class="lt-section-chevron" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
-            </span>
-          </button>
-          <div class="lt-accordion-panel" id="lt-section-profile-image-panel" role="region" aria-labelledby="lt-section-profile-image-trigger">
-            <div class="lt-accordion-panel__inner">
-              <div class="lt-field">
-                <label class="lt-field-label" for="logo">Upload company or personal logo</label>
-                <div class="lt-logo-upload-row">
-                  <label class="lt-file-button" for="logo">Choose File</label>
-                  <input class="lt-file-input" id="logo" name="logo" type="file" accept="image/*">
-                  <div class="lt-current-photo" id="lt-current-photo" hidden>
-                    <img id="lt-current-photo-img" alt="Current profile photo">
-                    <span id="lt-current-photo-text">Current photo saved</span>
-                  </div>
-                  <span class="lt-current-photo-empty" id="lt-current-photo-empty">No photo selected</span>
-                </div>
-              </div>
-              <details class="lt-more-info">
-                <summary>More info</summary>
-                <p>Square, high-contrast images crop best and keep the card feeling sharp on mobile screens.</p>
-              </details>
-            </div>
-          </div>
-        </section>
-
         <section class="lt-accordion-card" data-admin-section="whatsapp" data-section-fields="whatsapp-number whatsapp-message">
           <button class="lt-accordion-trigger" id="lt-section-whatsapp-trigger" type="button" aria-expanded="false" aria-controls="lt-section-whatsapp-panel">
             <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 8.5 8.5 0 0 1-4-1l-5 1.5 1.6-4.8A8.5 8.5 0 1 1 21 11.5Z"></path><path d="M8.5 9.5c.5 2 2 3.5 4 4l1.2-1.2 2 .5-.2 1.8c-.1.7-.7 1.1-1.4 1A7 7 0 0 1 6.4 8c-.1-.7.3-1.3 1-1.4l1.8-.2.5 2-1.2 1.1Z"></path></svg>
+              <i class="fi fi-rr-comment-alt"></i>
             </span>
             <span class="lt-section-copy">
               <span class="lt-section-title">Whatsapp Information</span>
@@ -311,7 +296,7 @@
         <section class="lt-accordion-card" data-admin-section="website" data-section-fields="website">
           <button class="lt-accordion-trigger" id="lt-section-website-trigger" type="button" aria-expanded="false" aria-controls="lt-section-website-panel">
             <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 0 20"></path><path d="M12 2a15.3 15.3 0 0 0 0 20"></path></svg>
+              <i class="fi fi-rr-globe"></i>
             </span>
             <span class="lt-section-copy">
               <span class="lt-section-title">Website</span>
@@ -345,7 +330,7 @@
         <section class="lt-accordion-card" data-admin-section="social-links" data-section-fields="social social-2 social-4 social-5 social-6 social-7 social-8">
           <button class="lt-accordion-trigger" id="lt-section-social-links-trigger" type="button" aria-expanded="false" aria-controls="lt-section-social-links-panel">
             <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.6 13.5 6.8 4"></path><path d="m15.4 6.5-6.8 4"></path></svg>
+              <i class="fi fi-rr-share"></i>
             </span>
             <span class="lt-section-copy">
               <span class="lt-section-title">Social Links</span>
@@ -426,41 +411,7 @@
               </div>
               <details class="lt-more-info">
                 <summary>More info</summary>
-                <p>Add only the profiles you actively use. Empty links stay hidden and are ignored when saving.</p>
-              </details>
-            </div>
-          </div>
-        </section>
-
-        <section class="lt-accordion-card" data-admin-section="card-appearance" data-section-fields="lt-theme-light lt-theme-dark">
-          <button class="lt-accordion-trigger" id="lt-section-card-appearance-trigger" type="button" aria-expanded="false" aria-controls="lt-section-card-appearance-panel">
-            <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 3a9 9 0 1 0 9 9 6 6 0 0 1-9-9Z"></path></svg>
-            </span>
-            <span class="lt-section-copy">
-              <span class="lt-section-title">Card Appearance</span>
-              <span class="lt-section-subtitle">Choose the light or dark card look.</span>
-            </span>
-            <span class="lt-section-badge" data-section-badge>Completed</span>
-            <span class="lt-section-chevron" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
-            </span>
-          </button>
-          <div class="lt-accordion-panel" id="lt-section-card-appearance-panel" role="region" aria-labelledby="lt-section-card-appearance-trigger">
-            <div class="lt-accordion-panel__inner">
-              <div class="lt-field">
-                <div class="lt-field-label">Card Appearance</div>
-                <div class="lt-theme-toggle" role="radiogroup" aria-label="Card appearance">
-                  <input type="radio" id="lt-theme-dark" name="lt-theme" value="dark">
-                  <input type="radio" id="lt-theme-light" name="lt-theme" value="light" checked>
-                  <div class="lt-theme-toggle__track" aria-hidden="true"></div>
-                  <label class="lt-theme-toggle__option" for="lt-theme-dark">Dark</label>
-                  <label class="lt-theme-toggle__option" for="lt-theme-light">Light</label>
-                </div>
-              </div>
-              <details class="lt-more-info">
-                <summary>More info</summary>
-                <p>This saves the light or dark look used on your card.</p>
+                <p>Add only the profiles you actively use. Empty links stay hidden and are ignored when saving. These links will be visible to anyone who visits your profile and can be toggled on or off at any time.</p>
               </details>
             </div>
           </div>
@@ -469,7 +420,7 @@
         <section class="lt-accordion-card" data-admin-section="share-access-code" data-section-fields="lt-code-value">
           <button class="lt-accordion-trigger" id="lt-section-share-access-code-trigger" type="button" aria-expanded="false" aria-controls="lt-section-share-access-code-panel">
             <span class="lt-section-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="M9 9h.01"></path><path d="M15 9h.01"></path><path d="M9 15h.01"></path><path d="M15 15h.01"></path></svg>
+              <i class="fi fi-rr-lock"></i>
             </span>
             <span class="lt-section-copy">
               <span class="lt-section-title">Share Access Code</span>
@@ -488,14 +439,30 @@
                 <div class="lt-code-block__value" id="lt-code-value"></div>
                 <p class="lt-note" id="lt-code-uses"></p>
               </div>
+              <div class="lt-code-block__url" id="lt-public-url-wrap" hidden>
+                <div class="lt-code-block__meta-label">Link profile page</div>
+                <a class="lt-inline-link lt-public-link" id="lt-public-url" href="#" target="_blank" rel="noreferrer noopener"></a>
+              </div>
               <details class="lt-more-info">
                 <summary>More info</summary>
-                <p>Use this code only where access sharing is required. It is separate from the profile link.</p>
+                <p>The Access Code is separate from the profile link and is used to grant new users access to be able to purchase a card. <i>You are able to share this code with 5 others.</i> The Link Profile Page URL is your public profile link. <i>You may use this to share your profile with others via a URL link</i></p>
               </details>
             </div>
           </div>
         </section>
+
+        <section class="lt-admin-savebar" aria-label="Save card details">
+          <button class="lt-btn" id="lt-save" type="button">Save Changes</button>
+        </section>
       </form>
+
+      <div class="lt-v-number">
+        <div class="lt-copyright">© 2026 RESIDUE</div>
+        <div class="lt-v-number__meta">
+          <h4>v1.0.0</h4>
+          <a class="lt-icon-credit" href="https://www.flaticon.com/uicons" target="_blank" rel="noreferrer noopener">Icons by Flaticon</a>
+        </div>
+      </div>
     </div>
   </div>
 

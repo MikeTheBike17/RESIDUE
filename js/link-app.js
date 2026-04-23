@@ -792,9 +792,12 @@ async function ensureLocalDraftForUser(user) {
 
   function updatePublicUrl(slug) {
     const urlEl = document.getElementById('lt-public-url');
+    const urlWrap = document.getElementById('lt-public-url-wrap');
     if (!urlEl) return;
     const publicUrl = buildPublicProfileUrl(slug);
     urlEl.textContent = publicUrl;
+    urlEl.hidden = false;
+    if (urlWrap) urlWrap.hidden = false;
     if (urlEl instanceof HTMLAnchorElement) {
       urlEl.href = publicUrl;
     }
