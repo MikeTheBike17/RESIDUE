@@ -62,9 +62,20 @@ window.addEventListener('DOMContentLoaded', () => {
     } catch {}
     return fallback || 'Link';
   };
+  const syncCompanySection = () => {
+    const section = document.getElementById('lt-company-section');
+    const heading = document.getElementById('lt-company-heading');
+    const nameEl = document.getElementById('lt-company-name');
+    const bioEl = document.getElementById('lt-company-bio');
+    const logo = document.getElementById('lt-company-logo');
+    const hasName = !!String(nameEl?.textContent || '').trim();
+    const hasBio = !!String(bioEl?.textContent || '').trim();
+    const hasLogo = !!String(logo?.getAttribute('src') || '').trim() && !logo?.hidden;
+    if (heading) heading.hidden = !(hasLogo || hasName);
+    if (section) section.hidden = !(hasLogo || hasName || hasBio);
+  };
   const setCompanyLogo = (url) => {
     const logo = document.getElementById('lt-company-logo');
-    const header = document.querySelector('.lt-header');
     const value = String(url || '').trim();
     if (logo) {
       if (value) {
@@ -75,7 +86,7 @@ window.addEventListener('DOMContentLoaded', () => {
         logo.hidden = true;
       }
     }
-    header?.classList.toggle('has-company-logo', !!value);
+    syncCompanySection();
   };
   setText('lt-company-name', parseBool(meta.show_company_name, false) ? meta.company_name : '');
   setText('lt-company-bio', parseBool(meta.show_company_bio, false) ? meta.company_bio : '');
