@@ -126,6 +126,7 @@ body.lt-page.preview-mode::-webkit-scrollbar {
 
 .lt-header.has-company-logo .lt-brand-mark {
   margin-left: auto;
+  transform: translateY(-34px);
 }
 
 .lt-brand {

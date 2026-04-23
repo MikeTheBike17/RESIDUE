@@ -41,6 +41,27 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
+  const inferLinkLabel = (url, fallback) => {
+    if (!url) return fallback || 'Link';
+    const value = String(url || '').trim().toLowerCase();
+    if (/^mailto:/i.test(value)) return 'Email';
+    if (/^tel:/i.test(value)) return 'Call';
+    try {
+      const host = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`).hostname.toLowerCase();
+      if (host.includes('linkedin')) return 'LinkedIn';
+      if (host.includes('instagram')) return 'Instagram';
+      if (host.includes('pinterest')) return 'Pinterest';
+      if (host.includes('tiktok')) return 'TikTok';
+      if (host.includes('whatsapp') || host.includes('wa.me')) return 'WhatsApp';
+      if (host.includes('youtube')) return 'YouTube';
+      if (host.includes('facebook')) return 'Facebook';
+      if (host.includes('x.com') || host.includes('twitter')) return 'X';
+      if (host.includes('google.') && host.includes('maps')) return 'Location';
+      if (host.includes('maps.apple')) return 'Location';
+      if (host.includes('residue')) return 'Residue';
+    } catch {}
+    return fallback || 'Link';
+  };
   const setCompanyLogo = (url) => {
     const logo = document.getElementById('lt-company-logo');
     const header = document.querySelector('.lt-header');
@@ -67,13 +88,18 @@ window.addEventListener('DOMContentLoaded', () => {
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';
   const linksWrap = document.getElementById('lt-links');
   if (linksWrap) {
+    const seen = new Set();
     linksWrap.innerHTML = '';
     links.forEach(link => {
       if (!link?.url || link.hidden) return;
-      if (/^tel:/i.test(link.url) || String(link.label || '').trim().toLowerCase() === 'call') return;
+      const inferredLabel = inferLinkLabel(link.url, link.label || link.url);
+      if (inferredLabel === 'Call' || /^tel:/i.test(link.url)) return;
+      const key = `${inferredLabel.toLowerCase()}::${String(link.url).trim().toLowerCase()}`;
+      if (seen.has(key)) return;
+      seen.add(key);
       const a = document.createElement('a');
       a.href = link.url;
-      a.textContent = link.label || link.url;
+      a.textContent = inferredLabel;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
       linksWrap.appendChild(a);
