@@ -228,6 +228,19 @@ body.lt-page[data-theme="dark"] .lt-brand-mark {
 
 .lt-company-bio {
   margin: 0 auto 28px;
+  padding: 0 18px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+
+body.lt-page[data-theme="dark"] .lt-company-bio {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body.lt-page[data-theme="light"] .lt-company-bio {
+  background: rgba(255, 255, 255, 0.42);
 }
 
 /* =========================
