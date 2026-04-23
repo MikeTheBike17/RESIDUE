@@ -2072,12 +2072,13 @@ async function ensureLocalDraftForUser(user) {
     return (links || []).reduce((acc, link) => {
       if (!link?.url) return acc;
       if (link.hidden) return acc;
-      const inferredLabel = inferLabel(link.url, link.label || link.url);
+      const sourceLabel = String(link.label || '').trim();
+      const inferredLabel = inferLabel(link.url, sourceLabel || link.url);
       if (inferredLabel === 'Call' || /^tel:/i.test(link.url)) return acc;
       const key = `${inferredLabel.toLowerCase()}::${String(link.url).trim().toLowerCase()}`;
       if (seen.has(key)) return acc;
       seen.add(key);
-      acc.push({ url: link.url, label: inferredLabel });
+      acc.push({ url: link.url, label: inferredLabel, sourceLabel });
       return acc;
     }, []);
   }
@@ -2087,8 +2088,9 @@ async function ensureLocalDraftForUser(user) {
     const normalLinks = [];
     let companyWebsite = null;
     visibleLinks.forEach(link => {
-      if (!companyWebsite && includeCompanyWebsite && String(link?.label || '').trim().toLowerCase() === 'website') {
-        companyWebsite = link;
+      const sourceLabel = String(link?.sourceLabel || '').trim().toLowerCase();
+      if (!companyWebsite && includeCompanyWebsite && sourceLabel === 'website') {
+        companyWebsite = { ...link, label: 'Website' };
         return;
       }
       normalLinks.push(link);

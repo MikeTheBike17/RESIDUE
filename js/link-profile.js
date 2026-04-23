@@ -111,12 +111,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const seen = new Set();
     return (rawLinks || []).reduce((acc, link) => {
       if (!link?.url || link.hidden) return acc;
-      const inferredLabel = inferLinkLabel(link.url, link.label || link.url);
+      const sourceLabel = String(link.label || '').trim();
+      const inferredLabel = inferLinkLabel(link.url, sourceLabel || link.url);
       if (inferredLabel === 'Call' || /^tel:/i.test(link.url)) return acc;
       const key = `${inferredLabel.toLowerCase()}::${String(link.url).trim().toLowerCase()}`;
       if (seen.has(key)) return acc;
       seen.add(key);
-      acc.push({ url: link.url, label: inferredLabel });
+      acc.push({ url: link.url, label: inferredLabel, sourceLabel });
       return acc;
     }, []);
   };
@@ -148,8 +149,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const normalLinks = [];
     let companyWebsite = null;
     visibleLinks.forEach(link => {
-      if (!companyWebsite && includeCompanyWebsite && String(link?.label || '').trim().toLowerCase() === 'website') {
-        companyWebsite = link;
+      const sourceLabel = String(link?.sourceLabel || '').trim().toLowerCase();
+      if (!companyWebsite && includeCompanyWebsite && sourceLabel === 'website') {
+        companyWebsite = { ...link, label: 'Website' };
         return;
       }
       normalLinks.push(link);
