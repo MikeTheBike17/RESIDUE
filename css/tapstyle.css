@@ -258,6 +258,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 .lt-company-name {
   margin: 0;
   text-align: center;
+  padding: 0;
 }
 
 .lt-company-name:empty {
