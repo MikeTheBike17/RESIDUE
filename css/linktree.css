@@ -330,8 +330,10 @@
 
 .lt-logo-upload-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   min-height: 52px;
   padding: 10px 12px;
   border: 1px solid var(--lt-border);
@@ -364,6 +366,7 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+  max-width: 100%;
   color: var(--lt-muted);
   font-size: 0.95rem;
 }
@@ -379,6 +382,12 @@
   object-fit: cover;
   border: 1px solid var(--lt-border);
   background: rgba(255,255,255,0.04);
+}
+
+.lt-current-photo span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lt-current-photo-empty {
