@@ -156,9 +156,7 @@
         <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;opacity:0;" aria-hidden="true">
         <input type="hidden" id="turnstile-token" name="turnstile_token" value="">
         <div class="turnstile-field" aria-label="Security check">
-          <div id="request_access_turnstile" class="turnstile-slot" data-turnstile-widget data-sitekey="0x4AAAAAADAvI_1p6cpg5G_F" data-turnstile-token="#turnstile-token" data-theme="dark" data-size="flexible" data-appearance="always">
-            <span class="turnstile-placeholder">Security check loading...</span>
-          </div>
+          <div id="request_access_turnstile" class="cf-turnstile turnstile-slot" data-turnstile-widget data-sitekey="0x4AAAAAADAvI_1p6qpg5G_E" data-turnstile-token="#turnstile-token" data-theme="dark" data-size="flexible" data-appearance="always" data-callback="residueTurnstileCallback" data-expired-callback="residueTurnstileExpired" data-timeout-callback="residueTurnstileExpired" data-error-callback="residueTurnstileError"></div>
         </div>
 
         <button type="submit" class="btn">Request</button>
@@ -175,8 +173,10 @@
 
   <script type="module" src="js/supabase-telemetry.js"></script>
   <script src="js/turnstile.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script src="js/access-antigravity.js"></script>
   <script src="js/access-request.js"></script>
+  <script src="js/password-toggle.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>

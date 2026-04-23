@@ -41,6 +41,8 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
+  setText('lt-company-name', parseBool(meta.show_company_name, false) ? meta.company_name : '');
+  setText('lt-company-bio', parseBool(meta.show_company_bio, false) ? meta.company_bio : '');
   setText('lt-name', profile?.name || 'Your name');
   setText('lt-title', parseBool(meta.show_role, true) ? (profile?.title || '') : '');
   setText('lt-bio', parseBool(meta.show_bio, true) ? (profile?.bio || '') : '');

@@ -1,7 +1,7 @@
 (() => {
   const SCRIPT_ID = "residue-turnstile-api";
-  const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-  const WIDGET_SELECTOR = "[data-turnstile-widget]";
+  const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+  const WIDGET_SELECTOR = ".cf-turnstile, [data-turnstile-widget]";
   const widgets = new Map();
   let scriptPromise = null;
 
@@ -31,7 +31,8 @@
     if (scriptPromise) return scriptPromise;
 
     scriptPromise = new Promise((resolve, reject) => {
-      const existing = document.getElementById(SCRIPT_ID);
+      const existing = document.getElementById(SCRIPT_ID)
+        || [...document.scripts].find(el => String(el.src || "").startsWith(SCRIPT_SRC));
       if (existing) {
         if (window.turnstile) {
           resolve(window.turnstile);
@@ -65,30 +66,44 @@
     return root?.querySelector('input[name="turnstile_token"]') || null;
   };
 
+  const responseFieldFor = container => {
+    const root = container.closest("form") || container.closest("[data-turnstile-root]") || container.parentElement;
+    return root?.querySelector('input[name="cf-turnstile-response"]') || null;
+  };
+
   const setToken = (container, token = "") => {
     container.dataset.turnstileToken = token;
     const field = tokenFieldFor(container);
     if (field) field.value = token;
   };
 
+  const clearResponse = container => {
+    const responseField = responseFieldFor(container);
+    if (responseField) responseField.value = "";
+  };
+
   const showMessage = (container, message) => {
     if (!container) return;
-    container.innerHTML = "";
-    const placeholder = document.createElement("span");
-    placeholder.className = "turnstile-placeholder";
-    placeholder.textContent = message;
-    container.appendChild(placeholder);
+    container.replaceChildren();
+    if (message) console.warn(message);
   };
 
   const showError = (container, message) => {
     widgets.delete(container);
     setToken(container, "");
+    clearResponse(container);
     showMessage(container, message);
   };
 
   const hasVisibleFrame = container => {
     const frame = container?.querySelector("iframe");
     return Boolean(frame && frame.offsetWidth > 0 && frame.offsetHeight > 0);
+  };
+
+  const tokenFor = container => {
+    const field = tokenFieldFor(container);
+    const responseField = responseFieldFor(container);
+    return String(container.dataset.turnstileToken || field?.value || responseField?.value || "").trim();
   };
 
   const render = async container => {
@@ -108,6 +123,10 @@
     }
 
     if (!turnstile || widgets.has(container) || !isVisible(container)) return null;
+
+    await new Promise(resolve => window.setTimeout(resolve, 0));
+    if (container.classList.contains("cf-turnstile")) return widgets.get(container) || null;
+    if (hasVisibleFrame(container)) return widgets.get(container) || null;
 
     try {
       container.innerHTML = "";
@@ -157,8 +176,7 @@
     await renderAll(root || document);
     const container = getWidget(root || document);
     if (!container) return "";
-    const field = tokenFieldFor(container);
-    const token = String(container.dataset.turnstileToken || field?.value || "").trim();
+    const token = tokenFor(container);
     if (!token) throw new Error("Complete the security check.");
     return token;
   };
@@ -169,11 +187,30 @@
     const widgetId = widgets.get(container);
     if (window.turnstile && widgetId != null) window.turnstile.reset(widgetId);
     setToken(container, "");
+    clearResponse(container);
   };
 
   document.addEventListener("DOMContentLoaded", () => {
     renderAll().catch(() => {});
   });
+
+  window.residueTurnstileCallback = token => {
+    widgetContainers().forEach(container => setToken(container, token));
+  };
+
+  window.residueTurnstileExpired = () => {
+    widgetContainers().forEach(container => {
+      setToken(container, "");
+      clearResponse(container);
+    });
+  };
+
+  window.residueTurnstileError = errorCode => {
+    widgetContainers().forEach(container => {
+      showError(container, `Security check could not render (${errorCode}). Check the Turnstile site key and allowed hostname.`);
+    });
+    return true;
+  };
 
   window.residueTurnstile = {
     hasConfig,
