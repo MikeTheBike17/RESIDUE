@@ -88,6 +88,75 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     syncCompanySection();
   };
+  const isCompanySectionVisible = () => {
+    const section = document.getElementById('lt-company-section');
+    return !!section && !section.hidden;
+  };
+  const setCompanyWebsiteLink = (link) => {
+    const companyWebsite = document.getElementById('lt-company-website-btn');
+    if (!companyWebsite) return false;
+    const url = String(link?.url || '').trim();
+    if (!url) {
+      companyWebsite.hidden = true;
+      companyWebsite.textContent = 'Website';
+      companyWebsite.removeAttribute('href');
+      return false;
+    }
+    companyWebsite.href = url;
+    companyWebsite.textContent = String(link?.label || 'Website').trim() || 'Website';
+    companyWebsite.hidden = false;
+    return true;
+  };
+  const getPublicLinks = rawLinks => {
+    const seen = new Set();
+    return (rawLinks || []).reduce((acc, link) => {
+      if (!link?.url || link.hidden) return acc;
+      const inferredLabel = inferLinkLabel(link.url, link.label || link.url);
+      if (inferredLabel === 'Call' || /^tel:/i.test(link.url)) return acc;
+      const key = `${inferredLabel.toLowerCase()}::${String(link.url).trim().toLowerCase()}`;
+      if (seen.has(key)) return acc;
+      seen.add(key);
+      acc.push({ url: link.url, label: inferredLabel });
+      return acc;
+    }, []);
+  };
+  const renderNormalLinks = (entries, { showEmptyState = true } = {}) => {
+    const linksWrap = document.getElementById('lt-links');
+    if (!linksWrap) return;
+    linksWrap.innerHTML = '';
+    linksWrap.hidden = false;
+    if (!entries.length) {
+      if (!showEmptyState) {
+        linksWrap.hidden = true;
+        return;
+      }
+      linksWrap.innerHTML = '<div class="lt-note lt-center">No links yet.</div>';
+      return;
+    }
+    entries.forEach(link => {
+      const a = document.createElement('a');
+      a.href = link.url;
+      a.textContent = link.label;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      linksWrap.appendChild(a);
+    });
+  };
+  const renderPublicLinks = rawLinks => {
+    const visibleLinks = getPublicLinks(rawLinks);
+    const includeCompanyWebsite = isCompanySectionVisible();
+    const normalLinks = [];
+    let companyWebsite = null;
+    visibleLinks.forEach(link => {
+      if (!companyWebsite && includeCompanyWebsite && String(link?.label || '').trim().toLowerCase() === 'website') {
+        companyWebsite = link;
+        return;
+      }
+      normalLinks.push(link);
+    });
+    const movedWebsite = setCompanyWebsiteLink(companyWebsite);
+    renderNormalLinks(normalLinks, { showEmptyState: !movedWebsite });
+  };
   setText('lt-company-name', parseBool(meta.show_company_name, false) ? meta.company_name : '');
   setText('lt-company-bio', parseBool(meta.show_company_bio, false) ? meta.company_bio : '');
   setCompanyLogo(parseBool(meta.show_company_logo, false) ? meta.company_logo_url : '');
@@ -97,25 +166,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.body?.setAttribute('data-theme', profile?.theme === 'dark' ? 'dark' : 'light');
   const avatar = document.getElementById('lt-avatar');
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';
-  const linksWrap = document.getElementById('lt-links');
-  if (linksWrap) {
-    const seen = new Set();
-    linksWrap.innerHTML = '';
-    links.forEach(link => {
-      if (!link?.url || link.hidden) return;
-      const inferredLabel = inferLinkLabel(link.url, link.label || link.url);
-      if (inferredLabel === 'Call' || /^tel:/i.test(link.url)) return;
-      const key = `${inferredLabel.toLowerCase()}::${String(link.url).trim().toLowerCase()}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      const a = document.createElement('a');
-      a.href = link.url;
-      a.textContent = inferredLabel;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      linksWrap.appendChild(a);
-    });
-  }
+  renderPublicLinks(links);
 
   setTimeout(hideOverlay, 200);
 });

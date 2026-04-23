@@ -299,6 +299,15 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   text-align: center;
 }
 
+.lt-company-website-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0;
+  text-decoration: none;
+}
+
 /* =========================
    Links
    ========================= */
@@ -398,6 +407,10 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
 .lt-save-contact-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.lt-save-contact-btn[hidden] {
+  display: none !important;
 }
 
 .lt-virtual-card-btn {

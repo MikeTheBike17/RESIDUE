@@ -75,7 +75,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (isPreview && localFallback) {
       const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
       fillPublic(localFallback.profile || {}, meta);
-      renderLinks('lt-links', normalLinks || []);
+      renderPublicLinks(normalLinks || []);
       setupContactDownload(localFallback.profile || {}, normalLinks || []);
       setupVirtualCard(localFallback.profile || {});
       finishOverlay();
@@ -87,7 +87,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       if (localFallback) {
         const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
         fillPublic(localFallback.profile || {}, meta);
-        renderLinks('lt-links', normalLinks || []);
+        renderPublicLinks(normalLinks || []);
         setupContactDownload(localFallback.profile || {}, normalLinks || []);
         setupVirtualCard(localFallback.profile || {});
       } else {
@@ -118,7 +118,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const { meta, normalLinks } = extractMetaFromLinks(links || []);
     const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
     fillPublic(profile || {}, meta);
-    renderLinks('lt-links', hydratedLinks || []);
+    renderPublicLinks(hydratedLinks || []);
     setupContactDownload(profile || {}, hydratedLinks || []);
     setupVirtualCard(profile || {});
     finishOverlay();
@@ -147,6 +147,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setText('lt-company-name', '');
     setText('lt-company-bio', '');
     setPublicCompanyLogo('');
+    setPublicCompanyWebsiteLink(null);
     setText('lt-name', 'Your name');
     setText('lt-title', 'Your title');
     setText('lt-bio', 'Add a short description.');
@@ -1977,6 +1978,25 @@ async function ensureLocalDraftForUser(user) {
     }
     syncPublicCompanySection();
   }
+  function isPublicCompanySectionVisible() {
+    const section = document.getElementById('lt-company-section');
+    return !!section && !section.hidden;
+  }
+  function setPublicCompanyWebsiteLink(link) {
+    const companyWebsite = document.getElementById('lt-company-website-btn');
+    if (!companyWebsite) return false;
+    const url = String(link?.url || '').trim();
+    if (!url) {
+      companyWebsite.hidden = true;
+      companyWebsite.textContent = 'Website';
+      companyWebsite.removeAttribute('href');
+      return false;
+    }
+    companyWebsite.href = url;
+    companyWebsite.textContent = String(link?.label || 'Website').trim() || 'Website';
+    companyWebsite.hidden = false;
+    return true;
+  }
   function setValue(id, val) {
     const el = document.getElementById(id);
     if (el) el.value = val;
@@ -2061,12 +2081,37 @@ async function ensureLocalDraftForUser(user) {
       return acc;
     }, []);
   }
-  function renderLinks(containerId, links) {
+  function splitPublicLinksForCompanySection(links = []) {
+    const visibleLinks = getPublicLinkRenderEntries(links);
+    const includeCompanyWebsite = isPublicCompanySectionVisible();
+    const normalLinks = [];
+    let companyWebsite = null;
+    visibleLinks.forEach(link => {
+      if (!companyWebsite && includeCompanyWebsite && String(link?.label || '').trim().toLowerCase() === 'website') {
+        companyWebsite = link;
+        return;
+      }
+      normalLinks.push(link);
+    });
+    return { companyWebsite, normalLinks };
+  }
+  function renderPublicLinks(links = []) {
+    const { companyWebsite, normalLinks } = splitPublicLinksForCompanySection(links);
+    const movedWebsite = setPublicCompanyWebsiteLink(companyWebsite);
+    renderLinks('lt-links', normalLinks, { skipNormalize: true, showEmptyState: !movedWebsite });
+  }
+  function renderLinks(containerId, links, options = {}) {
+    const { skipNormalize = false, showEmptyState = true } = options;
     const wrap = document.getElementById(containerId);
     if (!wrap) return;
-    const visibleLinks = getPublicLinkRenderEntries(links);
+    const visibleLinks = skipNormalize ? (links || []) : getPublicLinkRenderEntries(links);
     wrap.innerHTML = '';
+    wrap.hidden = false;
     if (!visibleLinks.length) {
+      if (!showEmptyState) {
+        wrap.hidden = true;
+        return;
+      }
       wrap.innerHTML = '<div class="lt-note lt-center">No links yet.</div>';
       return;
     }
