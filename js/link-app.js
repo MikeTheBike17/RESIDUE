@@ -75,7 +75,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (isPreview && localFallback) {
       const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
       fillPublic(localFallback.profile || {}, meta);
-      renderPublicLinks(normalLinks || []);
+      renderPublicLinks(normalLinks || [], meta);
       setupContactDownload(localFallback.profile || {}, normalLinks || []);
       setupVirtualCard(localFallback.profile || {});
       finishOverlay();
@@ -87,7 +87,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       if (localFallback) {
         const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
         fillPublic(localFallback.profile || {}, meta);
-        renderPublicLinks(normalLinks || []);
+        renderPublicLinks(normalLinks || [], meta);
         setupContactDownload(localFallback.profile || {}, normalLinks || []);
         setupVirtualCard(localFallback.profile || {});
       } else {
@@ -118,7 +118,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const { meta, normalLinks } = extractMetaFromLinks(links || []);
     const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
     fillPublic(profile || {}, meta);
-    renderPublicLinks(hydratedLinks || []);
+    renderPublicLinks(hydratedLinks || [], meta);
     setupContactDownload(profile || {}, hydratedLinks || []);
     setupVirtualCard(profile || {});
     finishOverlay();
@@ -1383,7 +1383,8 @@ async function ensureLocalDraftForUser(user) {
     const locationCoordinates = getValue('location-coordinates');
     const phone = getValue('phone');
     const email = getValue('email-config');
-    if (website) linksOut.push({ label: 'Website', url: website.startsWith('http') ? website : `https://${website}`, hidden: sw ? !sw.checked : false, sort: linksOut.length });
+    const websiteUrl = website ? (website.startsWith('http') ? website : `https://${website}`) : '';
+    if (websiteUrl) linksOut.push({ label: 'Website', url: websiteUrl, hidden: sw ? !sw.checked : false, sort: linksOut.length });
     if (locationCoordinates) {
       const locationUrl = buildLocationUrl(locationCoordinates);
       if (locationUrl) {
@@ -1428,6 +1429,7 @@ async function ensureLocalDraftForUser(user) {
     linksOut.push(metaLink('company_name', getValue('company-name'), linksOut.length));
     linksOut.push(metaLink('company_bio', getValue('lt-company-bio').slice(0, BIO_MAX_CHARS), linksOut.length));
     linksOut.push(metaLink('company_logo_url', getValue('lt-company-logo-url'), linksOut.length));
+    linksOut.push(metaLink('website_url', websiteUrl, linksOut.length));
     linksOut.push(metaLink('whatsapp_number', getValue('whatsapp-number'), linksOut.length));
     linksOut.push(metaLink('whatsapp_message', getValue('whatsapp-message').slice(0, WHATSAPP_MESSAGE_MAX_CHARS), linksOut.length));
 
@@ -2082,14 +2084,51 @@ async function ensureLocalDraftForUser(user) {
       return acc;
     }, []);
   }
-  function splitPublicLinksForCompanySection(links = []) {
+  function normalizeComparableUrl(url) {
+    const value = String(url || '').trim();
+    if (!value) return '';
+    try {
+      const parsed = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+      return parsed.href.replace(/\/$/, '').toLowerCase();
+    } catch {
+      return value.replace(/\/$/, '').toLowerCase();
+    }
+  }
+  function isGenericWebsiteLinkCandidate(link) {
+    const label = String(link?.label || '').trim().toLowerCase();
+    const sourceLabel = String(link?.sourceLabel || '').trim().toLowerCase();
+    const url = String(link?.url || '').trim();
+    if (!/^https?:\/\//i.test(url)) return false;
+    const excluded = new Set([
+      'website',
+      'location',
+      'email',
+      'whatsapp',
+      'whatsapp social',
+      'linkedin',
+      'instagram',
+      'youtube',
+      'facebook',
+      'x',
+      'pinterest',
+      'tiktok',
+      'call'
+    ]);
+    return !excluded.has(label) && !excluded.has(sourceLabel);
+  }
+  function splitPublicLinksForCompanySection(links = [], meta = {}) {
     const visibleLinks = getPublicLinkRenderEntries(links);
     const includeCompanyWebsite = isPublicCompanySectionVisible();
+    const showWebsite = parseBool(meta.show_website, false);
+    const savedWebsiteUrl = normalizeComparableUrl(meta.website_url || '');
     const normalLinks = [];
     let companyWebsite = null;
     visibleLinks.forEach(link => {
       const sourceLabel = String(link?.sourceLabel || '').trim().toLowerCase();
-      if (!companyWebsite && includeCompanyWebsite && sourceLabel === 'website') {
+      const comparableUrl = normalizeComparableUrl(link?.url || '');
+      const matchesSavedWebsite = !!savedWebsiteUrl && comparableUrl === savedWebsiteUrl;
+      const isWebsiteFallback = showWebsite && isGenericWebsiteLinkCandidate(link);
+      if (!companyWebsite && includeCompanyWebsite && (sourceLabel === 'website' || matchesSavedWebsite || isWebsiteFallback)) {
         companyWebsite = { ...link, label: 'Website' };
         return;
       }
@@ -2097,8 +2136,8 @@ async function ensureLocalDraftForUser(user) {
     });
     return { companyWebsite, normalLinks };
   }
-  function renderPublicLinks(links = []) {
-    const { companyWebsite, normalLinks } = splitPublicLinksForCompanySection(links);
+  function renderPublicLinks(links = [], meta = {}) {
+    const { companyWebsite, normalLinks } = splitPublicLinksForCompanySection(links, meta);
     const movedWebsite = setPublicCompanyWebsiteLink(companyWebsite);
     renderLinks('lt-links', normalLinks, { skipNormalize: true, showEmptyState: !movedWebsite });
   }
