@@ -21,6 +21,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   const els = {
     configureForm: qs(".configure-form"),
     fullName: qs("#full-name"),
+    customerTitle: qs("#customer-title"),
     email: qs("#email-config"),
     phone: qs("#phone"),
     quantity: qs("#quantity"),
@@ -294,6 +295,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       invoice_no: order.invoice_no,
       profile_id: userId,
       customer_name: order.customer_name,
+      customer_title: order.customer_title,
       customer_email: order.customer_email,
       customer_phone: order.customer_phone,
       quantity: order.quantity,
@@ -507,6 +509,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     const configData = {
       ...(existingRow?.config_data || {}),
       purchase_configuration: {
+        customer_title: (els.customerTitle?.value || "").trim(),
         card_type: activeCardType,
         card_configuration: standardCardsEnabled() ? selectedCardConfiguration : null,
         quantity: getCheckoutData().qty,
@@ -582,6 +585,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     pendingTermsOrder = {
       invoice_no: generateInvoiceNo(),
       customer_name: (els.fullName?.value || "").trim(),
+      customer_title: (els.customerTitle?.value || "").trim(),
       customer_email: (els.email?.value || "").trim().toLowerCase(),
       customer_phone: (els.phone?.value || "").trim(),
       product: customLogoEnabled() ? "custom-company-logo-card" : `card-configuration-${selectedCardConfiguration}`,

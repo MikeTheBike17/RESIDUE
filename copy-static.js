@@ -7,7 +7,7 @@ const sources = [
   'about.html',
   'access.html',
   'card-urls.html',
-  'drop.html',
+  'configuration.html',
   'residue-inside.html',
   'residue-private.html',
   'thank-you.html',
