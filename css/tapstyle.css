@@ -172,8 +172,8 @@ body.lt-page[data-theme="dark"] .lt-brand-mark {
   display: block;
   flex: 0 0 auto;
   width: auto;
-  max-width: min(280px, 72vw);
-  max-height: 88px;
+  max-width: min(240px, 64vw);
+  max-height: 76px;
   object-fit: contain;
   object-position: left center;
   border: 0;
@@ -228,7 +228,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1.5rem;
   width: 100%;
 }
 

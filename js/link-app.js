@@ -375,7 +375,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const phone = extractVisiblePhone(links);
     contactDownloadState.name = name;
     contactDownloadState.phone = phone;
-    if (saveBtn) saveBtn.disabled = !name || !phone;
+    if (saveBtn) {
+      saveBtn.hidden = !phone;
+      saveBtn.disabled = !name || !phone;
+    }
     if (consentMsg) {
       consentMsg.textContent = 'You are requesting to save contact details to your device. Do you agree to continue?';
     }
