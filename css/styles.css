@@ -469,6 +469,159 @@ body.drop-page .card img {
   }
 }
 
+.tutorial-section {
+  display: grid;
+  gap: 18px;
+}
+
+.tutorial-video-card {
+  --tutorial-youtube-red: transparent;
+  position: relative;
+  display: block;
+  width: min(100%, 920px);
+  margin-top: 12px;
+  border-radius: 24px;
+  overflow: hidden;
+  text-decoration: none;
+  isolation: isolate;
+  background: #0d0f14;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 28px 60px rgba(0,0,0,0.26);
+  aspect-ratio: 16 / 9;
+  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+}
+
+.tutorial-video-card:hover,
+.tutorial-video-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(216,176,122,0.58);
+  box-shadow: 0 34px 74px rgba(0,0,0,0.34);
+  outline: none;
+}
+
+.tutorial-video-card__image,
+.tutorial-video-card__shade,
+.tutorial-video-card__topline,
+.tutorial-video-card__play,
+.tutorial-video-card__bottomline {
+  position: absolute;
+  inset: 0;
+}
+
+.tutorial-video-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tutorial-video-card__shade {
+  background:
+    linear-gradient(180deg, rgba(5, 6, 9, 0.16) 0%, rgba(5, 6, 9, 0.06) 34%, rgba(5, 6, 9, 0.64) 100%),
+    radial-gradient(circle at center, rgba(255,255,255,0.02), rgba(0,0,0,0.28) 72%);
+}
+
+.tutorial-video-card__topline {
+  inset: 18px 18px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 1;
+}
+
+.tutorial-video-card__badge,
+.tutorial-video-card__duration {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(14px);
+}
+
+.tutorial-video-card__badge {
+  background: var(--tutorial-youtube-red);
+}
+
+.tutorial-video-card__duration {
+  background: rgba(9, 10, 12, 0.62);
+  color: rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.12);
+  justify-self: end;
+}
+
+.tutorial-video-card__play {
+  inset: 50% auto auto 50%;
+  width: 94px;
+  height: 66px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+
+.tutorial-video-card__play::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: var(--tutorial-youtube-red);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 16px 34px rgba(0,0,0,0.28);
+}
+
+.tutorial-video-card__play-icon {
+  position: relative;
+  width: 0;
+  height: 0;
+  margin-left: 6px;
+  border-top: 14px solid transparent;
+  border-bottom: 14px solid transparent;
+  border-left: 22px solid #ffffff;
+  z-index: 1;
+}
+
+.tutorial-video-card__bottomline {
+  inset: auto 22px 22px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 1;
+}
+
+.tutorial-video-card__title {
+  display: block;
+  max-width: 24ch;
+  color: #fff;
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  font-weight: 600;
+  line-height: 1.2;
+  text-shadow: 0 8px 24px rgba(0,0,0,0.45);
+}
+
+.tutorial-video-card__cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(216,176,122,0.4);
+  background: rgba(10, 11, 14, 0.58);
+  color: rgba(255,255,255,0.92);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
 .drop-guide-visual-compact {
   width: min(280px, 100%);
   justify-self: center;
@@ -3332,6 +3485,10 @@ footer {
   .card-layout-gallery {
     gap: 22px;
   }
+
+  .tutorial-video-card {
+    width: 100%;
+  }
 }
 
 @media (max-width: 640px) {
@@ -3536,6 +3693,51 @@ footer {
   .card-layout-flip {
     max-width: 460px;
     margin-inline: auto;
+  }
+
+  .tutorial-video-card {
+    border-radius: 18px;
+  }
+
+  .tutorial-video-card__topline {
+    inset: 12px 12px auto;
+  }
+
+  .tutorial-video-card__badge,
+  .tutorial-video-card__duration {
+    min-height: 28px;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+
+  .tutorial-video-card__play {
+    width: 74px;
+    height: 52px;
+  }
+
+  .tutorial-video-card__play-icon {
+    margin-left: 4px;
+    border-top-width: 11px;
+    border-bottom-width: 11px;
+    border-left-width: 18px;
+  }
+
+  .tutorial-video-card__bottomline {
+    inset: auto 14px 14px;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .tutorial-video-card__title {
+    max-width: 18ch;
+    font-size: clamp(0.96rem, 4.4vw, 1.18rem);
+  }
+
+  .tutorial-video-card__cta {
+    min-height: 34px;
+    padding: 7px 12px;
+    font-size: 0.72rem;
   }
 }
 
