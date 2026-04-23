@@ -1951,9 +1951,20 @@ async function ensureLocalDraftForUser(user) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
   }
+  function syncPublicCompanySection() {
+    const section = document.getElementById('lt-company-section');
+    const heading = document.getElementById('lt-company-heading');
+    const nameEl = document.getElementById('lt-company-name');
+    const bioEl = document.getElementById('lt-company-bio');
+    const logo = document.getElementById('lt-company-logo');
+    const hasName = !!String(nameEl?.textContent || '').trim();
+    const hasBio = !!String(bioEl?.textContent || '').trim();
+    const hasLogo = !!String(logo?.getAttribute('src') || '').trim() && !logo?.hidden;
+    if (heading) heading.hidden = !(hasLogo || hasName);
+    if (section) section.hidden = !(hasLogo || hasName || hasBio);
+  }
   function setPublicCompanyLogo(url) {
     const logo = document.getElementById('lt-company-logo');
-    const header = document.querySelector('.lt-header');
     const value = String(url || '').trim();
     if (logo) {
       if (value) {
@@ -1964,7 +1975,7 @@ async function ensureLocalDraftForUser(user) {
         logo.hidden = true;
       }
     }
-    header?.classList.toggle('has-company-logo', !!value);
+    syncPublicCompanySection();
   }
   function setValue(id, val) {
     const el = document.getElementById(id);

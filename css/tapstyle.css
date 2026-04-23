@@ -23,6 +23,9 @@ body.lt-page[data-theme="dark"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   --lt-avatar-border: rgba(255, 255, 255, 0.12);
   --lt-footer-link: rgba(255, 255, 255, 0.84);
+  --lt-company-section-border: rgba(255, 255, 255, 0.11);
+  --lt-company-section-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  --lt-company-section-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
   --lt-bio-border: rgba(255, 255, 255, 0.18);
   --lt-bio-edge: rgba(214, 178, 107, 0.26);
   --lt-bio-shadow:
@@ -45,6 +48,9 @@ body.lt-page[data-theme="light"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.78);
   --lt-avatar-border: rgba(16, 17, 25, 0.12);
   --lt-footer-link: rgba(16, 17, 25, 0.82);
+  --lt-company-section-border: rgba(16, 17, 25, 0.08);
+  --lt-company-section-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.44));
+  --lt-company-section-shadow: 0 14px 26px rgba(82, 74, 61, 0.1);
   --lt-bio-border: rgba(16, 17, 25, 0.18);
   --lt-bio-edge: rgba(214, 178, 107, 0.36);
   --lt-bio-shadow:
@@ -124,11 +130,6 @@ body.lt-page.preview-mode::-webkit-scrollbar {
   justify-content: flex-start;
 }
 
-.lt-header.has-company-logo .lt-brand-mark {
-  margin-left: auto;
-  transform: translateY(-34px);
-}
-
 .lt-brand {
   display: flex;
   align-items: center;
@@ -169,6 +170,7 @@ body.lt-page[data-theme="dark"] .lt-brand-mark {
 
 .lt-company-logo {
   display: block;
+  flex: 0 0 auto;
   width: auto;
   max-width: min(220px, 64vw);
   max-height: 64px;
@@ -204,6 +206,36 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   padding: 0;
 }
 
+.lt-company-section {
+  display: grid;
+  gap: 12px;
+  width: fit-content;
+  max-width: min(100%, 540px);
+  margin: 0 auto 28px;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--lt-company-section-border, rgba(255, 255, 255, 0.12));
+  border-radius: 18px;
+  background: var(--lt-company-section-bg, rgba(255, 255, 255, 0.08));
+  box-shadow: var(--lt-company-section-shadow, 0 16px 30px rgba(0, 0, 0, 0.16));
+  backdrop-filter: blur(10px);
+}
+
+.lt-company-section[hidden] {
+  display: none !important;
+}
+
+.lt-company-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.lt-company-heading[hidden] {
+  display: none !important;
+}
+
 .lt-avatar {
   width: 150px;
   height: 150px;
@@ -224,7 +256,8 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 }
 
 .lt-company-name {
-  margin: 0 0 5px;
+  margin: 0;
+  text-align: center;
 }
 
 .lt-company-name:empty {
@@ -255,20 +288,14 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 }
 
 .lt-company-bio {
-  margin: 0 auto 28px;
-  padding: 0 14px;
-  background: transparent !important;
+  margin: 0;
+  width: 100%;
+  padding: 0;
+  background: transparent;
   border: 0;
   box-shadow: none;
   outline: none;
-}
-
-body.lt-page[data-theme="dark"] .lt-company-bio {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-body.lt-page[data-theme="light"] .lt-company-bio {
-  background: rgba(255, 255, 255, 0.42);
+  text-align: center;
 }
 
 /* =========================
