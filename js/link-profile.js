@@ -41,8 +41,24 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val || ''; };
+  const setCompanyLogo = (url) => {
+    const logo = document.getElementById('lt-company-logo');
+    const header = document.querySelector('.lt-header');
+    const value = String(url || '').trim();
+    if (logo) {
+      if (value) {
+        logo.src = value;
+        logo.hidden = false;
+      } else {
+        logo.removeAttribute('src');
+        logo.hidden = true;
+      }
+    }
+    header?.classList.toggle('has-company-logo', !!value);
+  };
   setText('lt-company-name', parseBool(meta.show_company_name, false) ? meta.company_name : '');
   setText('lt-company-bio', parseBool(meta.show_company_bio, false) ? meta.company_bio : '');
+  setCompanyLogo(parseBool(meta.show_company_logo, false) ? meta.company_logo_url : '');
   setText('lt-name', profile?.name || 'Your name');
   setText('lt-title', parseBool(meta.show_role, true) ? (profile?.title || '') : '');
   setText('lt-bio', parseBool(meta.show_bio, true) ? (profile?.bio || '') : '');

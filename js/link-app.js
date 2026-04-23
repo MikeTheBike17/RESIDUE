@@ -129,8 +129,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setTheme(profile.theme || 'light');
     const includeCompanyName = parseBool(meta.show_company_name, false);
     const includeCompanyBio = parseBool(meta.show_company_bio, false);
+    const includeCompanyLogo = parseBool(meta.show_company_logo, false);
     setText('lt-company-name', includeCompanyName ? (meta.company_name || '') : '');
     setText('lt-company-bio', includeCompanyBio ? (meta.company_bio || '') : '');
+    setPublicCompanyLogo(includeCompanyLogo ? (meta.company_logo_url || '') : '');
     setText('lt-name', deriveDisplayName(profile?.name, null));
     const includeRole = parseBool(meta.show_role, false);
     const includeBio = parseBool(meta.show_bio, false);
@@ -144,6 +146,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setTheme('light');
     setText('lt-company-name', '');
     setText('lt-company-bio', '');
+    setPublicCompanyLogo('');
     setText('lt-name', 'Your name');
     setText('lt-title', 'Your title');
     setText('lt-bio', 'Add a short description.');
@@ -1245,6 +1248,8 @@ async function ensureLocalDraftForUser(user) {
     setValue('whatsapp-message', '');
     setValue('company-name', '');
     setValue('lt-company-bio', '');
+    setValue('lt-company-logo-url', '');
+    updateCompanyLogoPreview('');
 
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
     const hasMeta = key => Object.prototype.hasOwnProperty.call(meta, key);
@@ -1257,6 +1262,7 @@ async function ensureLocalDraftForUser(user) {
     setToggle('show-bio', hasMeta('show_bio') ? parseBool(meta.show_bio, false) : parseBool(fallbackShowBio, false));
     setToggle('show-company-name', parseToggleMeta('show_company_name', hasSnapshotField('show-company-name') ? parseBool(snapshotFields['show-company-name'], false) : false));
     setToggle('show-company-bio', parseToggleMeta('show_company_bio', hasSnapshotField('show-company-bio') ? parseBool(snapshotFields['show-company-bio'], false) : false));
+    setToggle('show-company-logo', parseToggleMeta('show_company_logo', hasSnapshotField('show-company-logo') ? parseBool(snapshotFields['show-company-logo'], false) : false));
     setToggle('show-website', parseToggleMeta('show_website', false));
     setToggle('show-location', parseToggleMeta('show_location', false));
     setToggle('show-phone', parseToggleMeta('show_phone', false));
@@ -1287,6 +1293,9 @@ async function ensureLocalDraftForUser(user) {
     else if (hasSnapshotField('company-name')) setValue('company-name', String(snapshotFields['company-name'] || ''));
     if (hasMeta('company_bio')) setValue('lt-company-bio', String(meta.company_bio || '').slice(0, BIO_MAX_CHARS));
     else if (hasSnapshotField('lt-company-bio')) setValue('lt-company-bio', String(snapshotFields['lt-company-bio'] || '').slice(0, BIO_MAX_CHARS));
+    if (hasMeta('company_logo_url')) setValue('lt-company-logo-url', String(meta.company_logo_url || ''));
+    else if (hasSnapshotField('lt-company-logo-url')) setValue('lt-company-logo-url', String(snapshotFields['lt-company-logo-url'] || ''));
+    updateCompanyLogoPreview(getValue('lt-company-logo-url'));
 
     normalLinks.forEach(link => {
       const label = (link.label || '').toLowerCase();
@@ -1403,6 +1412,7 @@ async function ensureLocalDraftForUser(user) {
     linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_company_name', document.getElementById('show-company-name')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_company_bio', document.getElementById('show-company-bio')?.checked ?? false, linksOut.length));
+    linksOut.push(metaLink('show_company_logo', document.getElementById('show-company-logo')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_website', document.getElementById('show-website')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_location', document.getElementById('show-location')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_phone', document.getElementById('show-phone')?.checked ?? false, linksOut.length));
@@ -1415,6 +1425,7 @@ async function ensureLocalDraftForUser(user) {
     });
     linksOut.push(metaLink('company_name', getValue('company-name'), linksOut.length));
     linksOut.push(metaLink('company_bio', getValue('lt-company-bio').slice(0, BIO_MAX_CHARS), linksOut.length));
+    linksOut.push(metaLink('company_logo_url', getValue('lt-company-logo-url'), linksOut.length));
     linksOut.push(metaLink('whatsapp_number', getValue('whatsapp-number'), linksOut.length));
     linksOut.push(metaLink('whatsapp_message', getValue('whatsapp-message').slice(0, WHATSAPP_MESSAGE_MAX_CHARS), linksOut.length));
 
@@ -1800,6 +1811,8 @@ async function ensureLocalDraftForUser(user) {
     const fullNameInput = document.getElementById('full-name');
     const logoInput = document.getElementById('logo');
     const avatarUrlInput = document.getElementById('lt-avatar-url');
+    const companyLogoInput = document.getElementById('company-logo');
+    const companyLogoUrlInput = document.getElementById('lt-company-logo-url');
     const saveStatusEl = document.getElementById('lt-save-status');
     const bioInput = document.getElementById('lt-bio');
     const bioCount = document.getElementById('lt-bio-count');
@@ -1820,44 +1833,75 @@ async function ensureLocalDraftForUser(user) {
       });
     });
 
-    const handleLogoChange = async () => {
-      const file = logoInput?.files?.[0];
+    const handleImageChange = async ({
+      fileInput,
+      valueInput,
+      updatePreview,
+      invalidMessage,
+      canceledMessage,
+      successMessage,
+      fallbackError,
+      readyLabel
+    }) => {
+      const file = fileInput?.files?.[0];
       if (!file) {
-        if (avatarUrlInput) avatarUrlInput.value = '';
-        updateLogoPreview('');
+        if (valueInput) valueInput.value = '';
+        updatePreview('');
         scheduleEditorAutosave(0);
         return;
       }
       if (!(file.type || '').startsWith('image/')) {
-        showStatusEl(saveStatusEl, 'Logo must be an image.', 'error');
-        logoInput.value = '';
+        showStatusEl(saveStatusEl, invalidMessage, 'error');
+        fileInput.value = '';
         return;
       }
       try {
         const cropped = await cropImageWithModal(file);
         if (!cropped) {
-          showStatusEl(saveStatusEl, 'Logo selection canceled.', 'error');
-          logoInput.value = '';
+          showStatusEl(saveStatusEl, canceledMessage, 'error');
+          fileInput.value = '';
           return;
         }
         const optimized = await compressDataUrl(cropped, 700 * 1024, 900);
-        if (avatarUrlInput) avatarUrlInput.value = optimized;
-        updateLogoPreview(optimized, 'New photo ready');
-        showStatusEl(saveStatusEl, 'Logo optimized.', 'success');
+        if (valueInput) valueInput.value = optimized;
+        updatePreview(optimized, readyLabel);
+        showStatusEl(saveStatusEl, successMessage, 'success');
         scheduleEditorAutosave(0);
       } catch (err) {
-        showStatusEl(saveStatusEl, err.message || 'Could not process logo.', 'error');
-        logoInput.value = '';
+        showStatusEl(saveStatusEl, err.message || fallbackError, 'error');
+        fileInput.value = '';
       }
     };
+    const handleLogoChange = () => handleImageChange({
+      fileInput: logoInput,
+      valueInput: avatarUrlInput,
+      updatePreview: updateLogoPreview,
+      invalidMessage: 'Logo must be an image.',
+      canceledMessage: 'Logo selection canceled.',
+      successMessage: 'Logo optimized.',
+      fallbackError: 'Could not process logo.',
+      readyLabel: 'New photo ready'
+    });
+    const handleCompanyLogoChange = () => handleImageChange({
+      fileInput: companyLogoInput,
+      valueInput: companyLogoUrlInput,
+      updatePreview: updateCompanyLogoPreview,
+      invalidMessage: 'Company logo must be an image.',
+      canceledMessage: 'Company logo selection canceled.',
+      successMessage: 'Company logo optimized.',
+      fallbackError: 'Could not process company logo.',
+      readyLabel: 'New logo ready'
+    });
     logoInput?.addEventListener('change', handleLogoChange);
+    companyLogoInput?.addEventListener('change', handleCompanyLogoChange);
     const editorForm = document.querySelector('#lt-editor form.configure-form');
+    const managedImageFieldIds = new Set(['logo', 'company-logo']);
     editorForm?.addEventListener('input', evt => {
-      if (evt.target?.id === 'logo') return;
+      if (managedImageFieldIds.has(evt.target?.id)) return;
       scheduleEditorAutosave();
     });
     editorForm?.addEventListener('change', evt => {
-      if (evt.target?.id === 'logo') return;
+      if (managedImageFieldIds.has(evt.target?.id)) return;
       scheduleEditorAutosave(0);
     });
     bindCharacterLimit(bioInput, bioCount, BIO_MAX_CHARS, 'Bio');
@@ -1972,6 +2016,21 @@ async function ensureLocalDraftForUser(user) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
   }
+  function setPublicCompanyLogo(url) {
+    const logo = document.getElementById('lt-company-logo');
+    const header = document.querySelector('.lt-header');
+    const value = String(url || '').trim();
+    if (logo) {
+      if (value) {
+        logo.src = value;
+        logo.hidden = false;
+      } else {
+        logo.removeAttribute('src');
+        logo.hidden = true;
+      }
+    }
+    header?.classList.toggle('has-company-logo', !!value);
+  }
   function setValue(id, val) {
     const el = document.getElementById(id);
     if (el) el.value = val;
@@ -2009,10 +2068,26 @@ async function ensureLocalDraftForUser(user) {
     update();
   }
   function updateLogoPreview(url, label = 'Current photo saved') {
-    const preview = document.getElementById('lt-current-photo');
-    const image = document.getElementById('lt-current-photo-img');
-    const text = document.getElementById('lt-current-photo-text');
-    const empty = document.getElementById('lt-current-photo-empty');
+    updateSavedImagePreview({
+      previewId: 'lt-current-photo',
+      imageId: 'lt-current-photo-img',
+      textId: 'lt-current-photo-text',
+      emptyId: 'lt-current-photo-empty'
+    }, url, label);
+  }
+  function updateCompanyLogoPreview(url, label = 'Current logo saved') {
+    updateSavedImagePreview({
+      previewId: 'lt-company-logo-current',
+      imageId: 'lt-company-logo-current-img',
+      textId: 'lt-company-logo-current-text',
+      emptyId: 'lt-company-logo-empty'
+    }, url, label);
+  }
+  function updateSavedImagePreview(ids, url, label) {
+    const preview = document.getElementById(ids.previewId);
+    const image = document.getElementById(ids.imageId);
+    const text = document.getElementById(ids.textId);
+    const empty = document.getElementById(ids.emptyId);
     const value = String(url || '').trim();
     if (!preview || !image || !empty) return;
     if (value) {

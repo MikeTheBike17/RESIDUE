@@ -108,6 +108,7 @@
         <input type="hidden" name="_next" value="/thank-you.html">
         <input type="text" name="_honey" style="display:none">
         <input id="lt-avatar-url" name="lt-avatar-url" type="hidden">
+        <input id="lt-company-logo-url" name="lt-company-logo-url" type="hidden">
 
         
 
@@ -205,14 +206,14 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="company-info" data-section-fields="company-name lt-company-bio">
+        <section class="lt-accordion-card" data-admin-section="company-info" data-section-fields="company-name lt-company-bio lt-company-logo-url">
           <button class="lt-accordion-trigger" id="lt-section-company-info-trigger" type="button" aria-expanded="false" aria-controls="lt-section-company-info-panel">
             <span class="lt-section-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9h.01"></path><path d="M9 13h.01"></path><path d="M9 17h.01"></path></svg>
             </span>
             <span class="lt-section-copy">
               <span class="lt-section-title">Company Information</span>
-              <span class="lt-section-subtitle">Company name and short company bio.</span>
+              <span class="lt-section-subtitle">Company name, bio, and logo.</span>
             </span>
             <span class="lt-section-badge" data-section-badge>Optional</span>
             <span class="lt-section-chevron" aria-hidden="true">
@@ -241,9 +242,26 @@
                 </div>
                 <p class="lt-note lt-count-note" id="lt-company-bio-count">0 / 180</p>
               </div>
+              <div class="lt-field">
+                <label class="lt-field-label" for="company-logo">Company Logo</label>
+                <div class="input-toggle-row">
+                  <div class="lt-logo-upload-row">
+                    <label class="lt-file-button" for="company-logo">Choose File</label>
+                    <input class="lt-file-input" id="company-logo" name="company-logo" type="file" accept="image/*">
+                    <div class="lt-current-photo" id="lt-company-logo-current" hidden>
+                      <img id="lt-company-logo-current-img" alt="Current company logo">
+                      <span id="lt-company-logo-current-text">Current logo saved</span>
+                    </div>
+                    <span class="lt-current-photo-empty" id="lt-company-logo-empty">No logo selected</span>
+                  </div>
+                  <label class="include-toggle lt-visibility-toggle" for="show-company-logo">
+                    <input class="lt-include-checkbox" type="checkbox" id="show-company-logo">
+                  </label>
+                </div>
+              </div>
               <details class="lt-more-info">
                 <summary>More info</summary>
-                <p>Use this when the card should lead with a company identity above the personal profile image.</p>
+                <p>Use this when the card should lead with a company identity above the personal information.</p>
               </details>
             </div>
           </div>
@@ -453,6 +471,7 @@
 
         <section class="lt-admin-savebar" aria-label="Save card details">
           <button class="lt-btn" id="lt-save" type="button">Save Changes</button>
+          <div class="lt-status lt-center" id="lt-save-status" aria-live="polite"></div>
         </section>
       </form>
 
