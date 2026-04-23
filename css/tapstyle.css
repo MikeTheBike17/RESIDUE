@@ -169,8 +169,8 @@ body.lt-page[data-theme="dark"] .lt-brand-mark {
 .lt-company-logo {
   display: block;
   width: auto;
-  max-width: min(110px, 32vw);
-  max-height: 32px;
+  max-width: min(220px, 64vw);
+  max-height: 64px;
   object-fit: contain;
   object-position: left center;
   border: 0;
@@ -223,7 +223,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 }
 
 .lt-company-name {
-  margin: 0 0 10px;
+  margin: 0 0 5px;
 }
 
 .lt-company-name:empty {
@@ -255,8 +255,8 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 
 .lt-company-bio {
   margin: 0 auto 28px;
-  padding: 0 18px;
-  background: transparent;
+  padding: 0 14px;
+  background: transparent !important;
   border: 0;
   box-shadow: none;
   outline: none;
