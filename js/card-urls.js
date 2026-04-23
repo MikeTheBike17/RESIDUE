@@ -158,7 +158,7 @@ function formatShipping(row) {
 function renderInvoiceRows(rows) {
   if (!invoiceBody) return;
   if (!rows.length) {
-    invoiceBody.innerHTML = '<tr><td colspan="10" class="card-urls-empty">No invoices found.</td></tr>';
+    invoiceBody.innerHTML = '<tr><td colspan="11" class="card-urls-empty">No invoices found.</td></tr>';
     return;
   }
 
@@ -168,6 +168,7 @@ function renderInvoiceRows(rows) {
     const cells = [
       row.invoice_no,
       row.customer_name,
+      row.customer_title,
       row.customer_email,
       row.customer_phone,
       String(row.quantity),
@@ -177,7 +178,7 @@ function renderInvoiceRows(rows) {
 
     cells.forEach((value, index) => {
       const td = document.createElement('td');
-      if (index === 5) td.className = 'card-urls-inline-text';
+      if (index === 6) td.className = 'card-urls-inline-text';
       td.textContent = value || '';
       tr.appendChild(td);
     });
@@ -249,7 +250,7 @@ async function fetchProfileRows() {
 async function fetchInvoiceRows() {
   const { data, error } = await supabase
     .from(INVOICE_TABLE)
-    .select('invoice_no, customer_name, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_postal, payment_status, created_at')
+    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_postal, payment_status, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message || 'Could not load invoices.');
@@ -257,6 +258,7 @@ async function fetchInvoiceRows() {
   return (data || []).map(row => ({
     invoice_no: formatInvoiceNo(row.invoice_no),
     customer_name: row.customer_name || '',
+    customer_title: row.customer_title || '',
     customer_email: row.customer_email || '',
     customer_phone: row.customer_phone || '',
     quantity: row.quantity ?? '',
