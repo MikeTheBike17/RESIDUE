@@ -176,6 +176,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   let autosaveTimer = null;
   let autosaveInFlight = false;
   let autosaveQueued = false;
+  let persistQueue = Promise.resolve();
   const DEFAULT_PROFILE_NAME = 'Your name';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
@@ -1692,7 +1693,14 @@ async function ensureLocalDraftForUser(user) {
     });
   }
 
-  async function persistEditorState({ statusEl = document.getElementById('lt-save-status'), redirect = false, silent = false } = {}) {
+  function persistEditorState(options = {}) {
+    const run = () => runPersistEditorState(options);
+    const next = persistQueue.then(run, run);
+    persistQueue = next.catch(() => {});
+    return next;
+  }
+
+  async function runPersistEditorState({ statusEl = document.getElementById('lt-save-status'), redirect = false, silent = false } = {}) {
     let session = null;
     if (supabase) {
       ({ data: { session } } = await supabase.auth.getSession());
@@ -1921,79 +1929,6 @@ async function ensureLocalDraftForUser(user) {
         showStatusEl(statusEl, err.message || 'Save failed.', 'error');
       }
     }, { capture: true });
-    saveBtn?.addEventListener('click', async evt => {
-      evt.preventDefault();
-      try {
-        let session = null;
-        if (supabase) {
-          ({ data: { session } } = await supabase.auth.getSession());
-          if (!session) return showStatusEl(statusEl, 'Not signed in.', 'error');
-        }
-
-        const profile = await collectProfilePayload(session?.user || null);
-        if (!profile.name) return showStatusEl(statusEl, 'Name is required.', 'error');
-        const locationCoordinates = getValue('location-coordinates');
-        if (locationCoordinates && !buildLocationUrl(locationCoordinates)) {
-          return showStatusEl(statusEl, 'Location must be an address or coordinates.', 'error');
-        }
-        const links = collectLinks();
-        showStatusEl(statusEl, 'Saving...', 'loading');
-
-        if (supabase && session) {
-          const { error: pErr } = await supabase.from('profiles').upsert(profile);
-          if (pErr) {
-            showStatusEl(statusEl, pErr.message, 'error');
-            return;
-          }
-          await supabase.from('links').delete().eq('profile_id', session.user.id);
-          if (links.length) {
-            const supaLinks = applyHiddenMeta(links).map(l => ({
-              label: l.label,
-              url: l.url,
-              sort: l.sort,
-              profile_id: session.user.id
-            }));
-            const { error: lErr } = await supabase.from('links').insert(supaLinks);
-            if (lErr) {
-              showStatusEl(statusEl, lErr.message, 'error');
-              return;
-            }
-          }
-          const snapshot = collectConfigureSnapshot(session.user, profile, applyHiddenMeta(links));
-          const { error: cErr } = await supabase.from('card_configs').upsert({
-            profile_id: session.user.id,
-            auth_email: normalizeEmail(session.user.email) || null,
-            config_data: snapshot,
-            updated_at: new Date().toISOString()
-          });
-          if (cErr) {
-            showStatusEl(statusEl, cErr.message, 'error');
-            return;
-          }
-        }
-
-        const localProfile = {
-          id: profile.id,
-          name: profile.name,
-          title: profile.title,
-          bio: profile.bio,
-          avatar_url: profile.avatar_url,
-          theme: profile.theme,
-          slug: profile.slug,
-          links: applyHiddenMeta(links)
-        };
-        const draftKey = localProfileKey(profile.slug);
-        localStorage.setItem(draftKey, JSON.stringify(localProfile));
-        localStorage.setItem('residue_link_last_profile_key', draftKey);
-
-        showStatusEl(statusEl, 'Saved. Redirecting...', 'success');
-        const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
-        setTimeout(() => { window.location.href = target; }, 500);
-      } catch (err) {
-        console.error(err);
-        showStatusEl(statusEl, err.message || 'Save failed.', 'error');
-      }
-    });
   }
   async function collectProfilePayload(user) {
     const name = getValue('full-name') || getValue('lt-name') || DEFAULT_PROFILE_NAME;
@@ -2101,21 +2036,33 @@ async function ensureLocalDraftForUser(user) {
       empty.hidden = false;
     }
   }
+  function getPublicLinkRenderEntries(links = []) {
+    const seen = new Set();
+    return (links || []).reduce((acc, link) => {
+      if (!link?.url) return acc;
+      if (link.hidden) return acc;
+      const inferredLabel = inferLabel(link.url, link.label || link.url);
+      if (inferredLabel === 'Call' || /^tel:/i.test(link.url)) return acc;
+      const key = `${inferredLabel.toLowerCase()}::${String(link.url).trim().toLowerCase()}`;
+      if (seen.has(key)) return acc;
+      seen.add(key);
+      acc.push({ url: link.url, label: inferredLabel });
+      return acc;
+    }, []);
+  }
   function renderLinks(containerId, links) {
     const wrap = document.getElementById(containerId);
+    if (!wrap) return;
+    const visibleLinks = getPublicLinkRenderEntries(links);
     wrap.innerHTML = '';
-    if (!links.length) {
+    if (!visibleLinks.length) {
       wrap.innerHTML = '<div class="lt-note lt-center">No links yet.</div>';
       return;
     }
-    links.forEach(l => {
-      if (!l.url) return;
-      if (l.hidden) return;
-      const inferredLabel = inferLabel(l.url, l.label || l.url);
-      if (inferredLabel === 'Call' || /^tel:/i.test(l.url)) return;
+    visibleLinks.forEach(link => {
       const a = document.createElement('a');
-      a.href = l.url;
-      a.textContent = inferredLabel;
+      a.href = link.url;
+      a.textContent = link.label;
       a.className = 'lt-link';
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
