@@ -1,4 +1,44 @@
 (() => {
+  const flipCards = Array.from(document.querySelectorAll('.card-layout-flip'));
+  if (flipCards.length) {
+    const touchModeQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+
+    const syncFlipMode = isTouchMode => {
+      flipCards.forEach(card => {
+        if (!isTouchMode) {
+          card.classList.remove('is-flipped');
+          card.setAttribute('aria-pressed', 'false');
+        }
+      });
+    };
+
+    const bindTouchFlip = () => {
+      flipCards.forEach(card => {
+        if (card.dataset.flipBound === 'true') return;
+        card.dataset.flipBound = 'true';
+        card.addEventListener('click', () => {
+          if (!touchModeQuery.matches) return;
+          const nextState = !card.classList.contains('is-flipped');
+          card.classList.toggle('is-flipped', nextState);
+          card.setAttribute('aria-pressed', String(nextState));
+        });
+      });
+    };
+
+    bindTouchFlip();
+    syncFlipMode(touchModeQuery.matches);
+
+    const handleFlipModeChange = event => {
+      syncFlipMode(event.matches);
+    };
+
+    if (typeof touchModeQuery.addEventListener === 'function') {
+      touchModeQuery.addEventListener('change', handleFlipModeChange);
+    } else if (typeof touchModeQuery.addListener === 'function') {
+      touchModeQuery.addListener(handleFlipModeChange);
+    }
+  }
+
   // Toggle window here. When a backend exists, replace with live status fetch.
   const dropConfig = {
     isOpen: false,

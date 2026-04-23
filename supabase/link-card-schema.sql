@@ -179,6 +179,7 @@ create table if not exists public.purchase_invoices (
   invoice_no text primary key,
   profile_id uuid references public.profiles(id) on delete set null,
   customer_name text not null default '',
+  customer_title text not null default '',
   customer_email text not null default '',
   customer_phone text,
   quantity integer not null default 0 check (quantity >= 0),
@@ -215,6 +216,8 @@ alter table public.purchase_invoices
   add column if not exists profile_id uuid references public.profiles(id) on delete set null;
 alter table public.purchase_invoices
   add column if not exists customer_name text not null default '';
+alter table public.purchase_invoices
+  add column if not exists customer_title text not null default '';
 alter table public.purchase_invoices
   add column if not exists customer_email text not null default '';
 alter table public.purchase_invoices
