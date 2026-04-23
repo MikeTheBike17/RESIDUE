@@ -107,6 +107,16 @@ window.addEventListener('DOMContentLoaded', () => {
     companyWebsite.hidden = false;
     return true;
   };
+  const normalizeComparableUrl = url => {
+    const value = String(url || '').trim();
+    if (!value) return '';
+    try {
+      const parsed = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+      return parsed.href.replace(/\/$/, '').toLowerCase();
+    } catch {
+      return value.replace(/\/$/, '').toLowerCase();
+    }
+  };
   const getPublicLinks = rawLinks => {
     const seen = new Set();
     return (rawLinks || []).reduce((acc, link) => {
@@ -120,6 +130,28 @@ window.addEventListener('DOMContentLoaded', () => {
       acc.push({ url: link.url, label: inferredLabel, sourceLabel });
       return acc;
     }, []);
+  };
+  const isGenericWebsiteLinkCandidate = link => {
+    const label = String(link?.label || '').trim().toLowerCase();
+    const sourceLabel = String(link?.sourceLabel || '').trim().toLowerCase();
+    const url = String(link?.url || '').trim();
+    if (!/^https?:\/\//i.test(url)) return false;
+    const excluded = new Set([
+      'website',
+      'location',
+      'email',
+      'whatsapp',
+      'whatsapp social',
+      'linkedin',
+      'instagram',
+      'youtube',
+      'facebook',
+      'x',
+      'pinterest',
+      'tiktok',
+      'call'
+    ]);
+    return !excluded.has(label) && !excluded.has(sourceLabel);
   };
   const renderNormalLinks = (entries, { showEmptyState = true } = {}) => {
     const linksWrap = document.getElementById('lt-links');
@@ -143,14 +175,19 @@ window.addEventListener('DOMContentLoaded', () => {
       linksWrap.appendChild(a);
     });
   };
-  const renderPublicLinks = rawLinks => {
+  const renderPublicLinks = (rawLinks, meta = {}) => {
     const visibleLinks = getPublicLinks(rawLinks);
     const includeCompanyWebsite = isCompanySectionVisible();
+    const showWebsite = parseBool(meta.show_website, false);
+    const savedWebsiteUrl = normalizeComparableUrl(meta.website_url || '');
     const normalLinks = [];
     let companyWebsite = null;
     visibleLinks.forEach(link => {
       const sourceLabel = String(link?.sourceLabel || '').trim().toLowerCase();
-      if (!companyWebsite && includeCompanyWebsite && sourceLabel === 'website') {
+      const comparableUrl = normalizeComparableUrl(link?.url || '');
+      const matchesSavedWebsite = !!savedWebsiteUrl && comparableUrl === savedWebsiteUrl;
+      const isWebsiteFallback = showWebsite && isGenericWebsiteLinkCandidate(link);
+      if (!companyWebsite && includeCompanyWebsite && (sourceLabel === 'website' || matchesSavedWebsite || isWebsiteFallback)) {
         companyWebsite = { ...link, label: 'Website' };
         return;
       }
@@ -168,7 +205,7 @@ window.addEventListener('DOMContentLoaded', () => {
   document.body?.setAttribute('data-theme', profile?.theme === 'dark' ? 'dark' : 'light');
   const avatar = document.getElementById('lt-avatar');
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';
-  renderPublicLinks(links);
+  renderPublicLinks(links, meta);
 
   setTimeout(hideOverlay, 200);
 });
