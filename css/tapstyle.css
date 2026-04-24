@@ -218,6 +218,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   background: var(--lt-company-section-bg, rgba(255, 255, 255, 0.08));
   box-shadow: var(--lt-company-section-shadow, 0 16px 30px rgba(0, 0, 0, 0.16));
   backdrop-filter: blur(10px);
+  overflow: hidden;
 }
 
 .lt-company-section[hidden] {
@@ -303,8 +304,12 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  margin-top: 0;
+  width: auto;
+  justify-self: stretch;
+  margin: 8px -18px -18px;
+  padding: 18px 18px 20px;
+  border-width: 1px 0 0;
+  border-radius: 0 0 18px 18px;
   text-decoration: none;
 }
 
