@@ -17,7 +17,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
         }
       });
 
-  const setTheme = theme => document.body.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  const setTheme = theme => {
+    const nextTheme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement?.setAttribute('data-theme', nextTheme);
+    document.body?.setAttribute('data-theme', nextTheme);
+    return nextTheme;
+  };
   const setAuthOnly = flag => {
     if (flag) document.body.classList.add('auth-only');
     else document.body.classList.remove('auth-only');
@@ -1461,6 +1466,7 @@ async function ensureLocalDraftForUser(user) {
         fields[key] = control.value ?? '';
       });
     }
+    fields['lt-theme'] = document.querySelector('input[name="lt-theme"]:checked')?.value || 'light';
     return {
       profile_id: user?.id || null,
       auth_email: normalizeEmail(user?.email) || null,
@@ -1819,6 +1825,17 @@ async function ensureLocalDraftForUser(user) {
     }
   }
 
+  function persistEditorImmediately(statusEl = document.getElementById('lt-save-status')) {
+    if (isFillingEditor) return;
+    clearTimeout(autosaveTimer);
+    if (autosaveInFlight) {
+      autosaveQueued = true;
+      showStatusEl(statusEl, 'Saving...', 'loading');
+      return;
+    }
+    void runEditorAutosave();
+  }
+
   function bindEditorActions() {
     if (editorActionsBound) return;
     editorActionsBound = true;
@@ -1844,6 +1861,7 @@ async function ensureLocalDraftForUser(user) {
       input.addEventListener('change', () => {
         if (!input.checked) return;
         setTheme(input.value);
+        persistEditorImmediately(saveStatusEl);
       });
     });
 

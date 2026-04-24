@@ -3727,11 +3727,13 @@ footer {
   .tutorial-video-card__bottomline {
     inset: auto 14px 14px;
     gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
   }
 
   .tutorial-video-card__title {
+    min-width: 0;
     max-width: 18ch;
     font-size: clamp(0.96rem, 4.4vw, 1.18rem);
   }
@@ -3740,6 +3742,49 @@ footer {
     min-height: 34px;
     padding: 7px 12px;
     font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .tutorial-video-card__topline {
+    inset: 10px 10px auto;
+    gap: 8px;
+  }
+
+  .tutorial-video-card__badge,
+  .tutorial-video-card__duration {
+    min-height: 24px;
+    padding: 4px 8px;
+    font-size: 0.64rem;
+  }
+
+  .tutorial-video-card__play {
+    width: 62px;
+    height: 44px;
+  }
+
+  .tutorial-video-card__play-icon {
+    margin-left: 3px;
+    border-top-width: 9px;
+    border-bottom-width: 9px;
+    border-left-width: 15px;
+  }
+
+  .tutorial-video-card__bottomline {
+    inset: auto 10px 10px;
+    gap: 8px;
+  }
+
+  .tutorial-video-card__title {
+    max-width: 14ch;
+    font-size: clamp(0.84rem, 4vw, 1rem);
+    line-height: 1.14;
+  }
+
+  .tutorial-video-card__cta {
+    min-height: 30px;
+    padding: 6px 10px;
+    font-size: 0.64rem;
   }
 }
 
