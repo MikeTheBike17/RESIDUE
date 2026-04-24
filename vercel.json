@@ -3,6 +3,32 @@
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/residue-inside",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+      ]
+    },
+    {
+      "source": "/residue-inside.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+      ]
+    },
+    {
+      "source": "/residue-private",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+      ]
+    },
+    {
+      "source": "/residue-private.html",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+      ]
+    }
+  ],
   "redirects": [
     { "source": "/about.html", "destination": "/about", "permanent": true },
     { "source": "/access.html", "destination": "/access", "permanent": true },
