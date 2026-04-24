@@ -191,6 +191,7 @@ create table if not exists public.purchase_invoices (
   shipping_street text,
   shipping_suburb text,
   shipping_city text,
+  shipping_province text,
   shipping_postal text,
   payment_provider text,
   payment_status text not null default 'PENDING',
@@ -240,6 +241,8 @@ alter table public.purchase_invoices
   add column if not exists shipping_suburb text;
 alter table public.purchase_invoices
   add column if not exists shipping_city text;
+alter table public.purchase_invoices
+  add column if not exists shipping_province text;
 alter table public.purchase_invoices
   add column if not exists shipping_postal text;
 alter table public.purchase_invoices

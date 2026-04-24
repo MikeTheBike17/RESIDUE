@@ -51,6 +51,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     shippingStreet: qs("#shipping-street"),
     shippingSuburb: qs("#shipping-suburb"),
     shippingCity: qs("#shipping-city"),
+    shippingProvince: qs("#shipping-province"),
     shippingPostal: qs("#shipping-postal"),
     shippingNextBtn: qs("#shipping-next-btn"),
     payfastStatus: qs("#payfast-status"),
@@ -307,6 +308,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       shipping_street: order.shipping_street,
       shipping_suburb: order.shipping_suburb,
       shipping_city: order.shipping_city,
+      shipping_province: order.shipping_province,
       shipping_postal: order.shipping_postal,
       payment_provider: order.payment_provider,
       payment_status: order.payment_status,
@@ -569,8 +571,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     const shippingStreet = (els.shippingStreet?.value || "").trim();
     const shippingSuburb = (els.shippingSuburb?.value || "").trim();
     const shippingCity = (els.shippingCity?.value || "").trim();
+    const shippingProvince = (els.shippingProvince?.value || "").trim();
     const shippingPostal = (els.shippingPostal?.value || "").trim();
-    if (!shippingName || !shippingStreet || !shippingSuburb || !shippingCity || !shippingPostal) {
+    if (!shippingName || !shippingStreet || !shippingSuburb || !shippingCity || !shippingProvince || !shippingPostal) {
       residueTelemetry.logPurchaseEvent({
         stage: "shipping_validate",
         outcome: "failure",
@@ -603,6 +606,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       shipping_street: shippingStreet,
       shipping_suburb: shippingSuburb,
       shipping_city: shippingCity,
+      shipping_province: shippingProvince,
       shipping_postal: shippingPostal,
       created_at: new Date().toISOString()
     };
