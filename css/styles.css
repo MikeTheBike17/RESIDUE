@@ -1402,6 +1402,20 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   background: rgba(255,255,255,0.02);
 }
 
+.card-config-custom-preview {
+  display: grid;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.card-config-custom-preview .card-config-face-label {
+  margin-top: 0;
+}
+
+.card-config-custom-image {
+  width: 100%;
+}
+
 .card-config-logo-panel[hidden] {
   display: none;
 }
