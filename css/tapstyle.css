@@ -309,8 +309,14 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   margin: 8px -18px -18px;
   padding: 18px 18px 20px;
   border-width: 1px 0 0;
-  border-radius: 0 0 18px 18px;
+  border-radius: 0;
+  box-shadow: none;
   text-decoration: none;
+}
+
+.lt-company-website-btn:hover:not(:disabled) {
+  box-shadow: none;
+  transform: none;
 }
 
 /* =========================
