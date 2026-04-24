@@ -222,13 +222,15 @@ body.access-page label {
 }
 
 body.access-page input,
-body.access-page textarea {
+body.access-page textarea,
+body.access-page select {
   background: rgba(255,255,255,0.04);
   border-color: rgba(216,176,122,0.32);
 }
 
 body.access-page input:focus,
-body.access-page textarea:focus {
+body.access-page textarea:focus,
+body.access-page select:focus {
   border-color: rgba(216,176,122,0.6);
   background: rgba(255,255,255,0.06);
 }
@@ -1601,7 +1603,7 @@ label {
   text-transform: uppercase;
 }
 
-input, textarea {
+input, textarea, select {
   width: 100%;
   padding: 12px 14px;
   border-radius: var(--radius);
@@ -1668,7 +1670,7 @@ textarea {
   to { width: 3ch; }
 }
 
-input:focus, textarea:focus {
+input:focus, textarea:focus, select:focus {
   border-color: var(--border-strong);
   background: rgba(255,255,255,0.03);
 }
@@ -3310,7 +3312,7 @@ footer {
   align-items: center;
 }
 
-[data-footer-copyright] {
+.footer-copy {
   font-size: 0.95rem;
   letter-spacing: 0.02em;
 }

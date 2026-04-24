@@ -151,6 +151,7 @@ function formatShipping(row) {
     row.shipping_street,
     row.shipping_suburb,
     row.shipping_city,
+    row.shipping_province,
     row.shipping_postal
   ].filter(Boolean).join(', ');
 }
@@ -250,7 +251,7 @@ async function fetchProfileRows() {
 async function fetchInvoiceRows() {
   const { data, error } = await supabase
     .from(INVOICE_TABLE)
-    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_postal, payment_status, created_at')
+    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_province, shipping_postal, payment_status, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message || 'Could not load invoices.');

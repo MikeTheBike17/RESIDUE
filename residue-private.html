@@ -190,6 +190,19 @@
               <input id="shipping-suburb" name="shipping-suburb" type="text" placeholder="Suburb" required>
               <label for="shipping-city">City</label>
               <input id="shipping-city" name="shipping-city" type="text" placeholder="City" required>
+              <label for="shipping-province">Province</label>
+              <select id="shipping-province" name="shipping-province" autocomplete="address-level1" required>
+                <option value="">Select Province</option>
+                <option value="Eastern Cape">Eastern Cape</option>
+                <option value="Free State">Free State</option>
+                <option value="Gauteng">Gauteng</option>
+                <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                <option value="Limpopo">Limpopo</option>
+                <option value="Mpumalanga">Mpumalanga</option>
+                <option value="North West">North West</option>
+                <option value="Northern Cape">Northern Cape</option>
+                <option value="Western Cape">Western Cape</option>
+              </select>
               <label for="shipping-postal">Postal Code</label>
               <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
             <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
@@ -315,7 +328,7 @@
 
   <footer>
     <div class="container footer-meta">
-      <span data-footer-copyright data-brand="Residue"></span>
+      <span class="footer-copy">RESIDUE. Leave your mark.</span>
     </div>
   </footer>
 
