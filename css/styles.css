@@ -2122,7 +2122,7 @@ input:focus, textarea:focus, select:focus {
   display: grid;
   justify-items: center;
   align-content: start;
-  padding: 0 20px 26px;
+  padding: 0 20px clamp(92px, 11vh, 160px);
   background-image:
     linear-gradient(180deg, rgba(14, 15, 17, 0.28), rgba(14, 15, 17, 0.46)),
     url('../images/manage-card-images/animation-background.png');
@@ -2184,6 +2184,37 @@ input:focus, textarea:focus, select:focus {
   display: block;
   position: static;
   transform: none;
+}
+
+.index-animation-intro {
+  position: relative;
+  z-index: 1;
+  width: min(1520px, calc(100vw - 48px));
+  padding-top: clamp(44px, 6vh, 84px);
+  text-align: center;
+}
+
+.index-animation-intro::before {
+  content: none;
+}
+
+.index-animation-intro p {
+  width: min(100%, 68rem);
+  margin: 0 auto;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  color: rgba(255,255,255,0.96);
+  font-size: clamp(1.18rem, 2vw, 1.58rem);
+  font-weight: 500;
+  line-height: 1.72;
+  letter-spacing: 0.008em;
+  text-shadow: 0 2px 24px rgba(0,0,0,0.26);
+  text-wrap: balance;
 }
 
 .index-animation-card-lane {
@@ -3625,7 +3656,7 @@ footer {
   .index-animation-stage {
     margin-top: -34vh;
     min-height: 128vh;
-    padding: 0 16px 32px;
+    padding: 0 16px 84px;
     -webkit-mask-image: linear-gradient(
       180deg,
       transparent 0%,
@@ -3642,6 +3673,16 @@ footer {
       #000 84%,
       transparent 100%
     );
+  }
+
+  .index-animation-intro {
+    width: min(100%, calc(100vw - 32px));
+    padding-top: clamp(32px, 5vh, 56px);
+  }
+
+  .index-animation-intro p {
+    width: min(100%, 46rem);
+    font-size: clamp(1rem, 2.8vw, 1.18rem);
   }
 
   .index-animation-card-lane {
@@ -3760,6 +3801,17 @@ footer {
 }
 
 @media (max-width: 430px) {
+  .index-animation-intro {
+    width: min(100%, calc(100vw - 28px));
+    padding-top: 24px;
+  }
+
+  .index-animation-intro p {
+    width: 100%;
+    font-size: 0.98rem;
+    line-height: 1.62;
+  }
+
   .tutorial-video-card__topline {
     inset: 10px 10px auto;
     gap: 8px;
