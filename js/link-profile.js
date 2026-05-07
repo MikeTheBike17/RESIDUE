@@ -7,7 +7,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   const qs = new URLSearchParams(window.location.search);
   const DEFAULT_PROFILE_NAME = 'Your name';
-  const FIRST_TIME_CARD_COPY = 'Set up your card now';
 
   const normalizeTheme = theme => (theme === 'dark' || theme === 'light' ? theme : null);
   const normalizeEmail = value => String(value || '').trim().toLowerCase();
@@ -128,7 +127,6 @@ window.addEventListener('DOMContentLoaded', () => {
   const showFirstTimeCard = () => {
     setPublicSetupMode(true);
     applyTheme('light');
-    setText('lt-first-setup-title', FIRST_TIME_CARD_COPY);
     setText('lt-company-name', '');
     setText('lt-company-bio', '');
     setText('lt-name', '');
