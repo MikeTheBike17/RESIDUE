@@ -257,7 +257,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   let adminOnboardingStepIndex = 0;
   let adminOnboardingBound = false;
   const DEFAULT_PROFILE_NAME = 'Your name';
-  const FIRST_TIME_CARD_COPY = 'Set up your Residue card now.';
+  const FIRST_TIME_CARD_COPY = 'Set up your card now';
   const ADMIN_ONBOARDING_SESSION_KEY_PREFIX = 'residue_link_admin_onboarding_';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
