@@ -732,14 +732,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
     });
   }
 
-  function hasSavedSnapshot(snapshot = null) {
-    if (!snapshot || typeof snapshot !== 'object') return false;
-    if (String(snapshot.saved_at || '').trim()) return true;
-    if (snapshot.fields && typeof snapshot.fields === 'object' && Object.keys(snapshot.fields).length) return true;
-    if (Array.isArray(snapshot.links) && snapshot.links.length) return true;
-    return false;
-  }
-
   function isDefaultDraftLink(link, authEmail = '') {
     const label = String(link?.label || '').trim().toLowerCase();
     const url = String(link?.url || '').trim();
@@ -754,20 +746,54 @@ import { residueTelemetry } from './supabase-telemetry.js';
     return false;
   }
 
+  function hasMeaningfulMetaContent(meta = {}) {
+    return ['company_name', 'company_bio', 'company_logo_url']
+      .some(key => !!String(meta[key] || '').trim());
+  }
+
+  function buildConfiguredProfileCandidate(profile = {}, snapshot = null, user = null) {
+    const snapshotProfile = snapshot?.profile && typeof snapshot.profile === 'object'
+      ? snapshot.profile
+      : {};
+    const snapshotFields = snapshot?.fields && typeof snapshot.fields === 'object'
+      ? snapshot.fields
+      : {};
+    const pickString = (...values) => {
+      for (const value of values) {
+        if (typeof value === 'string') return value;
+      }
+      return '';
+    };
+    return {
+      ...snapshotProfile,
+      ...profile,
+      auth_email: normalizeEmail(
+        profile?.auth_email
+          || snapshotProfile?.auth_email
+          || user?.email
+          || snapshotFields['email-config']
+          || ''
+      ),
+      name: pickString(profile?.name, snapshotProfile?.name),
+      title: pickString(profile?.title, snapshotProfile?.title, snapshotFields.role),
+      bio: pickString(profile?.bio, snapshotProfile?.bio, snapshotFields['lt-bio']),
+      avatar_url: pickString(profile?.avatar_url, snapshotProfile?.avatar_url, snapshotFields['lt-avatar-url'])
+    };
+  }
+
   function hasConfiguredCardContent(profile = {}, links = [], snapshot = null, user = null) {
-    if (hasSavedSnapshot(snapshot)) return true;
-    const authEmail = normalizeEmail(profile?.auth_email || user?.email || '');
+    const candidateProfile = buildConfiguredProfileCandidate(profile, snapshot, user);
+    const authEmail = normalizeEmail(candidateProfile?.auth_email || user?.email || '');
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
-    if (Object.keys(meta).length) return true;
-    const displayName = String(profile?.name || '').trim();
+    if (hasMeaningfulMetaContent(meta)) return true;
+    const displayName = String(candidateProfile?.name || '').trim();
     const emailPrefix = authEmail ? authEmail.split('@')[0] : '';
     if (displayName && displayName !== DEFAULT_PROFILE_NAME && displayName.toLowerCase() !== emailPrefix.toLowerCase()) {
       return true;
     }
-    if (String(profile?.title || '').trim()) return true;
-    if (String(profile?.bio || '').trim()) return true;
-    if (String(profile?.avatar_url || '').trim()) return true;
-    if (resolveThemeChoice(profile?.theme) === 'dark') return true;
+    if (String(candidateProfile?.title || '').trim()) return true;
+    if (String(candidateProfile?.bio || '').trim()) return true;
+    if (String(candidateProfile?.avatar_url || '').trim()) return true;
     return normalLinks.some(link => !isDefaultDraftLink(link, authEmail));
   }
 

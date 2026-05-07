@@ -200,12 +200,17 @@ window.addEventListener('DOMContentLoaded', () => {
     return false;
   };
 
+  const hasMeaningfulMetaContent = candidateMeta => (
+    ['company_name', 'company_bio', 'company_logo_url']
+      .some(key => !!String(candidateMeta?.[key] || '').trim())
+  );
+
   const hasConfiguredCardContent = candidateProfile => {
     if (!candidateProfile) return false;
     const authEmail = normalizeEmail(candidateProfile?.auth_email || '');
     const displayName = String(candidateProfile?.name || '').trim();
     const emailPrefix = authEmail ? authEmail.split('@')[0] : '';
-    if (Object.keys(meta).length) return true;
+    if (hasMeaningfulMetaContent(meta)) return true;
     if (displayName && displayName !== DEFAULT_PROFILE_NAME && displayName.toLowerCase() !== emailPrefix.toLowerCase()) {
       return true;
     }
