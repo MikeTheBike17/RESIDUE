@@ -435,40 +435,6 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="share-access-code" data-section-fields="lt-code-value">
-          <button class="lt-accordion-trigger" id="lt-section-share-access-code-trigger" type="button" aria-expanded="false" aria-controls="lt-section-share-access-code-panel">
-            <span class="lt-section-icon" aria-hidden="true">
-              <i class="fi fi-rr-lock"></i>
-            </span>
-            <span class="lt-section-copy">
-              <span class="lt-section-title">Share Access Code</span>
-              <span class="lt-section-subtitle">Code used for sharing access.</span>
-            </span>
-            <span class="lt-section-badge" data-section-badge>Missing</span>
-            <span class="lt-section-chevron" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
-            </span>
-          </button>
-          <div class="lt-accordion-panel" id="lt-section-share-access-code-panel" role="region" aria-labelledby="lt-section-share-access-code-trigger">
-            <div class="lt-accordion-panel__inner">
-              <p class="lt-empty-state" data-empty-for="share-access-code">Your access code will appear after your profile loads.</p>
-              <div class="lt-code-block" id="lt-code-block" hidden>
-                <div class="lt-code-block__label">Access code</div>
-                <div class="lt-code-block__value" id="lt-code-value"></div>
-                <p class="lt-note" id="lt-code-uses"></p>
-              </div>
-              <div class="lt-code-block__url" id="lt-public-url-wrap" hidden>
-                <div class="lt-code-block__meta-label">Link profile page</div>
-                <a class="lt-inline-link lt-public-link" id="lt-public-url" href="#" target="_blank" rel="noreferrer noopener"></a>
-              </div>
-              <details class="lt-more-info">
-                <summary>More info</summary>
-                <p>The Access Code is separate from the profile link and is used to grant new users access to be able to purchase a card. <i>You are able to share this code with 5 others.</i> The Link Profile Page URL is your public profile link. <i>You may use this to share your profile with others via a URL link</i></p>
-              </details>
-            </div>
-          </div>
-        </section>
-
         <section class="lt-admin-savebar" aria-label="Save card details">
           <button class="lt-btn" id="lt-save" type="button">Save Changes</button>
           <div class="lt-status lt-center" id="lt-save-status" aria-live="polite"></div>
@@ -574,7 +540,6 @@
         const missingRequired = required.some(id => !fieldValue(id));
 
         if (section === 'card-appearance') return 'completed';
-        if (section === 'share-access-code') return fieldValue('lt-code-value') ? 'completed' : 'missing';
         if (missingRequired) return 'missing';
         if (section === 'profile-link') return 'completed';
         return hasAnyValue(fields) ? 'completed' : 'optional';
@@ -586,7 +551,6 @@
         if (!emptyState) return;
 
         let hasContent = hasAnyValue(splitIds(card.dataset.sectionFields));
-        if (section === 'share-access-code') hasContent = !!fieldValue('lt-code-value');
         if (section === 'profile-link') hasContent = !!fieldValue('full-name');
 
         emptyState.hidden = hasContent;
@@ -645,22 +609,6 @@
         }
       });
       editorObserver.observe(editor, { attributes: true, attributeFilter: ['hidden', 'style'] });
-
-      const codeBlock = document.getElementById('lt-code-block');
-      const codeValue = document.getElementById('lt-code-value');
-      if (codeBlock) {
-        new MutationObserver(() => scheduleUpdate()).observe(codeBlock, {
-          attributes: true,
-          attributeFilter: ['hidden']
-        });
-      }
-      if (codeValue) {
-        new MutationObserver(() => scheduleUpdate()).observe(codeValue, {
-          childList: true,
-          characterData: true,
-          subtree: true
-        });
-      }
 
       updateSectionStates({ autoOpen: true });
     };

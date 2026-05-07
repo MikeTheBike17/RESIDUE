@@ -229,7 +229,58 @@
 
   const ACCESS_GRANTED_KEY = 'residue-access';
   const AUTH_INTENT_KEY = 'residue-auth-intent';
+  const publicEnv = window.env || {};
   let signupUnlockedForAuth = false;
+
+  function buildAccessCodeVerifyUrl() {
+    const explicitEndpoint = String(publicEnv.ACCESS_CODE_VERIFY_ENDPOINT || '').trim();
+    if (explicitEndpoint) return explicitEndpoint;
+    const supabaseBase = String(publicEnv.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+    return supabaseBase ? `${supabaseBase}/functions/v1/access-code-verify` : '';
+  }
+
+  async function verifyAccessCode(code) {
+    const endpoint = buildAccessCodeVerifyUrl();
+    const anonKey = String(publicEnv.SUPABASE_ANON_KEY || '').trim();
+    if (!endpoint || !anonKey) {
+      return {
+        ok: false,
+        error: 'Access verification is unavailable right now.'
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'apikey': anonKey,
+          'Authorization': `Bearer ${anonKey}`
+        },
+        body: JSON.stringify({ code }),
+        signal: controller.signal
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (res.ok && payload?.ok) {
+        return { ok: true };
+      }
+      return {
+        ok: false,
+        error: payload?.error || (res.status === 401 ? 'Invalid access code.' : 'Could not verify the access code.')
+      };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error?.name === 'AbortError'
+          ? 'Access verification timed out. Please try again.'
+          : 'Could not verify the access code.'
+      };
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
 
   function normalizeAuthIntent(value) {
     const intent = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
@@ -299,58 +350,71 @@
   else if (isAccessPage) clearPendingAuthMode();
 
   // Access gate
-  const validCodes = ['FOUNDER-001'];
   const gateForm = document.querySelector('.gate-form');
   if (gateForm) {
     const codeInput = gateForm.querySelector('#access-code');
     const statusEl = gateForm.querySelector('.gate-status');
     const gateButton = gateForm.querySelector('button[type="submit"]');
-    gateForm.addEventListener('submit', evt => {
+    gateForm.addEventListener('submit', async evt => {
       evt.preventDefault();
-      const code = (codeInput?.value || '').trim().toUpperCase();
+      const code = (codeInput?.value || '').trim();
+      const codePrefix = code.slice(0, 8).toUpperCase();
       if (!statusEl) return;
+      if (!code) {
+        statusEl.hidden = false;
+        statusEl.textContent = 'Enter an access code.';
+        statusEl.className = 'status error';
+        codeInput?.focus();
+        return;
+      }
       logAuth({
         action: 'access_code_check',
         outcome: 'attempt',
         detail: 'Access code submitted.',
-        metadata: { code_prefix: code.slice(0, 8) }
+        metadata: { code_prefix: codePrefix }
       });
       statusEl.hidden = false;
-      statusEl.textContent = 'Checking code';
+      statusEl.textContent = 'Checking code...';
       statusEl.className = 'status loading-dots';
       gateButton && (gateButton.disabled = true);
       codeInput && (codeInput.disabled = true);
 
-      setTimeout(() => {
-        if (validCodes.includes(code)) {
-          localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
-          logAuth({
-            action: 'access_code_check',
-            outcome: 'success',
-            detail: 'Access code accepted.',
-            metadata: { code_prefix: code.slice(0, 8) }
-          });
-          statusEl.textContent = 'Access granted.';
-          statusEl.className = 'status success';
-          signupUnlockedForAuth = true;
-          if (typeof window.openAuthModal === 'function') {
-            window.openAuthModal(getPendingAuthMode('create'));
-            clearPendingAuthMode();
-          }
-        } else {
-          logAuth({
-            action: 'access_code_check',
-            outcome: 'failure',
-            detail: 'Access code rejected.',
-            metadata: { code_prefix: code.slice(0, 8) }
-          });
-          statusEl.textContent = 'Invalid access code.';
-          statusEl.className = 'status error';
-          gateButton && (gateButton.disabled = false);
-          codeInput && (codeInput.disabled = false);
-          codeInput?.focus();
+      const startedAt = performance.now();
+      const result = await verifyAccessCode(code);
+      const remainingDelay = Math.max(0, 300 - (performance.now() - startedAt));
+      if (remainingDelay) {
+        await new Promise(resolve => window.setTimeout(resolve, remainingDelay));
+      }
+
+      if (result.ok) {
+        localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
+        logAuth({
+          action: 'access_code_check',
+          outcome: 'success',
+          detail: 'Access code accepted.',
+          metadata: { code_prefix: codePrefix }
+        });
+        statusEl.textContent = 'Access granted.';
+        statusEl.className = 'status success';
+        signupUnlockedForAuth = true;
+        if (typeof window.openAuthModal === 'function') {
+          window.openAuthModal(getPendingAuthMode('create'));
+          clearPendingAuthMode();
         }
-      }, 300);
+        return;
+      }
+
+      logAuth({
+        action: 'access_code_check',
+        outcome: 'failure',
+        detail: result.error || 'Access code rejected.',
+        metadata: { code_prefix: codePrefix }
+      });
+      statusEl.textContent = result.error || 'Invalid access code.';
+      statusEl.className = 'status error';
+      gateButton && (gateButton.disabled = false);
+      codeInput && (codeInput.disabled = false);
+      codeInput?.focus();
     });
   }
 

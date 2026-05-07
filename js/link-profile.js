@@ -18,6 +18,40 @@ window.addEventListener('DOMContentLoaded', () => {
     overlay?.classList.add('hide');
     if (overlay) overlay.style.display = 'none';
   };
+  const normalizeTheme = theme => (theme === 'dark' || theme === 'light' ? theme : null);
+  const normalizeEmail = value => String(value || '').trim().toLowerCase();
+  const resolveSlug = value => String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const themeStorageKey = (scope, value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized ? `residue_link_theme_${scope}_${normalized}` : '';
+  };
+  const buildThemeStorageKeys = ({ profileId = '', slug = '', email = '' } = {}) => {
+    const normalizedSlug = resolveSlug(slug || '');
+    const normalizedEmail = normalizeEmail(email || '');
+    return [...new Set([
+      themeStorageKey('profile', profileId),
+      themeStorageKey('slug', normalizedSlug),
+      themeStorageKey('email', normalizedEmail)
+    ].filter(Boolean))];
+  };
+  const readStoredThemePreference = (context = {}) => {
+    try {
+      for (const key of buildThemeStorageKeys(context)) {
+        const storedTheme = normalizeTheme(localStorage.getItem(key));
+        if (storedTheme) return storedTheme;
+      }
+    } catch {}
+    return null;
+  };
+  const applyTheme = theme => {
+    const nextTheme = normalizeTheme(theme) || 'light';
+    document.documentElement?.setAttribute('data-theme', nextTheme);
+    document.body?.setAttribute('data-theme', nextTheme);
+  };
 
   const profileKey = `residue_link_profile_${slug}`;
   let profile = null;
@@ -202,7 +236,13 @@ window.addEventListener('DOMContentLoaded', () => {
   setText('lt-name', profile?.name || 'Your name');
   setText('lt-title', parseBool(meta.show_role, true) ? (profile?.title || '') : '');
   setText('lt-bio', parseBool(meta.show_bio, true) ? (profile?.bio || '') : '');
-  document.body?.setAttribute('data-theme', profile?.theme === 'dark' ? 'dark' : 'light');
+  applyTheme(
+    readStoredThemePreference({
+      profileId: profile?.id,
+      slug: profile?.slug || slug,
+      email: profile?.auth_email
+    }) || profile?.theme
+  );
   const avatar = document.getElementById('lt-avatar');
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';
   renderPublicLinks(links, meta);
