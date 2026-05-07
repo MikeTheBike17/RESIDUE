@@ -12,7 +12,7 @@ create table if not exists public.profiles (
   title text,
   bio text,
   avatar_url text,
-  theme text not null default 'dark',
+  theme text not null default 'light',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint profiles_slug_format check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
@@ -32,7 +32,9 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists avatar_url text;
 alter table public.profiles
-  add column if not exists theme text not null default 'dark';
+  add column if not exists theme text not null default 'light';
+alter table public.profiles
+  alter column theme set default 'light';
 alter table public.profiles
   add column if not exists created_at timestamptz not null default now();
 alter table public.profiles
@@ -467,7 +469,7 @@ begin
     case when v_email <> '' then v_email else null end,
     coalesce(nullif(p_display_name, ''), nullif(v_email, ''), 'Residue User'),
     v_slug,
-    'dark'
+    'light'
   );
 end;
 $$;

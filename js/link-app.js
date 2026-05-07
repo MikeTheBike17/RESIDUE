@@ -23,48 +23,51 @@ import { residueTelemetry } from './supabase-telemetry.js';
     document.body?.setAttribute('data-theme', nextTheme);
     return nextTheme;
   };
+  const THEME_STORAGE_KEY_PREFIX = 'residue_link_theme_';
+  const normalizeTheme = theme => {
+    if (theme === 'dark' || theme === 'light') return theme;
+    return null;
+  };
+  const themeStorageKey = (scope, value) => {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized ? `${THEME_STORAGE_KEY_PREFIX}${scope}_${normalized}` : '';
+  };
+  const buildThemeStorageKeys = ({ profileId = '', slug = '', email = '' } = {}) => {
+    const normalizedSlug = resolveSlug(slug || '', '');
+    const normalizedEmail = normalizeEmail(email || '');
+    return [...new Set([
+      themeStorageKey('profile', profileId),
+      themeStorageKey('slug', normalizedSlug),
+      themeStorageKey('email', normalizedEmail)
+    ].filter(Boolean))];
+  };
+  const readStoredThemePreference = (context = {}) => {
+    try {
+      for (const key of buildThemeStorageKeys(context)) {
+        const storedTheme = normalizeTheme(localStorage.getItem(key));
+        if (storedTheme) return storedTheme;
+      }
+    } catch {}
+    return null;
+  };
+  const writeStoredThemePreference = (theme, context = {}) => {
+    const nextTheme = normalizeTheme(theme) || 'light';
+    try {
+      buildThemeStorageKeys(context).forEach(key => localStorage.setItem(key, nextTheme));
+    } catch {}
+    return nextTheme;
+  };
+  const resolveThemeChoice = (...candidates) => {
+    for (const candidate of candidates) {
+      const normalized = normalizeTheme(candidate);
+      if (normalized) return normalized;
+    }
+    return 'light';
+  };
   const setAuthOnly = flag => {
     if (flag) document.body.classList.add('auth-only');
     else document.body.classList.remove('auth-only');
   };
-
-  /* Invite code helpers */
-  const makeCode = () => {
-    const n = Math.floor(Math.random() * 9000) + 1000;
-    return `R-${n}`;
-  };
-
-  async function fetchOrCreateCode(userId) {
-    if (!supabase || !userId) return null;
-    // try existing
-    const { data: existing } = await supabase.from('codes').select('*').eq('owner_profile', userId).limit(1).maybeSingle();
-    if (existing) return existing;
-    // create new code server-side via RPC for atomicity
-    const { data, error } = await supabase.rpc('create_code_for_user', { p_owner: userId });
-    if (!error && data) return data;
-    console.warn('RPC create_code_for_user missing; falling back to client insert', error);
-    const code = makeCode();
-    const { data: inserted, error: insErr } = await supabase.from('codes').insert({ code, owner_profile: userId, max_uses: 5, used_count: 0, active: true }).select('*').single();
-    if (insErr) {
-      console.error('insert code failed', insErr);
-      return null;
-    }
-    return inserted;
-  }
-
-  function renderCodePanel(codeRow) {
-    const block = document.getElementById('lt-code-block');
-    if (!block) return;
-    if (!codeRow) {
-      block.hidden = true;
-      return;
-    }
-    block.hidden = false;
-    const usesEl = document.getElementById('lt-code-uses');
-    const valEl = document.getElementById('lt-code-value');
-    if (valEl) valEl.textContent = codeRow.code;
-    if (usesEl) usesEl.textContent = `${codeRow.used_count || 0} / ${codeRow.max_uses || 5} uses`;
-  }
 
   /* Public profile rendering */
   async function renderPublicProfile() {
@@ -131,7 +134,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function fillPublic(profile, meta = {}) {
-    setTheme(profile.theme || 'light');
+    const publicTheme = resolveThemeChoice(
+      readStoredThemePreference(buildThemeContext(profile)),
+      profile?.theme
+    );
+    setTheme(publicTheme);
     const includeCompanyName = parseBool(meta.show_company_name, false);
     const includeCompanyBio = parseBool(meta.show_company_bio, false);
     const includeCompanyLogo = parseBool(meta.show_company_logo, false);
@@ -183,6 +190,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   let autosaveInFlight = false;
   let autosaveQueued = false;
   let persistQueue = Promise.resolve();
+  let activeThemeContext = { profileId: '', slug: '', email: '' };
   const DEFAULT_PROFILE_NAME = 'Your name';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
@@ -194,6 +202,43 @@ import { residueTelemetry } from './supabase-telemetry.js';
     { id: 'social-7', label: 'Pinterest', toggle: 'show-social-7' },
     { id: 'social-8', label: 'TikTok', toggle: 'show-social-8' }
   ];
+
+  function buildThemeContext(profile = {}, user = null, snapshotFields = {}) {
+    let lastSlug = '';
+    try {
+      const lastKey = localStorage.getItem('residue_link_last_profile_key') || '';
+      lastSlug = lastKey.startsWith(LOCAL_PROFILE_KEY_PREFIX)
+        ? lastKey.slice(LOCAL_PROFILE_KEY_PREFIX.length)
+        : '';
+    } catch {}
+    const currentUser = readStoredCurrentUser();
+    return {
+      profileId: String(profile?.id || user?.id || currentUser?.id || '').trim(),
+      slug: resolveSlug(profile?.slug || qs.get('u') || lastSlug || '', ''),
+      email: normalizeEmail(
+        profile?.auth_email
+          || user?.email
+          || snapshotFields?.['email-config']
+          || currentUser?.email
+          || ''
+      )
+    };
+  }
+
+  function updateActiveThemeContext(profile = {}, user = null, snapshotFields = {}) {
+    const next = buildThemeContext(profile, user, snapshotFields);
+    activeThemeContext = {
+      profileId: next.profileId || activeThemeContext.profileId || '',
+      slug: next.slug || activeThemeContext.slug || '',
+      email: next.email || activeThemeContext.email || ''
+    };
+    return activeThemeContext;
+  }
+
+  function persistExplicitThemeChoice(theme, profile = {}, user = null, snapshotFields = {}) {
+    const themeContext = updateActiveThemeContext(profile, user, snapshotFields);
+    return writeStoredThemePreference(theme, themeContext);
+  }
 
   function showAdminLoader() {
     const overlay = document.getElementById('lt-overlay');
@@ -1184,8 +1229,6 @@ async function ensureLocalDraftForUser(user) {
     };
     const hydratedLinks = hydrateStoredLinks(effectiveLinks || []);
     fillEditor(mergedProfile || {}, hydratedLinks, user, snapshot);
-    const codeRow = await fetchOrCreateCode(user.id);
-    renderCodePanel(codeRow);
   }
 
   function toggleEditor(show) {
@@ -1222,6 +1265,7 @@ async function ensureLocalDraftForUser(user) {
   function fillEditor(profile, links, user = null, snapshot = null) {
     isFillingEditor = true;
     const snapshotFields = snapshot?.fields || {};
+    const themeContext = updateActiveThemeContext(profile, user, snapshotFields);
     const displayName = deriveDisplayName(profile?.name, user);
     const savedTitle = typeof profile?.title === 'string'
       ? profile.title
@@ -1232,7 +1276,11 @@ async function ensureLocalDraftForUser(user) {
     const savedEmail = Object.prototype.hasOwnProperty.call(snapshotFields, 'email-config')
       ? String(snapshotFields['email-config'] ?? '')
       : normalizeEmail(profile?.auth_email || user?.email || '');
-    const savedTheme = profile?.theme === 'dark' ? 'dark' : 'light';
+    const savedTheme = resolveThemeChoice(
+      readStoredThemePreference(themeContext),
+      snapshotFields['lt-theme'],
+      profile?.theme
+    );
     setValue('lt-avatar-url', profile.avatar_url || '');
     updateLogoPreview(profile.avatar_url || '');
     setValue('full-name', displayName || '');
@@ -1475,6 +1523,29 @@ async function ensureLocalDraftForUser(user) {
       profile,
       links
     };
+  }
+
+  function persistLocalProfileDraft(profile, links) {
+    const localProfile = {
+      id: profile.id,
+      name: profile.name,
+      title: profile.title,
+      bio: profile.bio,
+      avatar_url: profile.avatar_url,
+      theme: resolveThemeChoice(profile.theme),
+      slug: profile.slug,
+      auth_email: profile.auth_email || null,
+      links: Array.isArray(links) ? links : []
+    };
+    try {
+      const draftKey = localProfileKey(profile.slug);
+      localStorage.setItem(draftKey, JSON.stringify(localProfile));
+      localStorage.setItem('residue_link_last_profile_key', draftKey);
+    } catch {}
+    persistExplicitThemeChoice(localProfile.theme, localProfile, null, {
+      'email-config': localProfile.auth_email || ''
+    });
+    return localProfile;
   }
 
   async function cropImageWithModal(file) {
@@ -1734,6 +1805,11 @@ async function ensureLocalDraftForUser(user) {
     }
 
     const links = collectLinks();
+    const persistedLinks = applyHiddenMeta(links);
+    persistLocalProfileDraft(profile, persistedLinks);
+    updatePublicUrl(profile.slug);
+    setupVirtualCard(profile);
+    updateLogoPreview(profile.avatar_url || '');
     if (!silent) showStatusEl(statusEl, 'Saving...', 'loading');
 
     if (supabase && session) {
@@ -1744,7 +1820,7 @@ async function ensureLocalDraftForUser(user) {
       }
       await supabase.from('links').delete().eq('profile_id', session.user.id);
       if (links.length) {
-        const supaLinks = applyHiddenMeta(links).map(l => ({
+        const supaLinks = persistedLinks.map(l => ({
           label: l.label,
           url: l.url,
           sort: l.sort,
@@ -1756,7 +1832,7 @@ async function ensureLocalDraftForUser(user) {
           return false;
         }
       }
-      const snapshot = collectConfigureSnapshot(session.user, profile, applyHiddenMeta(links));
+      const snapshot = collectConfigureSnapshot(session.user, profile, persistedLinks);
       const { error: cErr } = await supabase.from('card_configs').upsert({
         profile_id: session.user.id,
         auth_email: normalizeEmail(session.user.email) || null,
@@ -1768,23 +1844,6 @@ async function ensureLocalDraftForUser(user) {
         return false;
       }
     }
-
-    const localProfile = {
-      id: profile.id,
-      name: profile.name,
-      title: profile.title,
-      bio: profile.bio,
-      avatar_url: profile.avatar_url,
-      theme: profile.theme,
-      slug: profile.slug,
-      links: applyHiddenMeta(links)
-    };
-    const draftKey = localProfileKey(profile.slug);
-    localStorage.setItem(draftKey, JSON.stringify(localProfile));
-    localStorage.setItem('residue_link_last_profile_key', draftKey);
-    updatePublicUrl(profile.slug);
-    setupVirtualCard(profile);
-    updateLogoPreview(profile.avatar_url || '');
 
     if (!silent) {
       showStatusEl(statusEl, redirect ? 'Saved. Redirecting...' : 'Saved.', 'success');
@@ -1860,7 +1919,14 @@ async function ensureLocalDraftForUser(user) {
     themeInputs.forEach(input => {
       input.addEventListener('change', () => {
         if (!input.checked) return;
-        setTheme(input.value);
+        const nextTheme = persistExplicitThemeChoice(input.value, {
+          id: activeThemeContext.profileId || readStoredCurrentUser()?.id || null,
+          slug: activeThemeContext.slug || '',
+          auth_email: activeThemeContext.email || getValue('email-config') || ''
+        }, null, {
+          'email-config': getValue('email-config')
+        });
+        setTheme(nextTheme);
         persistEditorImmediately(saveStatusEl);
       });
     });
