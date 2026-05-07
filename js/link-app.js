@@ -751,6 +751,27 @@ import { residueTelemetry } from './supabase-telemetry.js';
       .some(key => !!String(meta[key] || '').trim());
   }
 
+  function readExplicitCardReady(meta = {}) {
+    if (!Object.prototype.hasOwnProperty.call(meta, 'card_ready')) return null;
+    return parseBool(meta.card_ready, false);
+  }
+
+  function isMeaningfullyConfiguredDraft(profile = {}, links = [], extra = {}) {
+    const authEmail = normalizeEmail(profile?.auth_email || '');
+    const displayName = String(profile?.name || '').trim();
+    const emailPrefix = authEmail ? authEmail.split('@')[0] : '';
+    if (displayName && displayName !== DEFAULT_PROFILE_NAME && displayName.toLowerCase() !== emailPrefix.toLowerCase()) {
+      return true;
+    }
+    if (String(profile?.title || '').trim()) return true;
+    if (String(profile?.bio || '').trim()) return true;
+    if (String(profile?.avatar_url || '').trim()) return true;
+    if (String(extra.company_name || '').trim()) return true;
+    if (String(extra.company_bio || '').trim()) return true;
+    if (String(extra.company_logo_url || '').trim()) return true;
+    return (links || []).some(link => !isDefaultDraftLink(link, authEmail));
+  }
+
   function buildConfiguredProfileCandidate(profile = {}, snapshot = null, user = null) {
     const snapshotProfile = snapshot?.profile && typeof snapshot.profile === 'object'
       ? snapshot.profile
@@ -785,6 +806,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const candidateProfile = buildConfiguredProfileCandidate(profile, snapshot, user);
     const authEmail = normalizeEmail(candidateProfile?.auth_email || user?.email || '');
     const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
+    const explicitReady = readExplicitCardReady(meta);
+    if (explicitReady != null) return explicitReady;
     if (hasMeaningfulMetaContent(meta)) return true;
     const displayName = String(candidateProfile?.name || '').trim();
     const emailPrefix = authEmail ? authEmail.split('@')[0] : '';
@@ -1669,7 +1692,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     };
   }
 
-  function collectLinks() {
+  function collectLinks(profile = {}) {
     const linksOut = [];
 
     // Contact toggles
@@ -1709,6 +1732,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
       });
     });
 
+    const configuredDraft = isMeaningfullyConfiguredDraft(profile, linksOut, {
+      company_name: getValue('company-name'),
+      company_bio: getValue('lt-company-bio').slice(0, BIO_MAX_CHARS),
+      company_logo_url: getValue('lt-company-logo-url')
+    });
+
     linksOut.push(metaLink('show_role', document.getElementById('show-role')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_bio', document.getElementById('show-bio')?.checked ?? false, linksOut.length));
     linksOut.push(metaLink('show_company_name', document.getElementById('show-company-name')?.checked ?? false, linksOut.length));
@@ -1730,6 +1759,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     linksOut.push(metaLink('website_url', websiteUrl, linksOut.length));
     linksOut.push(metaLink('whatsapp_number', getValue('whatsapp-number'), linksOut.length));
     linksOut.push(metaLink('whatsapp_message', getValue('whatsapp-message').slice(0, WHATSAPP_MESSAGE_MAX_CHARS), linksOut.length));
+    linksOut.push(metaLink('card_ready', configuredDraft, linksOut.length));
 
     return linksOut;
   }
@@ -2046,7 +2076,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       return false;
     }
 
-    const links = collectLinks();
+    const links = collectLinks(profile);
     const persistedLinks = applyHiddenMeta(links);
     persistLocalProfileDraft(profile, persistedLinks);
     updatePublicUrl(profile.slug);
