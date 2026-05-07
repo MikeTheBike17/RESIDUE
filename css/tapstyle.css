@@ -206,6 +206,52 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   padding: 0;
 }
 
+.lt-first-setup {
+  display: grid;
+  gap: 18px;
+  align-items: start;
+  padding: 12px 0 6px;
+}
+
+.lt-first-setup[hidden] {
+  display: none !important;
+}
+
+.lt-first-setup__title {
+  margin: 0;
+  max-width: 11ch;
+  font-size: clamp(2rem, 7vw, 3rem);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.lt-first-setup__button {
+  width: 100%;
+  max-width: 320px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.lt-card.is-first-setup .lt-profile,
+.lt-card.is-first-setup .lt-links {
+  display: none !important;
+}
+
+.lt-card.is-first-setup .lt-first-setup {
+  min-height: 260px;
+  justify-content: center;
+}
+
+.lt-card.is-first-setup .lt-footer {
+  justify-content: flex-end;
+}
+
+.lt-card.is-first-setup .lt-made {
+  display: none !important;
+}
+
 .lt-company-section {
   display: grid;
   gap: 12px;
@@ -723,12 +769,20 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
     padding: 22px;
   }
 
+  .lt-card.is-first-setup .lt-first-setup {
+    min-height: 220px;
+  }
+
   .lt-hero-card {
     margin-bottom: 56px;
   }
 
   .lt-name {
     font-size: 30px;
+  }
+
+  .lt-first-setup__title {
+    max-width: 10ch;
   }
 
   .lt-footer {

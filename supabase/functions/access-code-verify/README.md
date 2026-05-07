@@ -5,6 +5,8 @@ Validates the single access code used by `access.html` without exposing the code
 ## Required secrets
 
 - `RESIDUE_ACCESS_CODE`
+  or
+- `RESIDUE_ACCESS_CODE_SHA256`
 
 ## Optional secrets
 
@@ -14,6 +16,7 @@ Validates the single access code used by `access.html` without exposing the code
 ## Suggested value
 
 - `RESIDUE_ACCESS_CODE=res-1738`
+- `RESIDUE_ACCESS_CODE_SHA256=01810e66ba6d21239428f3815c311d944035f6ff43228352ea372752c0a6f10d`
 
 ## Deploy
 
