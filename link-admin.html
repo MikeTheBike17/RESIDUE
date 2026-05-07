@@ -88,7 +88,7 @@
         <div class="lt-admin-topbar__copy">
           <div class="lt-admin-topbar__row">
             <div class="lt-label lt-admin-topbar__title">Profile Setup</div>
-            <section class="lt-admin-priority-card lt-admin-priority-card--theme" aria-label="Display mode">
+            <section class="lt-admin-priority-card lt-admin-priority-card--theme" id="lt-section-theme" aria-label="Display mode">
               <div class="lt-theme-toggle" role="radiogroup" aria-label="Card appearance">
                 <input type="radio" id="lt-theme-dark" name="lt-theme" value="dark">
                 <input type="radio" id="lt-theme-light" name="lt-theme" value="light" checked>
@@ -112,7 +112,7 @@
 
         
 
-        <section class="lt-admin-priority-card lt-admin-priority-card--identity" aria-label="Profile image and name">
+        <section class="lt-admin-priority-card lt-admin-priority-card--identity" id="lt-section-identity" aria-label="Profile image and name">
           <div class="lt-field">
             <label class="lt-field-label" for="logo">Upload Profile Image</label>
             <div class="lt-logo-upload-row">
@@ -131,7 +131,7 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="profile-info" data-section-fields="role location-coordinates phone email-config lt-bio">
+        <section class="lt-accordion-card" id="lt-section-profile-info" data-admin-section="profile-info" data-section-fields="role location-coordinates phone email-config lt-bio">
           <button class="lt-accordion-trigger" id="lt-section-profile-info-trigger" type="button" aria-expanded="false" aria-controls="lt-section-profile-info-panel">
             <span class="lt-section-icon" aria-hidden="true">
               <i class="fi fi-rr-user-gear"></i>
@@ -206,7 +206,7 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="company-info" data-section-fields="company-name lt-company-bio lt-company-logo-url">
+        <section class="lt-accordion-card" id="lt-section-company-info" data-admin-section="company-info" data-section-fields="company-name lt-company-bio lt-company-logo-url">
           <button class="lt-accordion-trigger" id="lt-section-company-info-trigger" type="button" aria-expanded="false" aria-controls="lt-section-company-info-panel">
             <span class="lt-section-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9h.01"></path><path d="M9 13h.01"></path><path d="M9 17h.01"></path></svg>
@@ -267,7 +267,7 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="whatsapp" data-section-fields="whatsapp-number whatsapp-message">
+        <section class="lt-accordion-card" id="lt-section-whatsapp" data-admin-section="whatsapp" data-section-fields="whatsapp-number whatsapp-message">
           <button class="lt-accordion-trigger" id="lt-section-whatsapp-trigger" type="button" aria-expanded="false" aria-controls="lt-section-whatsapp-panel">
             <span class="lt-section-icon" aria-hidden="true">
               <i class="fi fi-rr-comment-alt"></i>
@@ -311,7 +311,7 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="website" data-section-fields="website">
+        <section class="lt-accordion-card" id="lt-section-website" data-admin-section="website" data-section-fields="website">
           <button class="lt-accordion-trigger" id="lt-section-website-trigger" type="button" aria-expanded="false" aria-controls="lt-section-website-panel">
             <span class="lt-section-icon" aria-hidden="true">
               <i class="fi fi-rr-globe"></i>
@@ -345,7 +345,7 @@
           </div>
         </section>
 
-        <section class="lt-accordion-card" data-admin-section="social-links" data-section-fields="social social-2 social-4 social-5 social-6 social-7 social-8">
+        <section class="lt-accordion-card" id="lt-section-social-links" data-admin-section="social-links" data-section-fields="social social-2 social-4 social-5 social-6 social-7 social-8">
           <button class="lt-accordion-trigger" id="lt-section-social-links-trigger" type="button" aria-expanded="false" aria-controls="lt-section-social-links-panel">
             <span class="lt-section-icon" aria-hidden="true">
               <i class="fi fi-rr-share"></i>
@@ -435,7 +435,7 @@
           </div>
         </section>
 
-        <section class="lt-admin-savebar" aria-label="Save card details">
+        <section class="lt-admin-savebar" id="lt-section-savebar" aria-label="Save card details">
           <button class="lt-btn" id="lt-save" type="button">Save Changes</button>
           <div class="lt-status lt-center" id="lt-save-status" aria-live="polite"></div>
         </section>
@@ -482,6 +482,16 @@
       </div>
     </div>
   </div>
+
+  <aside class="lt-onboarding-popover" id="lt-onboarding-popover" hidden aria-live="polite" aria-atomic="true">
+    <div class="lt-onboarding-popover__step" id="lt-onboarding-step">1 / 8</div>
+    <h2 class="lt-onboarding-popover__title" id="lt-onboarding-title">Set up your card</h2>
+    <p class="lt-onboarding-popover__body" id="lt-onboarding-body">We will guide you through each section.</p>
+    <div class="lt-onboarding-popover__actions">
+      <button class="lt-btn secondary" id="lt-onboarding-skip" type="button">Skip</button>
+      <button class="lt-btn" id="lt-onboarding-next" type="button">Next</button>
+    </div>
+  </aside>
 
   <script type="module" src="js/link-app.js"></script>
   <script src="js/password-toggle.js"></script>

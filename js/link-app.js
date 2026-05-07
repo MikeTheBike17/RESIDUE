@@ -71,10 +71,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   /* Public profile rendering */
   async function renderPublicProfile() {
-    const slug = qs.get('u');
+    const slug = getRequestedSlug();
     const isPreview = qs.get('preview') === '1';
     const overlay = document.getElementById('lt-overlay');
     const finishOverlay = () => overlay?.classList.remove('active');
+    updatePublicAdminLinks(slug);
+    setPublicSetupMode(false, slug);
     if (overlay) {
       overlay.style.display = 'flex';
       overlay.classList.add('active');
@@ -93,11 +95,17 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
     if (isFileProtocol || !supabase) {
       if (localFallback) {
-        const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
-        fillPublic(localFallback.profile || {}, meta);
-        renderPublicLinks(normalLinks || [], meta);
-        setupContactDownload(localFallback.profile || {}, normalLinks || []);
-        setupVirtualCard(localFallback.profile || {});
+        const localProfile = localFallback.profile || {};
+        const localLinks = localFallback.links || [];
+        if (!hasConfiguredCardContent(localProfile, localLinks)) {
+          showFirstTimeCard(resolveSlug(localProfile?.slug || slug, ''));
+        } else {
+          const { meta, normalLinks } = extractMetaFromLinks(localLinks);
+          fillPublic(localProfile, meta);
+          renderPublicLinks(normalLinks || [], meta);
+          setupContactDownload(localProfile, normalLinks || []);
+          setupVirtualCard(localProfile);
+        }
       } else {
         showPlaceholder('Run via http:// (not file://) or add data first.');
       }
@@ -114,7 +122,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (error || !data) {
       profile = localFallback?.profile;
       if (!profile) {
-        showPlaceholder('Profile not found. Tap manage to create it.');
+        showFirstTimeCard(slug);
         finishOverlay();
         return;
       }
@@ -123,6 +131,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
       ? await supabase.from('links').select('*').eq('profile_id', profile.id).order('sort', { ascending: true })
       : { data: [] };
     const links = (linksData && linksData.length ? linksData : (localFallback?.links || []));
+    if (!hasConfiguredCardContent(profile || {}, links || [])) {
+      showFirstTimeCard(resolveSlug(profile?.slug || slug, ''));
+      finishOverlay();
+      if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
+      return;
+    }
     const { meta, normalLinks } = extractMetaFromLinks(links || []);
     const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
     fillPublic(profile || {}, meta);
@@ -138,6 +152,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
       readStoredThemePreference(buildThemeContext(profile)),
       profile?.theme
     );
+    setPublicSetupMode(false, profile?.slug || getRequestedSlug());
+    updatePublicAdminLinks(profile?.slug || getRequestedSlug());
     setTheme(publicTheme);
     const includeCompanyName = parseBool(meta.show_company_name, false);
     const includeCompanyBio = parseBool(meta.show_company_bio, false);
@@ -154,7 +170,52 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (avatar) avatar.src = profile.avatar_url || 'https://placehold.co/200x200?text=Add+photo';
   }
 
+  function setPublicSetupMode(showFirstSetup, slug = '') {
+    const card = document.querySelector('.lt-card');
+    const firstSetup = document.getElementById('lt-first-setup');
+    const profile = document.querySelector('.lt-profile');
+    const links = document.getElementById('lt-links');
+    const saveBtn = document.getElementById('lt-save-contact-btn');
+    const footer = document.querySelector('.lt-footer');
+    const status = document.getElementById('lt-status');
+    if (card) card.classList.toggle('is-first-setup', !!showFirstSetup);
+    if (firstSetup) firstSetup.hidden = !showFirstSetup;
+    if (profile) profile.hidden = !!showFirstSetup;
+    if (links) links.hidden = !!showFirstSetup;
+    if (saveBtn && showFirstSetup) {
+      saveBtn.hidden = true;
+      saveBtn.disabled = true;
+    }
+    if (footer) footer.hidden = false;
+    if (status) {
+      status.hidden = !!showFirstSetup;
+      if (showFirstSetup) status.textContent = '';
+    }
+    updatePublicAdminLinks(slug || getRequestedSlug());
+  }
+
+  function showFirstTimeCard(slug = '') {
+    const resolvedSlug = resolveSlug(slug || getRequestedSlug(), '');
+    setPublicSetupMode(true, resolvedSlug);
+    setTheme('light');
+    setText('lt-first-setup-title', FIRST_TIME_CARD_COPY);
+    setText('lt-company-name', '');
+    setText('lt-company-bio', '');
+    setPublicCompanyLogo('');
+    setPublicCompanyWebsiteLink(null);
+    setText('lt-name', '');
+    setText('lt-title', '');
+    setText('lt-bio', '');
+    const avatar = document.getElementById('lt-avatar');
+    if (avatar) avatar.removeAttribute('src');
+    renderLinks('lt-links', [], { showEmptyState: false });
+    setupContactDownload({}, []);
+    setupVirtualCard({});
+  }
+
   function showPlaceholder(message) {
+    setPublicSetupMode(false, getRequestedSlug());
+    updatePublicAdminLinks(getRequestedSlug());
     setTheme('light');
     setText('lt-company-name', '');
     setText('lt-company-bio', '');
@@ -191,7 +252,13 @@ import { residueTelemetry } from './supabase-telemetry.js';
   let autosaveQueued = false;
   let persistQueue = Promise.resolve();
   let activeThemeContext = { profileId: '', slug: '', email: '' };
+  let adminOnboardingPending = null;
+  let adminOnboardingActive = false;
+  let adminOnboardingStepIndex = 0;
+  let adminOnboardingBound = false;
   const DEFAULT_PROFILE_NAME = 'Your name';
+  const FIRST_TIME_CARD_COPY = 'Set up your Residue card now.';
+  const ADMIN_ONBOARDING_SESSION_KEY_PREFIX = 'residue_link_admin_onboarding_';
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
     { id: 'social-2', label: 'Instagram', toggle: 'show-social-2' },
@@ -201,6 +268,48 @@ import { residueTelemetry } from './supabase-telemetry.js';
     { id: 'social-6', label: 'X', toggle: 'show-social-6' },
     { id: 'social-7', label: 'Pinterest', toggle: 'show-social-7' },
     { id: 'social-8', label: 'TikTok', toggle: 'show-social-8' }
+  ];
+  const ADMIN_ONBOARDING_STEPS = [
+    {
+      target: '#lt-section-theme',
+      title: 'Choose the card display mode',
+      body: 'Use this switch to keep the card in dark or light mode for visitors.'
+    },
+    {
+      target: '#lt-section-identity',
+      title: 'Start with the basics',
+      body: 'Add the profile image and the full name you want shown on the card.'
+    },
+    {
+      target: '#lt-section-profile-info',
+      title: 'Fill in your profile details',
+      body: 'This section covers your role, contact details, location, and bio. The side toggles control what appears publicly.'
+    },
+    {
+      target: '#lt-section-company-info',
+      title: 'Add company branding if needed',
+      body: 'Use this section when the card should also show a company name, logo, or short company bio.'
+    },
+    {
+      target: '#lt-section-whatsapp',
+      title: 'Set up your WhatsApp shortcut',
+      body: 'Add a WhatsApp number and an optional first message so people can contact you faster.'
+    },
+    {
+      target: '#lt-section-website',
+      title: 'Link your main website',
+      body: 'Add the primary website you want visitors to open from your Residue card.'
+    },
+    {
+      target: '#lt-section-social-links',
+      title: 'Connect your social profiles',
+      body: 'Only add the social links you want to show. Empty fields stay hidden automatically.'
+    },
+    {
+      target: '#lt-section-savebar',
+      title: 'Save to publish this slug',
+      body: 'When you are happy with the setup, save here to publish the card on this slug.'
+    }
   ];
 
   function buildThemeContext(profile = {}, user = null, snapshotFields = {}) {
@@ -623,6 +732,45 @@ import { residueTelemetry } from './supabase-telemetry.js';
     });
   }
 
+  function hasSavedSnapshot(snapshot = null) {
+    if (!snapshot || typeof snapshot !== 'object') return false;
+    if (String(snapshot.saved_at || '').trim()) return true;
+    if (snapshot.fields && typeof snapshot.fields === 'object' && Object.keys(snapshot.fields).length) return true;
+    if (Array.isArray(snapshot.links) && snapshot.links.length) return true;
+    return false;
+  }
+
+  function isDefaultDraftLink(link, authEmail = '') {
+    const label = String(link?.label || '').trim().toLowerCase();
+    const url = String(link?.url || '').trim();
+    if (!url) return true;
+    if (label === 'call') return /^tel:\+?\s*$/i.test(url);
+    if (label === 'email') {
+      const normalizedUrl = normalizeEmail(url.replace(/^mailto:/i, ''));
+      const normalizedAuth = normalizeEmail(authEmail);
+      if (normalizedAuth) return normalizedUrl === normalizedAuth;
+      return /^mailto:[^@\s]+@[^@\s]+\.[^@\s]+$/i.test(url);
+    }
+    return false;
+  }
+
+  function hasConfiguredCardContent(profile = {}, links = [], snapshot = null, user = null) {
+    if (hasSavedSnapshot(snapshot)) return true;
+    const authEmail = normalizeEmail(profile?.auth_email || user?.email || '');
+    const { meta, normalLinks } = extractMetaFromLinks(Array.isArray(links) ? links : []);
+    if (Object.keys(meta).length) return true;
+    const displayName = String(profile?.name || '').trim();
+    const emailPrefix = authEmail ? authEmail.split('@')[0] : '';
+    if (displayName && displayName !== DEFAULT_PROFILE_NAME && displayName.toLowerCase() !== emailPrefix.toLowerCase()) {
+      return true;
+    }
+    if (String(profile?.title || '').trim()) return true;
+    if (String(profile?.bio || '').trim()) return true;
+    if (String(profile?.avatar_url || '').trim()) return true;
+    if (resolveThemeChoice(profile?.theme) === 'dark') return true;
+    return normalLinks.some(link => !isDefaultDraftLink(link, authEmail));
+  }
+
   const metaLink = (key, value, sort) => ({
     label: `${META_PREFIX}${key}`,
     url: `meta:${encodeURIComponent(String(value))}`,
@@ -723,38 +871,72 @@ import { residueTelemetry } from './supabase-telemetry.js';
     return cleaned;
   }
 
-const localProfileKey = slug => `${LOCAL_PROFILE_KEY_PREFIX}${(slug || '').toLowerCase()}`;
-
-async function ensureLocalDraftForUser(user) {
-  if (!user?.email) return;
-  const email = normalizeEmail(user.email);
-  const slug = await ensureUniqueSlug(resolveSlug(email.split('@')[0], email), {
-    excludeId: user.id || null,
-    fallbackSlug: 'card',
-    supabaseClient: null
-  });
-  const key = localProfileKey(slug);
-  const existing = localStorage.getItem(key);
-  if (existing) {
-    localStorage.setItem('residue_link_last_profile_key', key);
-    return;
+  function getRequestedSlug() {
+    return resolveSlug(qs.get('u') || '', '');
   }
-  const profile = {
-    id: user.id || null,
-    name: DEFAULT_PROFILE_NAME,
-    title: '',
-    bio: '',
-    avatar_url: '',
-    theme: 'light',
-    slug,
-    links: [
-      { label: 'Call', url: 'tel:+', sort: 1, hidden: true },
-      { label: 'Email', url: `mailto:${email}`, sort: 2, hidden: false }
-    ]
-  };
-  localStorage.setItem(key, JSON.stringify(profile));
-  localStorage.setItem('residue_link_last_profile_key', key);
-}
+
+  function readLastLocalProfileSlug() {
+    try {
+      const lastKey = localStorage.getItem('residue_link_last_profile_key') || '';
+      if (lastKey.startsWith(LOCAL_PROFILE_KEY_PREFIX)) {
+        return lastKey.slice(LOCAL_PROFILE_KEY_PREFIX.length);
+      }
+    } catch {}
+    return '';
+  }
+
+  const localProfileKey = slug => `${LOCAL_PROFILE_KEY_PREFIX}${(slug || '').toLowerCase()}`;
+
+  function buildAdminEntryUrl(slug = '') {
+    const normalizedSlug = resolveSlug(slug || '', '');
+    const adminPath = window.location.pathname
+      .replace(/link-profile(?:\.html)?$/i, 'link-admin.html')
+      .replace(/link-admin(?:\.html)?$/i, 'link-admin.html');
+    return normalizedSlug
+      ? `${adminPath}?u=${encodeURIComponent(normalizedSlug)}`
+      : adminPath;
+  }
+
+  function updatePublicAdminLinks(slug = '') {
+    const targetUrl = buildAdminEntryUrl(slug || getRequestedSlug());
+    const manageLink = document.getElementById('lt-manage-link');
+    const firstSetupBtn = document.getElementById('lt-first-setup-btn');
+    if (manageLink instanceof HTMLAnchorElement) manageLink.href = targetUrl;
+    if (firstSetupBtn instanceof HTMLAnchorElement) firstSetupBtn.href = targetUrl;
+  }
+
+  async function ensureLocalDraftForUser(user) {
+    if (!user?.email) return;
+    const email = normalizeEmail(user.email);
+    const requestedSlug = getRequestedSlug();
+    const slug = await ensureUniqueSlug(requestedSlug || resolveSlug(email.split('@')[0], email), {
+      excludeId: user.id || null,
+      fallbackSlug: 'card',
+      supabaseClient: null
+    });
+    const key = localProfileKey(slug);
+    const existing = localStorage.getItem(key);
+    if (existing) {
+      localStorage.setItem('residue_link_last_profile_key', key);
+      return;
+    }
+    const profile = {
+      id: user.id || null,
+      auth_email: email || null,
+      name: DEFAULT_PROFILE_NAME,
+      title: '',
+      bio: '',
+      avatar_url: '',
+      theme: 'light',
+      slug,
+      links: [
+        { label: 'Call', url: 'tel:+', sort: 1, hidden: true },
+        { label: 'Email', url: `mailto:${email}`, sort: 2, hidden: false }
+      ]
+    };
+    localStorage.setItem(key, JSON.stringify(profile));
+    localStorage.setItem('residue_link_last_profile_key', key);
+  }
 
   function getStoredLocalProfiles() {
     return Object.keys(localStorage)
@@ -822,10 +1004,9 @@ async function ensureLocalDraftForUser(user) {
   }
 
   function buildAdminPageUrl() {
-    const url = new URL(window.location.href);
-    url.search = '';
+    const url = new URL(buildAdminEntryUrl(getRequestedSlug()), window.location.origin);
     url.hash = '';
-    return `${url.origin}${url.pathname}`;
+    return `${url.origin}${url.pathname}${url.search}`;
   }
 
   function buildResetPasswordPageUrl() {
@@ -1132,8 +1313,9 @@ async function ensureLocalDraftForUser(user) {
     if (!user) return;
     const authEmail = normalizeEmail(user.email);
     const emailPrefix = (authEmail || user.email || '').split('@')[0];
+    const requestedSlug = getRequestedSlug();
     const fallbackSlug = await ensureUniqueSlug(
-      resolveSlug(emailPrefix, authEmail),
+      requestedSlug || resolveSlug(emailPrefix, authEmail),
       {
         excludeId: user.id,
         fallbackSlug: `user-${String(user.id || '').replace(/-/g, '').slice(0, 8)}`
@@ -1146,6 +1328,27 @@ async function ensureLocalDraftForUser(user) {
       slug: fallbackSlug,
       theme: 'light'
     });
+  }
+
+  async function maybeAdoptRequestedSlug(profile, links, user, snapshot = null) {
+    const requestedSlug = getRequestedSlug();
+    if (!user || !requestedSlug) return profile;
+    const currentSlug = resolveSlug(profile?.slug, profile?.auth_email, user?.email);
+    if (!currentSlug || requestedSlug === currentSlug) return profile;
+    if (hasConfiguredCardContent(profile || {}, links || [], snapshot, user)) return profile;
+    const nextSlug = await ensureUniqueSlug(requestedSlug, {
+      excludeId: user.id,
+      fallbackSlug: currentSlug
+    });
+    if (nextSlug !== requestedSlug) return profile;
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ slug: nextSlug })
+      .eq('id', user.id)
+      .select('*')
+      .maybeSingle();
+    if (error) return profile;
+    return data || { ...profile, slug: nextSlug };
   }
 
   async function initSession(forceLoad = false) {
@@ -1223,11 +1426,13 @@ async function ensureLocalDraftForUser(user) {
     const snapshot = cardConfig?.config_data || null;
     const snapshotLinks = Array.isArray(snapshot?.links) ? snapshot.links : [];
     const effectiveLinks = (links && links.length) ? links : snapshotLinks;
+    profile = await maybeAdoptRequestedSlug(profile, effectiveLinks, user, snapshot);
     const mergedProfile = {
       ...(snapshot?.profile || {}),
       ...(profile || {})
     };
     const hydratedLinks = hydrateStoredLinks(effectiveLinks || []);
+    syncAdminOnboardingState(mergedProfile || {}, hydratedLinks, user, snapshot);
     fillEditor(mergedProfile || {}, hydratedLinks, user, snapshot);
   }
 
@@ -1242,23 +1447,30 @@ async function ensureLocalDraftForUser(user) {
       editorCard.hidden = !show;
       editorCard.style.display = show ? 'grid' : 'none';
     }
+    if (show) window.setTimeout(() => maybeStartAdminOnboarding(), 0);
+    else dismissAdminOnboarding({ rememberSession: false, clearPending: false });
   }
 
   function loadLocalDraft() {
+    const requestedSlug = getRequestedSlug();
+    const requestedKey = requestedSlug ? localProfileKey(requestedSlug) : '';
     const lastKey = localStorage.getItem('residue_link_last_profile_key');
     const keys = Object.keys(localStorage);
     const pickProfile = key => {
       if (!key) return null;
       try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
     };
-    let profile = pickProfile(lastKey);
+    let profile = pickProfile(requestedKey) || pickProfile(lastKey);
     if (!profile) {
       const anyKey = keys.find(k => k.startsWith(LOCAL_PROFILE_KEY_PREFIX));
       profile = pickProfile(anyKey);
     }
     if (profile) {
+      const currentUser = readStoredCurrentUser();
       const links = Array.isArray(profile.links) ? profile.links : [];
-      fillEditor(profile, hydrateStoredLinks(links));
+      const hydratedLinks = hydrateStoredLinks(links);
+      syncAdminOnboardingState(profile, hydratedLinks, currentUser);
+      fillEditor(profile, hydratedLinks, currentUser);
     }
   }
 
@@ -1290,8 +1502,12 @@ async function ensureLocalDraftForUser(user) {
     if (themeInput) themeInput.checked = true;
     setTheme(savedTheme);
     setupVirtualCard(profile || {});
-    if (profile?.slug) updatePublicUrl(profile.slug);
-    else syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
+    if (profile?.slug) {
+      updateAdminContextUrl(profile.slug);
+      updatePublicUrl(profile.slug);
+    } else {
+      syncAutoSlug(displayName || '', profile.auth_email || displayName || profile.name || '');
+    }
     const setToggle = (id, checked = false) => {
       const el = document.getElementById(id);
       if (el) el.checked = !!checked;
@@ -1843,6 +2059,9 @@ async function ensureLocalDraftForUser(user) {
         if (!silent) showStatusEl(statusEl, cErr.message, 'error');
         return false;
       }
+      syncAdminOnboardingState(profile, persistedLinks, session.user, snapshot);
+    } else {
+      syncAdminOnboardingState(profile, persistedLinks, session?.user || null, null);
     }
 
     if (!silent) {
@@ -2024,7 +2243,11 @@ async function ensureLocalDraftForUser(user) {
     const name = getValue('full-name') || getValue('lt-name') || DEFAULT_PROFILE_NAME;
     const auth_email = normalizeEmail(user?.email);
     const fallbackSlug = resolveSlug(auth_email.split('@')[0], auth_email) || `user-${String(user?.id || '').replace(/-/g, '').slice(0, 8)}`;
-    const slug = await ensureUniqueSlug(name, {
+    const existingSlug = resolveSlug(
+      activeThemeContext.slug || getRequestedSlug() || readLastLocalProfileSlug() || '',
+      fallbackSlug
+    );
+    const slug = await ensureUniqueSlug(existingSlug || name, {
       excludeId: user?.id || null,
       fallbackSlug
     });
@@ -2275,6 +2498,143 @@ async function ensureLocalDraftForUser(user) {
     }
   }
 
+  function buildAdminOnboardingSessionKey(context = {}) {
+    const slug = resolveSlug(context.slug || '', '');
+    const userId = String(context.userId || '').trim();
+    return slug ? `${ADMIN_ONBOARDING_SESSION_KEY_PREFIX}${slug}__${userId || 'anon'}` : '';
+  }
+
+  function isAdminOnboardingDismissedForSession(context = {}) {
+    const key = buildAdminOnboardingSessionKey(context);
+    if (!key) return false;
+    try {
+      return sessionStorage.getItem(key) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  function clearAdminOnboardingFocus() {
+    document.querySelectorAll('.lt-onboarding-focus').forEach(node => node.classList.remove('lt-onboarding-focus'));
+  }
+
+  function dismissAdminOnboarding({ rememberSession = true, clearPending = false } = {}) {
+    const popover = document.getElementById('lt-onboarding-popover');
+    if (rememberSession && adminOnboardingPending) {
+      const key = buildAdminOnboardingSessionKey(adminOnboardingPending);
+      if (key) {
+        try { sessionStorage.setItem(key, '1'); } catch {}
+      }
+    }
+    if (popover) popover.hidden = true;
+    clearAdminOnboardingFocus();
+    adminOnboardingActive = false;
+    adminOnboardingStepIndex = 0;
+    if (clearPending) adminOnboardingPending = null;
+  }
+
+  function bindAdminOnboardingControls() {
+    if (adminOnboardingBound) return;
+    adminOnboardingBound = true;
+    const nextBtn = document.getElementById('lt-onboarding-next');
+    const skipBtn = document.getElementById('lt-onboarding-skip');
+    nextBtn?.addEventListener('click', () => {
+      if (!adminOnboardingActive) return;
+      if (adminOnboardingStepIndex >= ADMIN_ONBOARDING_STEPS.length - 1) {
+        dismissAdminOnboarding({ rememberSession: true, clearPending: false });
+        return;
+      }
+      adminOnboardingStepIndex += 1;
+      renderAdminOnboardingStep();
+    });
+    skipBtn?.addEventListener('click', () => {
+      dismissAdminOnboarding({ rememberSession: true, clearPending: false });
+    });
+  }
+
+  function syncAdminOnboardingState(profile = {}, links = [], user = null, snapshot = null) {
+    const slug = resolveSlug(
+      profile?.slug || getRequestedSlug() || activeThemeContext.slug || readLastLocalProfileSlug() || '',
+      profile?.auth_email || user?.email || ''
+    );
+    const hasConfiguredContent = hasConfiguredCardContent(profile || {}, links || [], snapshot, user);
+    if (!slug || hasConfiguredContent) {
+      dismissAdminOnboarding({ rememberSession: false, clearPending: true });
+      return;
+    }
+    adminOnboardingPending = {
+      slug,
+      userId: String(user?.id || profile?.id || '').trim()
+    };
+  }
+
+  function setAdminAccordionOpen(card, open) {
+    const trigger = card?.querySelector('.lt-accordion-trigger');
+    const panel = card?.querySelector('.lt-accordion-panel');
+    if (!card || !trigger || !panel) return;
+    card.classList.toggle('is-open', !!open);
+    trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    panel.setAttribute('aria-hidden', open ? 'false' : 'true');
+    if ('inert' in panel) panel.inert = !open;
+  }
+
+  function focusAdminOnboardingTarget(step) {
+    const target = document.querySelector(step.target);
+    if (!target) return false;
+    clearAdminOnboardingFocus();
+    if (target.classList.contains('lt-accordion-card')) {
+      document.querySelectorAll('.lt-accordion-card').forEach(card => {
+        setAdminAccordionOpen(card, card === target);
+      });
+    }
+    target.classList.add('lt-onboarding-focus');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targetTop = window.scrollY + target.getBoundingClientRect().top - 112;
+    window.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: prefersReducedMotion ? 'auto' : 'smooth'
+    });
+    return true;
+  }
+
+  function renderAdminOnboardingStep() {
+    if (!adminOnboardingActive) return;
+    const popover = document.getElementById('lt-onboarding-popover');
+    const stepCount = document.getElementById('lt-onboarding-step');
+    const title = document.getElementById('lt-onboarding-title');
+    const body = document.getElementById('lt-onboarding-body');
+    const nextBtn = document.getElementById('lt-onboarding-next');
+    const step = ADMIN_ONBOARDING_STEPS[adminOnboardingStepIndex];
+    if (!popover || !step) {
+      dismissAdminOnboarding({ rememberSession: true, clearPending: false });
+      return;
+    }
+    if (!focusAdminOnboardingTarget(step)) {
+      if (adminOnboardingStepIndex >= ADMIN_ONBOARDING_STEPS.length - 1) {
+        dismissAdminOnboarding({ rememberSession: true, clearPending: false });
+        return;
+      }
+      adminOnboardingStepIndex += 1;
+      renderAdminOnboardingStep();
+      return;
+    }
+    if (stepCount) stepCount.textContent = `${adminOnboardingStepIndex + 1} / ${ADMIN_ONBOARDING_STEPS.length}`;
+    if (title) title.textContent = step.title;
+    if (body) body.textContent = step.body;
+    if (nextBtn) nextBtn.textContent = adminOnboardingStepIndex >= ADMIN_ONBOARDING_STEPS.length - 1 ? 'Done' : 'Next';
+    popover.hidden = false;
+  }
+
+  function maybeStartAdminOnboarding() {
+    const editor = document.getElementById('lt-editor');
+    const popover = document.getElementById('lt-onboarding-popover');
+    if (!adminOnboardingPending || adminOnboardingActive || !editor || editor.hidden || !popover) return;
+    if (isAdminOnboardingDismissedForSession(adminOnboardingPending)) return;
+    adminOnboardingActive = true;
+    adminOnboardingStepIndex = 0;
+    renderAdminOnboardingStep();
+  }
+
   /* Avatar file handling */
   const avatarFile = document.getElementById('lt-avatar-file');
   const avatarUrlInput = document.getElementById('lt-avatar-url');
@@ -2362,11 +2722,12 @@ async function ensureLocalDraftForUser(user) {
         showStatusEl(document.getElementById('lt-auth-status'), 'Local mode: data stays on this device.', 'success');
       }
       persistCurrentUser(null);
-      updateAdminContextUrl('');
+      updateAdminContextUrl(getRequestedSlug());
       setAuthOnly(true);
       toggleEditor(false);
       bindAuth();
       bindEditorActions();
+      bindAdminOnboardingControls();
       await initSession(false);
     }
   };
