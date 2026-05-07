@@ -245,11 +245,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 }
 
 .lt-card.is-first-setup .lt-footer {
-  justify-content: flex-end;
-}
-
-.lt-card.is-first-setup .lt-made {
-  display: none !important;
+  justify-content: space-between;
 }
 
 .lt-company-section {
