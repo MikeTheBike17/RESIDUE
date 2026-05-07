@@ -198,7 +198,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const resolvedSlug = resolveSlug(slug || getRequestedSlug(), '');
     setPublicSetupMode(true, resolvedSlug);
     setTheme('light');
-    setText('lt-first-setup-title', FIRST_TIME_CARD_COPY);
     setText('lt-company-name', '');
     setText('lt-company-bio', '');
     setPublicCompanyLogo('');
@@ -256,9 +255,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
   let adminOnboardingActive = false;
   let adminOnboardingStepIndex = 0;
   let adminOnboardingBound = false;
+  let adminOnboardingAlignTimer = 0;
   const DEFAULT_PROFILE_NAME = 'Your name';
-  const FIRST_TIME_CARD_COPY = 'Set up your card now';
   const ADMIN_ONBOARDING_SESSION_KEY_PREFIX = 'residue_link_admin_onboarding_';
+  const ADMIN_ONBOARDING_GAP_PX = 16;
+  const ADMIN_ONBOARDING_REPOSITION_DELAY_MS = 320;
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
     { id: 'social-2', label: 'Instagram', toggle: 'show-social-2' },
@@ -273,7 +274,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     {
       target: '#lt-section-theme',
       title: 'Choose the card display mode',
-      body: 'Use this switch to keep the card in dark or light mode for visitors.'
+      body: 'Use this switch to keep the card in dark or light mode for visitors.',
+      popoverPlacement: 'below-target'
     },
     {
       target: '#lt-section-identity',
@@ -2576,13 +2578,20 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function dismissAdminOnboarding({ rememberSession = true, clearPending = false } = {}) {
     const popover = document.getElementById('lt-onboarding-popover');
+    if (adminOnboardingAlignTimer) {
+      window.clearTimeout(adminOnboardingAlignTimer);
+      adminOnboardingAlignTimer = 0;
+    }
     if (rememberSession && adminOnboardingPending) {
       const key = buildAdminOnboardingSessionKey(adminOnboardingPending);
       if (key) {
         try { sessionStorage.setItem(key, '1'); } catch {}
       }
     }
-    if (popover) popover.hidden = true;
+    if (popover) {
+      popover.hidden = true;
+      popover.style.removeProperty('top');
+    }
     clearAdminOnboardingFocus();
     adminOnboardingActive = false;
     adminOnboardingStepIndex = 0;
@@ -2634,9 +2643,49 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if ('inert' in panel) panel.inert = !open;
   }
 
-  function focusAdminOnboardingTarget(step) {
+  function getAdminOnboardingScrollBehavior() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+
+  function positionAdminOnboardingPopover(step, popover, target) {
+    if (!popover) return;
+    popover.style.removeProperty('top');
+    if (step?.popoverPlacement !== 'below-target' || !target) return;
+    const targetRect = target.getBoundingClientRect();
+    const popoverRect = popover.getBoundingClientRect();
+    const maxTop = Math.max(12, window.innerHeight - popoverRect.height - 12);
+    const nextTop = Math.max(12, Math.min(targetRect.bottom + ADMIN_ONBOARDING_GAP_PX, maxTop));
+    popover.style.top = `${Math.round(nextTop)}px`;
+  }
+
+  function alignAdminOnboardingTarget(step, target, popover) {
+    if (!target || !popover) return;
+    if (step?.popoverPlacement === 'below-target') {
+      const targetTop = window.scrollY + target.getBoundingClientRect().top - 12;
+      window.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: getAdminOnboardingScrollBehavior()
+      });
+      positionAdminOnboardingPopover(step, popover, target);
+      return;
+    }
+    positionAdminOnboardingPopover(step, popover, null);
+    const popoverRect = popover.getBoundingClientRect();
+    const desiredViewportTop = popoverRect.bottom + ADMIN_ONBOARDING_GAP_PX;
+    const targetTop = window.scrollY + target.getBoundingClientRect().top - desiredViewportTop;
+    window.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: getAdminOnboardingScrollBehavior()
+    });
+  }
+
+  function focusAdminOnboardingTarget(step, popover) {
     const target = document.querySelector(step.target);
-    if (!target) return false;
+    if (!target || !popover) return false;
+    if (adminOnboardingAlignTimer) {
+      window.clearTimeout(adminOnboardingAlignTimer);
+      adminOnboardingAlignTimer = 0;
+    }
     clearAdminOnboardingFocus();
     if (target.classList.contains('lt-accordion-card')) {
       document.querySelectorAll('.lt-accordion-card').forEach(card => {
@@ -2644,12 +2693,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
       });
     }
     target.classList.add('lt-onboarding-focus');
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const targetTop = window.scrollY + target.getBoundingClientRect().top - 112;
-    window.scrollTo({
-      top: Math.max(0, targetTop),
-      behavior: prefersReducedMotion ? 'auto' : 'smooth'
-    });
+    alignAdminOnboardingTarget(step, target, popover);
+    adminOnboardingAlignTimer = window.setTimeout(() => {
+      if (!adminOnboardingActive || ADMIN_ONBOARDING_STEPS[adminOnboardingStepIndex] !== step) return;
+      alignAdminOnboardingTarget(step, target, popover);
+      adminOnboardingAlignTimer = 0;
+    }, ADMIN_ONBOARDING_REPOSITION_DELAY_MS);
     return true;
   }
 
@@ -2665,20 +2714,19 @@ import { residueTelemetry } from './supabase-telemetry.js';
       dismissAdminOnboarding({ rememberSession: true, clearPending: false });
       return;
     }
-    if (!focusAdminOnboardingTarget(step)) {
+    if (stepCount) stepCount.textContent = `${adminOnboardingStepIndex + 1} / ${ADMIN_ONBOARDING_STEPS.length}`;
+    if (title) title.textContent = step.title;
+    if (body) body.textContent = step.body;
+    if (nextBtn) nextBtn.textContent = adminOnboardingStepIndex >= ADMIN_ONBOARDING_STEPS.length - 1 ? 'Done' : 'Next';
+    popover.hidden = false;
+    if (!focusAdminOnboardingTarget(step, popover)) {
       if (adminOnboardingStepIndex >= ADMIN_ONBOARDING_STEPS.length - 1) {
         dismissAdminOnboarding({ rememberSession: true, clearPending: false });
         return;
       }
       adminOnboardingStepIndex += 1;
       renderAdminOnboardingStep();
-      return;
     }
-    if (stepCount) stepCount.textContent = `${adminOnboardingStepIndex + 1} / ${ADMIN_ONBOARDING_STEPS.length}`;
-    if (title) title.textContent = step.title;
-    if (body) body.textContent = step.body;
-    if (nextBtn) nextBtn.textContent = adminOnboardingStepIndex >= ADMIN_ONBOARDING_STEPS.length - 1 ? 'Done' : 'Next';
-    popover.hidden = false;
   }
 
   function maybeStartAdminOnboarding() {
