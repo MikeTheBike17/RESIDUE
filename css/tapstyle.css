@@ -219,12 +219,14 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 
 .lt-first-setup__title {
   margin: 0;
-  max-width: 11ch;
-  font-size: clamp(2rem, 7vw, 3rem);
+  max-width: none;
+  justify-self: center;
+  text-align: center;
+  font-size: clamp(1.55rem, 5.8vw, 2.5rem);
   font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.03em;
-  text-wrap: balance;
+  white-space: nowrap;
 }
 
 .lt-first-setup__button {
@@ -778,7 +780,7 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
   }
 
   .lt-first-setup__title {
-    max-width: 10ch;
+    font-size: clamp(1.35rem, 6vw, 1.8rem);
   }
 
   .lt-footer {
