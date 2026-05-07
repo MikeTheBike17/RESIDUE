@@ -200,12 +200,24 @@ window.addEventListener('DOMContentLoaded', () => {
     return false;
   };
 
+  const hasMeaningfulMetaContent = candidateMeta => (
+    ['company_name', 'company_bio', 'company_logo_url']
+      .some(key => !!String(candidateMeta?.[key] || '').trim())
+  );
+
+  const readExplicitCardReady = candidateMeta => {
+    if (!Object.prototype.hasOwnProperty.call(candidateMeta || {}, 'card_ready')) return null;
+    return parseBool(candidateMeta.card_ready, false);
+  };
+
   const hasConfiguredCardContent = candidateProfile => {
     if (!candidateProfile) return false;
     const authEmail = normalizeEmail(candidateProfile?.auth_email || '');
     const displayName = String(candidateProfile?.name || '').trim();
     const emailPrefix = authEmail ? authEmail.split('@')[0] : '';
-    if (Object.keys(meta).length) return true;
+    const explicitReady = readExplicitCardReady(meta);
+    if (explicitReady != null) return explicitReady;
+    if (hasMeaningfulMetaContent(meta)) return true;
     if (displayName && displayName !== DEFAULT_PROFILE_NAME && displayName.toLowerCase() !== emailPrefix.toLowerCase()) {
       return true;
     }
