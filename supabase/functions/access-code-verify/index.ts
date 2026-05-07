@@ -1,13 +1,38 @@
 const ACCESS_CODE_VERIFY_ALLOWED_ORIGINS = Deno.env.get("ACCESS_CODE_VERIFY_ALLOWED_ORIGINS") ?? "*";
-const RESIDUE_ACCESS_CODE = String(Deno.env.get("RESIDUE_ACCESS_CODE") ?? "res-1738")
-  .trim()
-  .toLowerCase();
+const DEFAULT_ACCESS_CODE_SHA256 = "01810e66ba6d21239428f3815c311d944035f6ff43228352ea372752c0a6f10d";
 
 function normalizeCode(value: unknown) {
   return String(value ?? "")
     .trim()
     .toLowerCase();
 }
+
+async function sha256Hex(value: string) {
+  const data = new TextEncoder().encode(value);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function timingSafeEqualHex(left: string, right: string) {
+  if (!left || !right || left.length !== right.length) return false;
+  let diff = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    diff |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return diff === 0;
+}
+
+const expectedAccessCodeHashPromise = (async () => {
+  const explicitHash = String(Deno.env.get("RESIDUE_ACCESS_CODE_SHA256") ?? "")
+    .trim()
+    .toLowerCase();
+  if (/^[a-f0-9]{64}$/.test(explicitHash)) return explicitHash;
+
+  const explicitCode = normalizeCode(Deno.env.get("RESIDUE_ACCESS_CODE") ?? "");
+  if (explicitCode) return await sha256Hex(explicitCode);
+
+  return DEFAULT_ACCESS_CODE_SHA256;
+})();
 
 function buildCorsHeaders(origin: string | null) {
   const allowList = ACCESS_CODE_VERIFY_ALLOWED_ORIGINS
@@ -39,9 +64,6 @@ Deno.serve(async req => {
   if (req.method !== "POST") {
     return json({ error: "Method not allowed" }, 405, corsHeaders);
   }
-  if (!RESIDUE_ACCESS_CODE) {
-    return json({ error: "Server misconfiguration" }, 500, corsHeaders);
-  }
 
   const payload = await req.json().catch(() => null);
   if (!payload || typeof payload !== "object") {
@@ -52,7 +74,9 @@ Deno.serve(async req => {
   if (!submittedCode) {
     return json({ error: "Access code is required." }, 400, corsHeaders);
   }
-  if (submittedCode !== RESIDUE_ACCESS_CODE) {
+  const expectedHash = await expectedAccessCodeHashPromise;
+  const submittedHash = await sha256Hex(submittedCode);
+  if (!timingSafeEqualHex(submittedHash, expectedHash)) {
     return json({ ok: false, error: "Invalid access code." }, 401, corsHeaders);
   }
 

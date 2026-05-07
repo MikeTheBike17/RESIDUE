@@ -7,6 +7,7 @@ const ordersTable = process.env.SUPABASE_ORDERS_TABLE || '';
 const invoicesTable = process.env.SUPABASE_INVOICES_TABLE || '';
 const payfastProcessUrl = process.env.PAYFAST_PROCESS_URL || '';
 const accessRequestFunctionUrl = process.env.ACCESS_REQUEST_FUNCTION_URL || '';
+const accessCodeVerifyEndpoint = process.env.ACCESS_CODE_VERIFY_ENDPOINT || '';
 const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || '0x4AAAAAADAvI_1p6qpg5G_E';
 
 // Only publish values that are safe to ship to every browser.
@@ -19,6 +20,7 @@ const output = `window.env = {
   SUPABASE_INVOICES_TABLE: '${invoicesTable}',
   PAYFAST_PROCESS_URL: '${payfastProcessUrl}',
   ACCESS_REQUEST_FUNCTION_URL: '${accessRequestFunctionUrl}',
+  ACCESS_CODE_VERIFY_ENDPOINT: '${accessCodeVerifyEndpoint}',
   TURNSTILE_SITE_KEY: '${turnstileSiteKey}'
 };`;
 writeFileSync('js/env.js', output);

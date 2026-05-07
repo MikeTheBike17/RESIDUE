@@ -232,54 +232,97 @@
   const publicEnv = window.env || {};
   let signupUnlockedForAuth = false;
 
-  function buildAccessCodeVerifyUrl() {
+  function buildAccessCodeVerifyEndpoints() {
     const explicitEndpoint = String(publicEnv.ACCESS_CODE_VERIFY_ENDPOINT || '').trim();
-    if (explicitEndpoint) return explicitEndpoint;
+    const sameOriginEndpoint = `${window.location.origin}/api/access-code-verify`;
     const supabaseBase = String(publicEnv.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-    return supabaseBase ? `${supabaseBase}/functions/v1/access-code-verify` : '';
+    const supabaseEndpoint = supabaseBase ? `${supabaseBase}/functions/v1/access-code-verify` : '';
+    return [...new Set([
+      explicitEndpoint,
+      sameOriginEndpoint,
+      supabaseEndpoint
+    ].filter(Boolean))];
   }
 
-  async function verifyAccessCode(code) {
-    const endpoint = buildAccessCodeVerifyUrl();
+  function isSupabaseFunctionEndpoint(endpoint) {
+    return /supabase\.co\/functions\/v1\//i.test(String(endpoint || ''));
+  }
+
+  async function requestAccessCodeVerification(endpoint, code) {
     const anonKey = String(publicEnv.SUPABASE_ANON_KEY || '').trim();
-    if (!endpoint || !anonKey) {
+    if (!endpoint) {
       return {
         ok: false,
-        error: 'Access verification is unavailable right now.'
+        error: 'Access verification is unavailable right now.',
+        retryable: false
       };
     }
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), 8000);
     try {
+      const headers = {
+        'content-type': 'application/json'
+      };
+      if (isSupabaseFunctionEndpoint(endpoint)) {
+        if (!anonKey) {
+          return {
+            ok: false,
+            error: 'Access verification is unavailable right now.',
+            retryable: false
+          };
+        }
+        headers.apikey = anonKey;
+        headers.Authorization = `Bearer ${anonKey}`;
+      }
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'apikey': anonKey,
-          'Authorization': `Bearer ${anonKey}`
-        },
+        headers,
         body: JSON.stringify({ code }),
         signal: controller.signal
       });
       const payload = await res.json().catch(() => ({}));
       if (res.ok && payload?.ok) {
-        return { ok: true };
+        return { ok: true, retryable: false };
       }
       return {
         ok: false,
-        error: payload?.error || (res.status === 401 ? 'Invalid access code.' : 'Could not verify the access code.')
+        error: payload?.error || (res.status === 401 ? 'Invalid access code.' : 'Could not verify the access code.'),
+        retryable: res.status >= 500 || res.status === 404
       };
     } catch (error) {
       return {
         ok: false,
         error: error?.name === 'AbortError'
           ? 'Access verification timed out. Please try again.'
-          : 'Could not verify the access code.'
+          : 'Could not verify the access code.',
+        retryable: true
       };
     } finally {
       window.clearTimeout(timeoutId);
     }
+  }
+
+  async function verifyAccessCode(code) {
+    const endpoints = buildAccessCodeVerifyEndpoints();
+    if (!endpoints.length) {
+      return {
+        ok: false,
+        error: 'Access verification is unavailable right now.'
+      };
+    }
+
+    let lastError = 'Could not verify the access code.';
+    for (const endpoint of endpoints) {
+      const result = await requestAccessCodeVerification(endpoint, code);
+      if (result.ok) return { ok: true };
+      lastError = result.error || lastError;
+      if (!result.retryable || lastError === 'Invalid access code.') {
+        return { ok: false, error: lastError };
+      }
+    }
+
+    return { ok: false, error: lastError };
   }
 
   function normalizeAuthIntent(value) {
