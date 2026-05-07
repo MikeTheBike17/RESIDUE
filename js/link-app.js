@@ -309,8 +309,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     },
     {
       target: '#lt-section-savebar',
-      title: 'Save to publish this slug',
-      body: 'When you are happy with the setup, save here to publish the card on this slug.'
+      title: 'Save current card setup',
+      body: 'When you are happy with the setup, save here to publish it.'
     }
   ];
 
