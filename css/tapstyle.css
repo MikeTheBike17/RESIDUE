@@ -7,13 +7,28 @@
 *::before,
 *::after { box-sizing: border-box; }
 
-html, body { height: 100%; }
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--page-bg, #000);
+}
+
+html[data-theme="dark"] {
+  --page-bg: #000000;
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  --page-bg: #ffffff;
+  color-scheme: light;
+}
 
 body.lt-page[data-theme="dark"] {
-  --lt-page-bg:
-    radial-gradient(120% 140% at 16% 12%, rgba(143, 104, 58, 0.18), transparent 34%),
-    radial-gradient(120% 120% at 86% 14%, rgba(31, 42, 84, 0.16), transparent 32%),
-    linear-gradient(180deg, #030407 0%, #06070a 100%);
+  --page-bg: #000000;
+  --lt-page-bg: var(--page-bg);
   --lt-page-text: #f6f4ef;
   --lt-muted: rgba(214, 216, 224, 0.68);
   --lt-card-bg: linear-gradient(180deg, rgba(6, 7, 10, 0.96), rgba(4, 5, 8, 0.98));
@@ -32,13 +47,12 @@ body.lt-page[data-theme="dark"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.13),
     inset 0 -1px 0 rgba(0, 0, 0, 0.48),
     0 12px 24px rgba(0, 0, 0, 0.24);
+  color-scheme: dark;
 }
 
 body.lt-page[data-theme="light"] {
-  --lt-page-bg:
-    radial-gradient(120% 140% at 14% 12%, rgba(191, 171, 142, 0.28), transparent 32%),
-    radial-gradient(120% 120% at 88% 14%, rgba(53, 65, 110, 0.18), transparent 30%),
-    linear-gradient(180deg, #f3f1ed 0%, #ece8e2 100%);
+  --page-bg: #ffffff;
+  --lt-page-bg: var(--page-bg);
   --lt-page-text: #101119;
   --lt-muted: rgba(16, 17, 25, 0.58);
   --lt-card-bg: linear-gradient(180deg, rgba(247, 244, 239, 0.97), rgba(239, 235, 228, 0.98));
@@ -57,21 +71,32 @@ body.lt-page[data-theme="light"] {
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     inset 0 -1px 0 rgba(82, 74, 61, 0.16),
     0 12px 22px rgba(82, 74, 61, 0.13);
+  color-scheme: light;
 }
 
 body.lt-page {
-  margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: 'Space Grotesk', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
   color: var(--lt-page-text, #fff);
   overscroll-behavior: contain;
+  overscroll-behavior-y: none;
   touch-action: pan-y;
   overflow: auto;
-
-  background: var(--lt-page-bg, rgba(0, 0, 0, 0.9));
+  background: var(--page-bg, #000);
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.link-profile-page,
+.link-profile-page main,
+main.link-profile-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--page-bg, #000);
 }
 
 body.lt-page.preview-mode {
