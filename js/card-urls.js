@@ -21,11 +21,18 @@ const urlsBody = document.getElementById('card-urls-body');
 const invoiceBody = document.getElementById('invoice-rows-body');
 const refreshBtn = document.getElementById('card-urls-refresh');
 const invoiceRefreshBtn = document.getElementById('invoice-refresh');
+const searchInput = document.getElementById('manager-search');
 const isCardUrlsPage = !!urlsBody;
 const isInvoicingPage = !!invoiceBody && !urlsBody;
+let profileRowsCache = [];
+let invoiceRowsCache = [];
 
 function normalizeEmail(value) {
   return (value || '').trim().toLowerCase();
+}
+
+function normalizeSearchTerm(value) {
+  return String(value || '').trim().toLowerCase();
 }
 
 function setStatus(message, type = '') {
@@ -65,10 +72,28 @@ function hasInvoicingAccess() {
   }
 }
 
-function renderUrlRows(rows) {
+function getActiveSearchTerm() {
+  return normalizeSearchTerm(searchInput?.value);
+}
+
+function filterProfileRows(rows, query) {
+  if (!query) return rows;
+  return rows.filter(row => normalizeSearchTerm(row.auth_email).includes(query));
+}
+
+function filterInvoiceRows(rows, query) {
+  if (!query) return rows;
+  return rows.filter(row => (
+    normalizeSearchTerm(row.customer_name).includes(query) ||
+    normalizeSearchTerm(row.customer_email).includes(query) ||
+    normalizeSearchTerm(row.customer_phone).includes(query)
+  ));
+}
+
+function renderUrlRows(rows, emptyMessage = 'No users found.') {
   if (!urlsBody) return;
   if (!rows.length) {
-    urlsBody.innerHTML = '<tr><td colspan="3" class="card-urls-empty">No users found.</td></tr>';
+    urlsBody.innerHTML = `<tr><td colspan="3" class="card-urls-empty">${emptyMessage}</td></tr>`;
     return;
   }
 
@@ -156,10 +181,10 @@ function formatShipping(row) {
   ].filter(Boolean).join(', ');
 }
 
-function renderInvoiceRows(rows) {
+function renderInvoiceRows(rows, emptyMessage = 'No invoices found.') {
   if (!invoiceBody) return;
   if (!rows.length) {
-    invoiceBody.innerHTML = '<tr><td colspan="11" class="card-urls-empty">No invoices found.</td></tr>';
+    invoiceBody.innerHTML = `<tr><td colspan="11" class="card-urls-empty">${emptyMessage}</td></tr>`;
     return;
   }
 
@@ -204,6 +229,21 @@ function renderInvoiceRows(rows) {
 
     invoiceBody.appendChild(tr);
   });
+}
+
+function applySearchFilter() {
+  const query = getActiveSearchTerm();
+
+  if (isCardUrlsPage) {
+    const filteredRows = filterProfileRows(profileRowsCache, query);
+    renderUrlRows(filteredRows, query ? 'No users match this email search.' : 'No users found.');
+    return;
+  }
+
+  if (isInvoicingPage) {
+    const filteredRows = filterInvoiceRows(invoiceRowsCache, query);
+    renderInvoiceRows(filteredRows, query ? 'No users match this search.' : 'No invoices found.');
+  }
 }
 
 async function guardManagerAccess() {
@@ -285,17 +325,19 @@ async function fetchAllRows() {
 
   try {
     if (isCardUrlsPage) {
-      const profileRows = await fetchProfileRows();
-      renderUrlRows(profileRows);
-      setStatus(`Loaded ${profileRows.length} URLs.`, 'success');
+      profileRowsCache = await fetchProfileRows();
+      applySearchFilter();
+      setStatus(`Loaded ${profileRowsCache.length} URLs.`, 'success');
     } else if (isInvoicingPage) {
-      const invoiceRows = await fetchInvoiceRows();
-      renderInvoiceRows(invoiceRows);
-      setStatus(`Loaded ${invoiceRows.length} invoice rows.`, 'success');
+      invoiceRowsCache = await fetchInvoiceRows();
+      applySearchFilter();
+      setStatus(`Loaded ${invoiceRowsCache.length} invoice rows.`, 'success');
     } else {
       setStatus('', '');
     }
   } catch (error) {
+    profileRowsCache = [];
+    invoiceRowsCache = [];
     if (isCardUrlsPage) renderUrlRows([]);
     if (isInvoicingPage) renderInvoiceRows([]);
     setStatus(error.message || 'Could not load manager data.', 'error');
@@ -315,10 +357,11 @@ async function refreshInvoicesOnly() {
   if (invoiceRefreshBtn) invoiceRefreshBtn.disabled = true;
 
   try {
-    const invoiceRows = await fetchInvoiceRows();
-    renderInvoiceRows(invoiceRows);
-    setStatus(`Loaded ${invoiceRows.length} invoice rows.`, 'success');
+    invoiceRowsCache = await fetchInvoiceRows();
+    applySearchFilter();
+    setStatus(`Loaded ${invoiceRowsCache.length} invoice rows.`, 'success');
   } catch (error) {
+    invoiceRowsCache = [];
     renderInvoiceRows([]);
     setStatus(error.message || 'Could not load invoices.', 'error');
   } finally {
@@ -328,6 +371,7 @@ async function refreshInvoicesOnly() {
 
 refreshBtn?.addEventListener('click', fetchAllRows);
 invoiceRefreshBtn?.addEventListener('click', refreshInvoicesOnly);
+searchInput?.addEventListener('input', applySearchFilter);
 
 (async () => {
   const session = await guardManagerAccess();
