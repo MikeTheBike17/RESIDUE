@@ -1689,6 +1689,15 @@ input:focus, textarea:focus, select:focus {
   background: rgba(255,255,255,0.03);
 }
 
+#shipping-province {
+  font-weight: 600;
+}
+
+#shipping-province option {
+  color: #121212;
+  background: #ffffff;
+}
+
 /* Access panels (legacy) */
 .access-panels, .access-options { display: none; }
 .access-options .btn { min-width: 132px; }
@@ -2730,6 +2739,116 @@ input:focus, textarea:focus, select:focus {
   gap: 12px;
   justify-content: flex-end;
   flex-wrap: wrap;
+}
+
+.payment-provider-intro {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.payment-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.payment-provider-card {
+  width: 100%;
+  display: block;
+  padding: 0;
+  border: 1px solid rgba(216,176,122,0.28);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #ffffff;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.payment-provider-media {
+  min-height: 158px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  border-radius: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.payment-provider-card-payfast .payment-provider-media {
+  min-height: 0;
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.payment-provider-card-stitch .payment-provider-media {
+  background: #ffffff;
+}
+
+.payment-provider-image {
+  width: 100%;
+  max-width: 300px;
+  max-height: 104px;
+  display: block;
+  border: 0;
+  background: transparent;
+  margin: 0;
+  object-fit: contain;
+}
+
+.payment-provider-card-payfast {
+  background: #ffffff;
+}
+
+.payment-provider-card-payfast .payment-provider-image {
+  max-width: none;
+  max-height: none;
+  height: auto;
+  object-fit: cover;
+}
+
+.payment-provider-card-stitch .payment-provider-image {
+  max-width: 236px;
+  max-height: 82px;
+}
+
+.payment-provider-card:hover {
+  border-color: rgba(216,176,122,0.7);
+  background: rgba(216,176,122,0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.24);
+}
+
+.payment-provider-card-payfast:hover {
+  background: #ffffff;
+}
+
+.payment-provider-card:disabled {
+  transform: none;
+}
+
+.payment-provider-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.payment-provider-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--accent-premium);
+}
+
+.payment-provider-copy {
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 /* order summary styling */
@@ -4146,6 +4265,10 @@ body::after { opacity: 0.04; }
 
   .card-urls-search {
     max-width: none;
+  }
+
+  .payment-provider-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -8,6 +8,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 120);
   const PAYFAST_PROCESS_URL = cfg.PAYFAST_PROCESS_URL || "https://www.payfast.co.za/eng/process";
   const PENDING_ORDER_KEY = "residue_pending_order";
+  const THANK_YOU_REDIRECT_MS = 7000;
 
   const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
     ? null
@@ -63,10 +64,14 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     payfastTotal: qs("#payfast-total"),
     payfastBackBtn: qs("#payfast-back-btn"),
     payfastContinueBtn: qs("#payfast-continue-btn"),
+    stitchContinueBtn: qs("#stitch-continue-btn"),
     payfastForm: qs("#payfast-form"),
     thankYouModal: qs("#thank-you-modal"),
+    thankYouHeading: qs("#thank-you-heading"),
+    thankYouMessage: qs("#thank-you-message"),
     thankYouInvoice: qs("#thank-you-invoice"),
     thankYouPaymentStatus: qs("#thank-you-payment-status"),
+    thankYouRedirectNote: qs("#thank-you-redirect-note"),
     redirectBtn: qs("#redirect-btn"),
     termsBackBtn: qs("#terms-back-btn")
   };
@@ -96,6 +101,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   let customLogoMeta = null;
   let pendingTermsOrder = null;
   let payFastCredentialsPromise = null;
+  let thankYouRedirectTimer = null;
 
   function setStatus(el, message, type = "") {
     if (!el) return;
@@ -108,6 +114,30 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function setPayFastStatus(message, type = "") {
     setStatus(els.payfastStatus, message, type);
     setStatus(els.payfastConfirmStatus, message, type);
+  }
+
+  function setPaymentProviderButtonsDisabled(disabled) {
+    if (els.payfastContinueBtn) els.payfastContinueBtn.disabled = disabled;
+    if (els.stitchContinueBtn) els.stitchContinueBtn.disabled = disabled;
+    if (els.payfastBackBtn) els.payfastBackBtn.disabled = disabled;
+  }
+
+  function clearThankYouRedirect() {
+    if (thankYouRedirectTimer) {
+      window.clearTimeout(thankYouRedirectTimer);
+      thankYouRedirectTimer = null;
+    }
+  }
+
+  function scheduleThankYouRedirect() {
+    clearThankYouRedirect();
+    if (els.thankYouRedirectNote) {
+      els.thankYouRedirectNote.hidden = false;
+      els.thankYouRedirectNote.textContent = "Redirecting you back to the homepage...";
+    }
+    thankYouRedirectTimer = window.setTimeout(() => {
+      window.location.href = "index.html";
+    }, THANK_YOU_REDIRECT_MS);
   }
 
   function openModal(el) {
@@ -197,25 +227,121 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return `INV-${stamp}-${rand}`;
   }
 
-  function paymentStatusText(status) {
-    if (status === "COMPLETE") return "Payment complete.";
-    if (status === "FAILED") return "Payment failed.";
-    if (status === "CANCELLED") return "Payment cancelled.";
-    return `Payment status: ${status || "PENDING"}.`;
+  function providerLabel(provider) {
+    if (provider === "stitch") return "Stitch";
+    return "PayFast";
   }
 
-  function parseReturnState() {
+  function normalizePayFastStatus(value) {
+    const normalized = String(value || "").trim().toUpperCase();
+    if (normalized === "COMPLETE" || normalized === "SUCCESS") return "COMPLETE";
+    if (normalized === "FAILED") return "FAILED";
+    if (normalized === "CANCELLED" || normalized === "CANCELED" || normalized === "CLOSED") return "CANCELLED";
+    if (normalized === "EXPIRED") return "EXPIRED";
+    return normalized || "PENDING";
+  }
+
+  function normalizeStitchCallbackStatus(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "complete") return "COMPLETE";
+    if (normalized === "closed") return "CANCELLED";
+    if (normalized === "failed") return "FAILED";
+    return "PENDING";
+  }
+
+  function normalizeStitchRequestStatus(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "completed") return "COMPLETE";
+    if (normalized === "cancelled") return "CANCELLED";
+    if (normalized === "expired") return "EXPIRED";
+    return "PENDING";
+  }
+
+  function paymentStatusText(status, provider = "") {
+    const via = provider ? ` via ${providerLabel(provider)}` : "";
+    if (status === "COMPLETE") return `Payment received${via}.`;
+    if (status === "FAILED") return `Payment failed${via}.`;
+    if (status === "CANCELLED") return `Payment cancelled${via}.`;
+    if (status === "EXPIRED") return `Payment session expired${via}.`;
+    return `Payment status${via}: ${status || "PENDING"}.`;
+  }
+
+  function buildPostPaymentMessage(status, provider = "") {
+    const providerName = providerLabel(provider);
+    if (status === "COMPLETE") {
+      return {
+        heading: "Payment received",
+        message: `Your payment was successfully completed through ${providerName}. We are now processing your Residue NFC card order and will continue with fulfilment.`,
+        shouldRedirect: true
+      };
+    }
+    if (status === "FAILED") {
+      return {
+        heading: "Payment not completed",
+        message: `Your ${providerName} payment was not completed successfully. You can try again from the purchase flow or contact support if the issue continues.`,
+        shouldRedirect: false
+      };
+    }
+    if (status === "CANCELLED") {
+      return {
+        heading: "Payment cancelled",
+        message: `The ${providerName} checkout was cancelled before payment was completed. Your order has not moved into production.`,
+        shouldRedirect: false
+      };
+    }
+    if (status === "EXPIRED") {
+      return {
+        heading: "Payment expired",
+        message: `The ${providerName} payment session expired before completion. Please start the payment step again when you're ready.`,
+        shouldRedirect: false
+      };
+    }
+    return {
+      heading: "Order awaiting payment",
+      message: `Your order is saved, but ${providerName} has not confirmed payment yet. If you already paid, the status may update shortly.`,
+      shouldRedirect: false
+    };
+  }
+
+  function parsePaymentReturnState() {
     const params = new URLSearchParams(window.location.search);
-    const invoice = params.get("m_payment_id") || "";
-    const paymentStatus = (params.get("payment_status") || "").toUpperCase();
+    const provider = String(params.get("provider") || "").trim().toLowerCase();
+
+    if (provider === "stitch" || params.has("externalReference") || (params.has("id") && params.has("status"))) {
+      return {
+        provider: "stitch",
+        params,
+        invoice: params.get("externalReference") || params.get("invoice") || "",
+        callbackStatus: params.get("status") || "",
+        stitchPaymentRequestId: params.get("id") || ""
+      };
+    }
+
+    const payfastInvoice = params.get("m_payment_id") || params.get("invoice") || "";
     const payfastPaymentId = params.get("pf_payment_id") || "";
-    if (!invoice && !payfastPaymentId && !paymentStatus) return null;
-    return { params, invoice, paymentStatus, payfastPaymentId };
+    const payfastStatus = params.get("payment_status") || params.get("payment") || "";
+    if (provider === "payfast" || payfastInvoice || payfastPaymentId || payfastStatus) {
+      return {
+        provider: "payfast",
+        params,
+        invoice: payfastInvoice,
+        paymentStatus: normalizePayFastStatus(payfastStatus),
+        payfastPaymentId
+      };
+    }
+
+    return null;
   }
 
-  function buildReturnUrl(basePath, paymentState) {
-    const u = new URL(basePath, window.location.origin);
-    if (paymentState) u.searchParams.set("payment", paymentState);
+  function buildPaymentReturnUrl(provider, params = {}) {
+    const safeProvider = provider === "stitch" ? "stitch" : "payfast";
+    const u = new URL("residue-private.html", window.location.origin);
+    u.searchParams.set("provider", safeProvider);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && String(value).trim()) {
+        u.searchParams.set(key, String(value));
+      }
+    });
     return u.toString();
   }
 
@@ -229,11 +355,30 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
   }
 
-  function getPayFastPublicConfig() {
+  async function getFunctionsRequestHeaders() {
+    const headers = {
+      apikey: cfg.SUPABASE_ANON_KEY || "",
+      Accept: "application/json"
+    };
+
+    if (supabase) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+    }
+
+    return headers;
+  }
+
+  function getPayFastPublicConfig(order) {
     const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
     return {
-      returnUrl: buildReturnUrl("residue-private.html", "success"),
-      cancelUrl: buildReturnUrl("residue-private.html", "cancelled"),
+      returnUrl: buildPaymentReturnUrl("payfast", { invoice: order?.invoice_no || "" }),
+      cancelUrl: buildPaymentReturnUrl("payfast", {
+        invoice: order?.invoice_no || "",
+        payment: "cancelled"
+      }),
       notifyUrl: functionsBaseUrl ? `${functionsBaseUrl}/payfast-notify` : ""
     };
   }
@@ -243,20 +388,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
     payFastCredentialsPromise = (async () => {
       if (!supabase) throw new Error("Supabase is not configured in js/env.js.");
-      const { data: { session } } = await supabase.auth.getSession();
 
       const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
       if (!functionsBaseUrl) {
         throw new Error("Could not determine the Supabase Functions URL.");
       }
 
-      const headers = {
-        apikey: cfg.SUPABASE_ANON_KEY || "",
-        Accept: "application/json"
-      };
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
+      const headers = await getFunctionsRequestHeaders();
 
       const response = await fetch(`${functionsBaseUrl}/payfast-config`, {
         method: "GET",
@@ -283,6 +421,62 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       payFastCredentialsPromise = null;
       throw error;
     }
+  }
+
+  async function createStitchPaymentRequest(order) {
+    const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
+    if (!functionsBaseUrl) {
+      throw new Error("Could not determine the Supabase Functions URL.");
+    }
+
+    const headers = await getFunctionsRequestHeaders();
+    headers["Content-Type"] = "application/json";
+
+    const response = await fetch(`${functionsBaseUrl}/stitch-payment-request`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        order,
+        redirectUrl: buildPaymentReturnUrl("stitch", { invoice: order.invoice_no })
+      })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error || payload?.detail || "Could not create the Stitch payment request.");
+    }
+
+    const redirectUrl = String(payload?.redirectUrl || "").trim();
+    const requestId = String(payload?.id || "").trim();
+    if (!redirectUrl || !requestId) {
+      throw new Error("Stitch payment setup is incomplete.");
+    }
+
+    return {
+      id: requestId,
+      redirectUrl,
+      status: String(payload?.status || "").trim()
+    };
+  }
+
+  async function getStitchPaymentStatus(requestId) {
+    const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
+    if (!functionsBaseUrl) {
+      throw new Error("Could not determine the Supabase Functions URL.");
+    }
+
+    const headers = await getFunctionsRequestHeaders();
+    const response = await fetch(`${functionsBaseUrl}/stitch-payment-status?id=${encodeURIComponent(requestId)}`, {
+      method: "GET",
+      headers
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error || payload?.detail || "Could not verify the Stitch payment status.");
+    }
+
+    return payload;
   }
 
   async function getAuthenticatedUser() {
@@ -327,16 +521,34 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   async function updateInvoiceStatus(invoiceNo, updates) {
     if (!supabase || !invoiceNo) return;
-    const { error } = await supabase
+    const payload = Object.fromEntries(
+      Object.entries({ ...updates, updated_at: new Date().toISOString() })
+        .filter(([, value]) => value !== undefined)
+    );
+
+    let { error } = await supabase
       .from(INVOICE_TABLE)
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq("invoice_no", invoiceNo);
+
+    if (error && /column .* does not exist/i.test(error.message || "")) {
+      const fallbackPayload = {
+        payment_provider: payload.payment_provider,
+        payment_status: payload.payment_status,
+        updated_at: payload.updated_at
+      };
+      ({ error } = await supabase
+        .from(INVOICE_TABLE)
+        .update(fallbackPayload)
+        .eq("invoice_no", invoiceNo));
+    }
+
     if (error) throw new Error(`Could not update invoice in Supabase: ${error.message}`);
   }
 
   async function configurePayFastForm(order) {
     const { merchantId, merchantKey } = await getPayFastCredentials();
-    const publicConfig = getPayFastPublicConfig();
+    const publicConfig = getPayFastPublicConfig(order);
     if (!publicConfig.notifyUrl) {
       throw new Error("PayFast notify URL could not be derived from SUPABASE_URL.");
     }
@@ -540,6 +752,14 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     sessionStorage.removeItem(PENDING_ORDER_KEY);
   }
 
+  function buildProviderOrder(order, provider) {
+    return {
+      ...order,
+      payment_provider: provider,
+      payment_status: "PENDING"
+    };
+  }
+
   async function onPurchaseClick() {
     const missing = requiredFieldErrors();
     if (missing.length > 0) {
@@ -600,7 +820,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       subtotal_amount: checkout.subtotal,
       shipping_amount: checkout.shipping,
       total_amount: checkout.total,
-      payment_provider: "payfast",
+      payment_provider: null,
       payment_status: "PENDING",
       shipping_name: shippingName,
       shipping_street: shippingStreet,
@@ -615,37 +835,39 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   async function proceedToPayFast(order) {
+    const payFastOrder = buildProviderOrder(order, "payfast");
     try {
       const sessionUser = await getAuthenticatedUser();
+      setPaymentProviderButtonsDisabled(true);
       setPayFastStatus("Saving invoice and preparing payment...", "loading");
       await saveCardConfiguration(sessionUser);
-      await upsertInvoice(order, sessionUser?.id || null);
+      await upsertInvoice(payFastOrder, sessionUser?.id || null);
       residueTelemetry.logPurchaseEvent({
         stage: "invoice_created",
         outcome: "success",
-        email: order.customer_email,
-        invoice_no: order.invoice_no,
-        order_ref: order.invoice_no,
-        payment_provider: order.payment_provider,
-        payment_status: order.payment_status,
-        amount_total: order.total_amount,
-        product: order.product,
-        quantity: order.quantity,
+        email: payFastOrder.customer_email,
+        invoice_no: payFastOrder.invoice_no,
+        order_ref: payFastOrder.invoice_no,
+        payment_provider: payFastOrder.payment_provider,
+        payment_status: payFastOrder.payment_status,
+        amount_total: payFastOrder.total_amount,
+        product: payFastOrder.product,
+        quantity: payFastOrder.quantity,
         detail: "Invoice inserted in Supabase."
       });
-      persistPending(order);
-      await configurePayFastForm(order);
+      persistPending(payFastOrder);
+      await configurePayFastForm(payFastOrder);
       residueTelemetry.logPurchaseEvent({
         stage: "redirect_payfast",
         outcome: "success",
-        email: order.customer_email,
-        invoice_no: order.invoice_no,
-        order_ref: order.invoice_no,
+        email: payFastOrder.customer_email,
+        invoice_no: payFastOrder.invoice_no,
+        order_ref: payFastOrder.invoice_no,
         payment_provider: "payfast",
         payment_status: "PENDING",
-        amount_total: order.total_amount,
-        product: order.product,
-        quantity: order.quantity,
+        amount_total: payFastOrder.total_amount,
+        product: payFastOrder.product,
+        quantity: payFastOrder.quantity,
         detail: "Redirecting user to PayFast."
       });
       setPayFastStatus("Redirecting to PayFast...", "success");
@@ -654,6 +876,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         els.payfastForm.submit();
       }, 250);
     } catch (err) {
+      setPaymentProviderButtonsDisabled(false);
       residueTelemetry.logPurchaseEvent({
         stage: "invoice_created",
         outcome: "failure",
@@ -664,17 +887,114 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
   }
 
-  async function handleReturnFromPayFast() {
-    const state = parseReturnState();
-    if (!state) return;
+  async function proceedToStitch(order) {
+    const stitchOrder = buildProviderOrder(order, "stitch");
 
+    try {
+      const sessionUser = await getAuthenticatedUser();
+      setPaymentProviderButtonsDisabled(true);
+      setPayFastStatus("Saving invoice and preparing Stitch checkout...", "loading");
+      await saveCardConfiguration(sessionUser);
+      await upsertInvoice(stitchOrder, sessionUser?.id || null);
+      residueTelemetry.logPurchaseEvent({
+        stage: "invoice_created",
+        outcome: "success",
+        email: stitchOrder.customer_email,
+        invoice_no: stitchOrder.invoice_no,
+        order_ref: stitchOrder.invoice_no,
+        payment_provider: stitchOrder.payment_provider,
+        payment_status: stitchOrder.payment_status,
+        amount_total: stitchOrder.total_amount,
+        product: stitchOrder.product,
+        quantity: stitchOrder.quantity,
+        detail: "Invoice inserted in Supabase."
+      });
+
+      const stitchRequest = await createStitchPaymentRequest(stitchOrder);
+      const pendingOrder = {
+        ...stitchOrder,
+        stitch_payment_request_id: stitchRequest.id
+      };
+      persistPending(pendingOrder);
+
+      await updateInvoiceStatus(stitchOrder.invoice_no, {
+        payment_provider: "stitch",
+        payment_status: "PENDING",
+        payment_reference: stitchRequest.id,
+        stitch_payment_request_id: stitchRequest.id,
+        payment_updated_at: new Date().toISOString()
+      });
+
+      residueTelemetry.logPurchaseEvent({
+        stage: "redirect_stitch",
+        outcome: "success",
+        email: stitchOrder.customer_email,
+        invoice_no: stitchOrder.invoice_no,
+        order_ref: stitchOrder.invoice_no,
+        payment_provider: "stitch",
+        payment_status: "PENDING",
+        amount_total: stitchOrder.total_amount,
+        product: stitchOrder.product,
+        quantity: stitchOrder.quantity,
+        detail: "Redirecting user to Stitch."
+      });
+
+      setPayFastStatus("Redirecting to Stitch...", "success");
+      setTimeout(() => {
+        closeModal(els.payfastConfirmModal);
+        window.location.assign(stitchRequest.redirectUrl);
+      }, 250);
+    } catch (err) {
+      setPaymentProviderButtonsDisabled(false);
+      residueTelemetry.logPurchaseEvent({
+        stage: "redirect_stitch",
+        outcome: "failure",
+        email: (els.email?.value || "").trim().toLowerCase(),
+        detail: err.message || "Could not start Stitch payment."
+      });
+      setPayFastStatus(err.message || "Could not start Stitch payment.", "error");
+    }
+  }
+
+  function renderPostPaymentSummary({ provider, status, invoice, pendingOrder }) {
+    const summary = buildPostPaymentMessage(status, provider);
+
+    if (els.thankYouHeading) {
+      els.thankYouHeading.textContent = summary.heading;
+    }
+    if (els.thankYouMessage) {
+      els.thankYouMessage.textContent = summary.message;
+    }
+    if (els.thankYouInvoice) {
+      els.thankYouInvoice.textContent = invoice || pendingOrder?.invoice_no || "Unknown";
+      if (els.thankYouInvoice.parentElement) {
+        els.thankYouInvoice.parentElement.hidden = false;
+      }
+    }
+    if (els.thankYouPaymentStatus) {
+      els.thankYouPaymentStatus.textContent = paymentStatusText(status, provider);
+      els.thankYouPaymentStatus.hidden = false;
+    }
+
+    if (summary.shouldRedirect) {
+      scheduleThankYouRedirect();
+    } else {
+      clearThankYouRedirect();
+      if (els.thankYouRedirectNote) {
+        els.thankYouRedirectNote.hidden = true;
+      }
+    }
+
+    openModal(els.thankYouModal);
+  }
+
+  async function handleReturnFromPayFast(state, pendingOrder) {
     const status = state.paymentStatus || "PENDING";
-    const invoice = state.invoice;
-    const pending = sessionStorage.getItem(PENDING_ORDER_KEY);
-    const pendingOrder = pending ? JSON.parse(pending) : null;
+    const invoice = state.invoice || pendingOrder?.invoice_no || "";
 
     try {
       await updateInvoiceStatus(invoice, {
+        payment_provider: "payfast",
         payment_status: status,
         payment_reference: state.payfastPaymentId || null,
         payment_updated_at: new Date().toISOString()
@@ -706,14 +1026,91 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       });
     }
 
-    if (els.thankYouInvoice) {
-      els.thankYouInvoice.textContent = invoice || pendingOrder?.invoice_no || "Unknown";
+    renderPostPaymentSummary({
+      provider: "payfast",
+      status,
+      invoice,
+      pendingOrder
+    });
+  }
+
+  async function handleReturnFromStitch(state, pendingOrder) {
+    const invoice = state.invoice || pendingOrder?.invoice_no || "";
+    let status = normalizeStitchCallbackStatus(state.callbackStatus);
+
+    try {
+      if (state.stitchPaymentRequestId) {
+        const stitchState = await getStitchPaymentStatus(state.stitchPaymentRequestId);
+        status = normalizeStitchRequestStatus(stitchState?.status || state.callbackStatus);
+      }
+
+      await updateInvoiceStatus(invoice, {
+        payment_provider: "stitch",
+        payment_status: status,
+        payment_reference: state.stitchPaymentRequestId || pendingOrder?.stitch_payment_request_id || null,
+        stitch_payment_request_id: state.stitchPaymentRequestId || pendingOrder?.stitch_payment_request_id || null,
+        payment_updated_at: new Date().toISOString()
+      });
+
+      residueTelemetry.logPurchaseEvent({
+        stage: "payment_return",
+        outcome: "success",
+        email: pendingOrder?.customer_email || null,
+        invoice_no: invoice || pendingOrder?.invoice_no || null,
+        order_ref: invoice || pendingOrder?.invoice_no || null,
+        payment_provider: "stitch",
+        payment_status: status || "PENDING",
+        amount_total: pendingOrder?.total_amount ?? null,
+        product: pendingOrder?.product ?? null,
+        quantity: pendingOrder?.quantity ?? null,
+        detail: "Processed Stitch return state."
+      });
+    } catch (err) {
+      console.error(err);
+      residueTelemetry.logPurchaseEvent({
+        stage: "payment_return",
+        outcome: "failure",
+        email: pendingOrder?.customer_email || null,
+        invoice_no: invoice || pendingOrder?.invoice_no || null,
+        order_ref: invoice || pendingOrder?.invoice_no || null,
+        payment_provider: "stitch",
+        payment_status: status || "PENDING",
+        detail: err.message || "Could not verify/update Stitch payment state."
+      });
     }
-    if (els.thankYouPaymentStatus) {
-      els.thankYouPaymentStatus.textContent = paymentStatusText(status);
+
+    renderPostPaymentSummary({
+      provider: "stitch",
+      status,
+      invoice,
+      pendingOrder
+    });
+  }
+
+  async function handlePaymentReturn() {
+    const state = parsePaymentReturnState();
+    if (!state) return;
+
+    const pending = sessionStorage.getItem(PENDING_ORDER_KEY);
+    let pendingOrder = null;
+    if (pending) {
+      try {
+        pendingOrder = JSON.parse(pending);
+      } catch {
+        pendingOrder = null;
+      }
     }
-    openModal(els.thankYouModal);
+
+    if (state.provider === "stitch") {
+      await handleReturnFromStitch(state, pendingOrder);
+    } else {
+      await handleReturnFromPayFast(state, pendingOrder);
+    }
+
     clearPending();
+    if (window.history?.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 
   function wireModalClose() {
@@ -738,6 +1135,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         closeModal(els.termsModal);
         return;
       }
+      setPaymentProviderButtonsDisabled(false);
+      setPayFastStatus("");
       showPurchaseStep(els.payfastConfirmModal, els.termsModal);
     });
     els.termsModal?.addEventListener("click", (e) => {
@@ -745,11 +1144,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     });
 
     const dismissPayFastConfirm = () => {
+      setPaymentProviderButtonsDisabled(false);
       closeModal(els.payfastConfirmModal);
     };
 
     els.payfastConfirmClose?.addEventListener("click", dismissPayFastConfirm);
     els.payfastBackBtn?.addEventListener("click", () => {
+      setPaymentProviderButtonsDisabled(false);
       closeModal(els.payfastConfirmModal);
       openModal(els.termsModal);
     });
@@ -759,6 +1160,16 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         return;
       }
       await proceedToPayFast(pendingTermsOrder);
+      if (!els.payfastConfirmStatus?.classList.contains("error")) {
+        pendingTermsOrder = null;
+      }
+    });
+    els.stitchContinueBtn?.addEventListener("click", async () => {
+      if (!pendingTermsOrder) {
+        dismissPayFastConfirm();
+        return;
+      }
+      await proceedToStitch(pendingTermsOrder);
       if (!els.payfastConfirmStatus?.classList.contains("error")) {
         pendingTermsOrder = null;
       }
@@ -787,6 +1198,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     els.shippingNextBtn?.addEventListener("click", onShippingNextClick);
     els.quantity?.addEventListener("input", updatePriceDisplay);
     els.redirectBtn?.addEventListener("click", () => {
+      clearThankYouRedirect();
       window.location.href = "index.html";
     });
   }
@@ -795,6 +1207,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     wireEvents();
     updateCustomLogoFileName();
     updatePriceDisplay();
-    await handleReturnFromPayFast();
+    await handlePaymentReturn();
   });
 })();
