@@ -245,7 +245,7 @@
             <p>Orders containing custom card production or personalized branding may not be refundable once manufacturing has started, except where required by law.</p>
             <p>Shipping timelines are estimates and may be affected by courier delays, customs handling, or events outside Residue's control.</p>
             <p>Residue reserves the right to cancel, pause, or refuse fulfillment where fraud, abuse, payment failure, unauthorized branding, or invalid shipping information is detected.</p>
-            <p>Proceeding to PayFast means you agree to these terms and consent to Residue storing the relevant purchase, shipping, and card configuration data needed to fulfill your order.</p>
+            <p>Proceeding to payment means you agree to these terms and consent to Residue storing the relevant purchase, shipping, and card configuration data needed to fulfill your order.</p>
           </div>
           <div class="terms-actions">
             <button id="terms-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
@@ -258,7 +258,7 @@
 
     <div id="payfast-confirm-modal" class="pay-modal hidden" aria-hidden="true">
       <div class="modal-content terms-modal-content">
-        <button class="close-btn" aria-label="Close PayFast step">&times;</button>
+        <button class="close-btn" aria-label="Close payment provider step">&times;</button>
         <div class="stack" style="gap:16px;">
           <div class="purchase-step-indicator" aria-label="Purchase flow step 4 of 4">
             <span class="purchase-step is-complete">1</span>
@@ -269,7 +269,7 @@
             <span class="purchase-step-line is-complete" aria-hidden="true"></span>
             <span class="purchase-step is-active" aria-current="step">4</span>
           </div>
-          <h3 class="terms-title">Secure Payment</h3>
+          <h3 class="terms-title">RESIDUE</h3>
           <div class="status configure-status" id="payfast-confirm-status" aria-live="polite" hidden></div>
           <div class="order-summary">
             <div class="summary-line">
@@ -285,13 +285,45 @@
               <span id="payfast-total">R120</span>
             </div>
           </div>
+
+          <p class="payment-provider-intro">Choose your preferred payment provider.</p>
+
+          <!-- PAYMENT PROVIDER OPTIONS START -->
+          <div class="payment-provider-grid" aria-label="Payment providers">
+            <button id="payfast-continue-btn" class="payment-provider-card payment-provider-card-payfast" type="button">
+              <div class="payment-provider-media">
+                <img
+                  class="payment-provider-image"
+                  src="images/payment-providers/payfast-logo.jpg"
+                  alt="PayFast provider logo"
+                  loading="lazy"
+                  decoding="async"
+                >
+              </div>
+            </button>
+
+            <!-- STITCH PAYMENT OPTION START -->
+            <button id="stitch-continue-btn" class="payment-provider-card payment-provider-card-stitch" type="button">
+              <div class="payment-provider-media">
+                <img
+                  class="payment-provider-image"
+                  src="images/payment-providers/stitch-express-logo.png"
+                  alt="Stitch provider logo"
+                  loading="lazy"
+                  decoding="async"
+                >
+              </div>
+            </button>
+            <!-- STITCH PAYMENT OPTION END -->
+          </div>
+          <!-- PAYMENT PROVIDER OPTIONS END -->
+
           <p class="muted">
-            We make use of PayFast for secure payments.<br>
-            By proceeding with the payment you will be redirected PayFast.
+            Choose a payment provider to complete your order securely.<br>
+            After payment you will be redirected back to Residue with a confirmation message.
           </p>
           <div class="purchase-modal-actions">
             <button id="payfast-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
-            <button id="payfast-continue-btn" class="btn btn-outline premium-btn" type="button">Proceed to PayFast</button>
           </div>
         </div>
       </div>
@@ -323,11 +355,14 @@
       <div class="modal-content" style="text-align:center;">
         <div class="stack" style="gap:20px;">
           <div class="eyebrow premium">Thank You!</div>
-          <h2 style="margin:0; color:var(--accent-premium);">Your order is being processed</h2>
-          <p class="muted">We are currently processing your order. You can expect the delivery of your Residue NFC card within <strong>5-7 business days</strong>. Thank you for your purchase.</p>
+          <!-- POST PAYMENT MESSAGE START -->
+          <h2 id="thank-you-heading" style="margin:0; color:var(--accent-premium);">Your order is being processed</h2>
+          <p class="muted" id="thank-you-message">We are currently processing your order. You can expect the delivery of your Residue NFC card within <strong>5-7 business days</strong>. Thank you for your purchase.</p>
+          <!-- POST PAYMENT MESSAGE END -->
           <p class="muted small" hidden>Invoice: <strong id="thank-you-invoice">Pending</strong></p>
           <p class="muted small" id="thank-you-payment-status" hidden>Waiting for payment confirmation.</p>
-          <button id="redirect-btn" class="btn btn-outline premium-btn" type="button">Exit</button>
+          <p class="muted small" id="thank-you-redirect-note" hidden>Redirecting you shortly.</p>
+          <button id="redirect-btn" class="btn btn-outline premium-btn" type="button">Return Home</button>
         </div>
       </div>
     </div>
