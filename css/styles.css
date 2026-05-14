@@ -3579,34 +3579,47 @@ body.private-page {
   position: relative;
   min-width: 0;
   width: 100%;
+  display: block;
 }
 
 .password-reveal-field input {
-  padding-right: 52px;
+  padding-right: 64px;
+}
+
+.modal-form .password-reveal-field {
+  margin-top: 8px;
+}
+
+.modal-form .password-reveal-field input {
+  margin-top: 0;
 }
 
 .password-reveal-toggle {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 10px;
   transform: translateY(-50%);
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  border: 1px solid rgba(216,176,122,0.42);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.04);
-  color: var(--muted);
+  border: 1px solid rgba(216,176,122,0.58);
+  border-radius: 10px;
+  background: rgba(8, 8, 10, 0.82);
+  color: rgba(255,255,255,0.86);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.14),
+    inset 0 1px 0 rgba(255,255,255,0.06);
   cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
 }
 
 .password-reveal-toggle svg {
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -3616,9 +3629,9 @@ body.private-page {
 
 .password-reveal-toggle:hover,
 .password-reveal-toggle:focus-visible {
-  border-color: rgba(216,176,122,0.78);
+  border-color: rgba(216,176,122,0.9);
   color: var(--text);
-  background: rgba(216,176,122,0.08);
+  background: rgba(18, 18, 22, 0.94);
   outline: none;
 }
 

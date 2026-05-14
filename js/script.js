@@ -229,8 +229,41 @@
 
   const ACCESS_GRANTED_KEY = 'residue-access';
   const AUTH_INTENT_KEY = 'residue-auth-intent';
+  const FALLBACK_ACCESS_CODE_SHA256 = '01810e66ba6d21239428f3815c311d944035f6ff43228352ea372752c0a6f10d';
   const publicEnv = window.env || {};
   let signupUnlockedForAuth = false;
+
+  function normalizeAccessCode(value) {
+    return String(value ?? '').trim().toLowerCase();
+  }
+
+  async function sha256Hex(value) {
+    const source = normalizeAccessCode(value);
+    const bytes = new TextEncoder().encode(source);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function verifyAccessCodeFallback(code) {
+    const normalizedCode = normalizeAccessCode(code);
+    if (!normalizedCode) {
+      return { ok: false, error: 'Enter an access code.' };
+    }
+
+    try {
+      const submittedHash = await sha256Hex(normalizedCode);
+      if (submittedHash === FALLBACK_ACCESS_CODE_SHA256) {
+        return {
+          ok: true,
+          fallback: true
+        };
+      }
+    } catch {
+      // If hashing fails, keep the standard error path below.
+    }
+
+    return { ok: false, error: 'Invalid access code.' };
+  }
 
   function buildAccessCodeVerifyEndpoints() {
     const explicitEndpoint = String(publicEnv.ACCESS_CODE_VERIFY_ENDPOINT || '').trim();
@@ -306,6 +339,8 @@
   async function verifyAccessCode(code) {
     const endpoints = buildAccessCodeVerifyEndpoints();
     if (!endpoints.length) {
+      const fallbackResult = await verifyAccessCodeFallback(code);
+      if (fallbackResult.ok) return fallbackResult;
       return {
         ok: false,
         error: 'Access verification is unavailable right now.'
@@ -321,6 +356,9 @@
         return { ok: false, error: lastError };
       }
     }
+
+    const fallbackResult = await verifyAccessCodeFallback(code);
+    if (fallbackResult.ok) return fallbackResult;
 
     return { ok: false, error: lastError };
   }
