@@ -76,6 +76,23 @@
       </div>
     </section>
 
+    <div class="modal" id="signupAccessPrompt" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="signupAccessPromptTitle" aria-describedby="signupAccessPromptText">
+      <div class="modal-backdrop" data-close-signup-access></div>
+
+      <div class="modal-panel" role="document">
+        <button class="modal-close" type="button" aria-label="Close" data-close-signup-access>&times;</button>
+
+        <div style="position: relative; z-index: 1; display: grid; gap: 12px;">
+          <h3 id="signupAccessPromptTitle" style="margin: 0;">Please enter your access code.</h3>
+          <p class="muted" id="signupAccessPromptText" style="margin: 0;">If you do not have an access code, you can request one.</p>
+
+          <div class="modal-actions" style="margin-top: 4px;">
+            <button class="btn" type="button" data-close-signup-access>Continue</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- AUTH MODAL (Log in / Sign up) -->
     <div class="modal" id="authModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <div class="modal-backdrop" data-close></div>
@@ -135,6 +152,12 @@
       </div>
     </div>
 
+    <section>
+        <div class="stack" style="align-items:center; text-align:center; margin-top: 48px;">
+          <h2 class="h2" style="margin: 0;">Don't have an access code?</h2>
+          <p class="muted" style="margin: 0;">Request access and we'll get back to you.</p>
+        </div>
+    </section>
 
     <!--REQUEST ACCESS CODE GENERTED BY US-->
     <section class="panel reveal section-tight" style="margin-top: 28px;" id="request-access">
@@ -167,6 +190,14 @@
 
   <footer>
     <div class="container footer-meta">
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="configuration.html">Configuration</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="footer-divider" aria-hidden="true"></div>
       <span class="footer-copy">RESIDUE. Leave your mark.</span>
     </div>
   </footer>

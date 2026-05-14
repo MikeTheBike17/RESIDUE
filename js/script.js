@@ -634,6 +634,7 @@
       el.hidden = !show;
     }
 
+    const signupAccessPrompt = $("#signupAccessPrompt");
     const modal = $("#authModal");
     const title = $("#authTitle");
     const subtitle = $("#authSubtitle");
@@ -646,6 +647,29 @@
 
     const signinStatus = $("#signinStatus");
     const createStatus = $("#createStatus");
+
+    function focusAccessCodeField(delay = prefersReducedMotion ? 0 : 60) {
+      window.setTimeout(() => {
+        $("#access-code")?.focus();
+      }, delay);
+    }
+
+    function openSignupAccessPrompt() {
+      if (!signupAccessPrompt) return;
+      signupAccessPrompt.classList.add("is-open");
+      signupAccessPrompt.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeSignupAccessPrompt({ focusCode = true } = {}) {
+      if (!signupAccessPrompt) return;
+      signupAccessPrompt.classList.remove("is-open");
+      signupAccessPrompt.setAttribute("aria-hidden", "true");
+      if (!modal?.classList.contains("is-open")) {
+        document.body.style.overflow = "";
+      }
+      if (focusCode) focusAccessCodeField();
+    }
 
     function openAuthModal(defaultMode = "signin") {
       if (!modal) return;
@@ -670,9 +694,7 @@
       closeAuthModal();
       const target = gateForm?.closest("section") || gateForm;
       target?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
-      window.setTimeout(() => {
-        $("#access-code")?.focus();
-      }, prefersReducedMotion ? 0 : 220);
+      focusAccessCodeField(prefersReducedMotion ? 0 : 220);
     }
 
     // expose so your access gate can call it
@@ -680,12 +702,19 @@
 
     // close handlers
     modal?.querySelectorAll("[data-close]")?.forEach(el => el.addEventListener("click", closeAuthModal));
+    signupAccessPrompt?.querySelectorAll("[data-close-signup-access]")?.forEach(el => {
+      el.addEventListener("click", () => closeSignupAccessPrompt());
+    });
     document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && signupAccessPrompt?.classList.contains("is-open")) {
+        closeSignupAccessPrompt();
+      }
       if (e.key === "Escape" && modal?.classList.contains("is-open")) closeAuthModal();
     });
 
     // force closed on load
     if (modal) closeAuthModal();
+    if (signupAccessPrompt) closeSignupAccessPrompt({ focusCode: false });
 
     function setMode(mode) {
       const isSignin = mode === "signin";
@@ -739,6 +768,13 @@
       setTimeout(() => {
         openAuthModal(requestedAuthMode || 'signin');
         clearPendingAuthMode();
+      }, 80);
+    }
+
+    if (signupAccessPrompt && isAccessPage && requestedAuthIntent === 'signup') {
+      setTimeout(() => {
+        openSignupAccessPrompt();
+        clearAuthIntentFromUrl();
       }, 80);
     }
 
@@ -939,7 +975,7 @@
     let current = 0;
     const total = slides.length;
     let autoTimer = null;
-    const interval = 4000;
+    const interval = 5500;
     let swipeStartX = 0;
     let swipeStartY = 0;
     let swipePointerId = null;
