@@ -20,7 +20,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
   const els = {
+    checkoutFlowCard: qs("#checkout-flow-card"),
     configureForm: qs(".configure-form"),
+    checkoutStagePanels: qsa("[data-checkout-stage]"),
     fullName: qs("#full-name"),
     customerTitle: qs("#customer-title"),
     email: qs("#email-config"),
@@ -36,6 +38,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     configurePrice: qs("#configure-price"),
     configurePriceNote: qs("#configure-price-note"),
     purchaseBtn: qs("#purchase-btn"),
+    continueToDeliveryButtons: qsa('[data-checkout-continue="delivery"]'),
     validationModal: qs("#validation-modal"),
     missingFields: qs("#missing-fields-list"),
     validationClose: qs("#validation-close-btn"),
@@ -54,6 +57,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     shippingCity: qs("#shipping-city"),
     shippingProvince: qs("#shipping-province"),
     shippingPostal: qs("#shipping-postal"),
+    shippingBackBtn: qs("#shipping-back-btn"),
     shippingNextBtn: qs("#shipping-next-btn"),
     payfastStatus: qs("#payfast-status"),
     payfastConfirmStatus: qs("#payfast-confirm-status"),
@@ -65,6 +69,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     payfastBackBtn: qs("#payfast-back-btn"),
     payfastContinueBtn: qs("#payfast-continue-btn"),
     stitchContinueBtn: qs("#stitch-continue-btn"),
+    paymentProviderButtons: qsa("[data-payment-provider]"),
     payfastForm: qs("#payfast-form"),
     thankYouModal: qs("#thank-you-modal"),
     thankYouHeading: qs("#thank-you-heading"),
@@ -73,7 +78,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     thankYouPaymentStatus: qs("#thank-you-payment-status"),
     thankYouRedirectNote: qs("#thank-you-redirect-note"),
     redirectBtn: qs("#redirect-btn"),
-    termsBackBtn: qs("#terms-back-btn")
+    termsBackBtn: qs("#terms-back-btn"),
+    checkoutStepItems: qsa("[data-checkout-step]"),
+    checkoutStepLines: qsa(".checkout-stepper-line"),
+    summaryPreviewImage: qs("#summary-preview-image"),
+    summaryCardType: qs("#summary-card-type"),
+    summaryCardDetail: qs("#summary-card-detail"),
+    summaryQuantity: qs("#summary-quantity")
   };
 
   const pfFields = {
@@ -102,6 +113,10 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   let pendingTermsOrder = null;
   let payFastCredentialsPromise = null;
   let thankYouRedirectTimer = null;
+  let currentCheckoutStage = 1;
+  let termsAccepted = false;
+  let summaryShippingUnlocked = false;
+  let selectedPaymentProvider = "";
 
   function setStatus(el, message, type = "") {
     if (!el) return;
@@ -116,10 +131,27 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     setStatus(els.payfastConfirmStatus, message, type);
   }
 
+  function sidebarShippingAmount() {
+    return summaryShippingUnlocked ? SHIPPING_FEE : 0;
+  }
+
   function setPaymentProviderButtonsDisabled(disabled) {
     if (els.payfastContinueBtn) els.payfastContinueBtn.disabled = disabled;
     if (els.stitchContinueBtn) els.stitchContinueBtn.disabled = disabled;
     if (els.payfastBackBtn) els.payfastBackBtn.disabled = disabled;
+    if (els.purchaseBtn) els.purchaseBtn.disabled = Boolean(disabled && currentCheckoutStage === 4);
+  }
+
+  function setSelectedPaymentProvider(provider = "") {
+    const normalized = provider === "stitch" ? "stitch" : provider === "payfast" ? "payfast" : "";
+    selectedPaymentProvider = normalized;
+    els.paymentProviderButtons.forEach((button) => {
+      const isSelected = button.getAttribute("data-payment-provider") === normalized;
+      button.classList.toggle("is-selected", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+    });
+    if (normalized) setPayFastStatus("");
+    updatePurchaseButtonLabel();
   }
 
   function clearThankYouRedirect() {
@@ -142,17 +174,155 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   function openModal(el) {
     if (!el) return;
+    if (el.hasAttribute?.("data-checkout-stage")) {
+      el.classList.remove("hidden");
+      el.setAttribute("aria-hidden", "false");
+      return;
+    }
     el.classList.remove("hidden");
     el.setAttribute("aria-hidden", "false");
   }
 
   function closeModal(el) {
     if (!el) return;
+    if (el.hasAttribute?.("data-checkout-stage")) {
+      el.classList.add("hidden");
+      el.setAttribute("aria-hidden", "true");
+      return;
+    }
     el.classList.add("hidden");
     el.setAttribute("aria-hidden", "true");
   }
 
+  function checkoutStageFor(el) {
+    return Number(el?.getAttribute?.("data-checkout-stage") || 1);
+  }
+
+  function checkoutStageSections() {
+    return els.checkoutStagePanels.filter(Boolean);
+  }
+
+  function mainFieldErrors() {
+    const missing = [];
+    const requiredMain = qsa("[required]", els.configureForm || document);
+    requiredMain.forEach((input) => {
+      if (!input.value.trim()) {
+        const label = qs(`label[for="${input.id}"]`);
+        missing.push(label ? label.textContent.trim() : input.id);
+      }
+    });
+    const { qty } = getCheckoutData();
+    if (qty <= 0) missing.push("Quantity (must be greater than 0)");
+    if (!activeCardType) missing.push("Select a card type");
+    if (standardCardsEnabled() && !selectedCardConfiguration) missing.push("Select a card configuration");
+    if (customLogoEnabled() && !els.customLogoFile?.files?.length) missing.push("Upload custom logo image");
+    return missing;
+  }
+
+  function shippingFieldErrors() {
+    const missing = [];
+    [
+      els.shippingName,
+      els.shippingStreet,
+      els.shippingSuburb,
+      els.shippingCity,
+      els.shippingProvince,
+      els.shippingPostal
+    ].forEach((input) => {
+      if (!input) return;
+      if ((input.value || "").trim()) return;
+      const label = qs(`label[for="${input.id}"]`);
+      missing.push(label ? label.textContent.trim() : input.id);
+    });
+    return missing;
+  }
+
+  function showValidationModal(missing) {
+    if (!els.missingFields) return;
+    els.missingFields.innerHTML = missing
+      .map((field) => `<div style="padding:4px 0; color:var(--muted);">&bull; ${field}</div>`)
+      .join("");
+    openModal(els.validationModal);
+  }
+
+  function canAccessStage(step) {
+    if (step <= 1) return true;
+    if (mainFieldErrors().length > 0) return false;
+    if (step === 2) return true;
+    if (shippingFieldErrors().length > 0) return false;
+    if (step === 3) return true;
+    return termsAccepted;
+  }
+
+  function invalidateStageProgress(fromStage) {
+    if (fromStage <= 3) {
+      pendingTermsOrder = null;
+      termsAccepted = false;
+      setPaymentProviderButtonsDisabled(false);
+      setPayFastStatus("");
+    }
+
+    if (fromStage <= 2 && currentCheckoutStage > 2) {
+      updateCheckoutStage(2);
+      return;
+    }
+
+    if (fromStage <= 3 && currentCheckoutStage > 3) {
+      updateCheckoutStage(3);
+      return;
+    }
+
+    updateCheckoutStage(currentCheckoutStage);
+  }
+
+  function updateCheckoutStage(stage = 1, { scroll = false } = {}) {
+    currentCheckoutStage = Math.max(1, Math.min(4, Number(stage) || 1));
+
+    checkoutStageSections().forEach(panel => {
+      const visible = currentCheckoutStage === checkoutStageFor(panel);
+      panel.classList.toggle("hidden", !visible);
+      panel.setAttribute("aria-hidden", String(!visible));
+    });
+
+    els.checkoutStepItems.forEach(item => {
+      const step = Number(item.getAttribute("data-checkout-step") || 0);
+      const bubble = item.querySelector(".purchase-step");
+      const isActive = step === currentCheckoutStage;
+      const isComplete = step < currentCheckoutStage;
+      const isLocked = !isComplete && !isActive && !canAccessStage(step);
+      item.classList.toggle("is-active", isActive);
+      item.classList.toggle("is-complete", isComplete);
+      item.classList.toggle("is-locked", isLocked);
+      item.setAttribute("aria-disabled", String(isLocked));
+      if (bubble) {
+        bubble.classList.toggle("is-active", isActive);
+        bubble.classList.toggle("is-complete", isComplete);
+        if (isActive) bubble.setAttribute("aria-current", "step");
+        else bubble.removeAttribute("aria-current");
+      }
+      if (isActive) item.setAttribute("aria-current", "step");
+      else item.removeAttribute("aria-current");
+    });
+
+    els.checkoutStepLines.forEach((line, index) => {
+      line.classList.toggle("is-complete", index < currentCheckoutStage - 1);
+    });
+
+    updatePurchaseButtonLabel();
+
+    if (scroll) {
+      const target = els.checkoutFlowCard
+        || checkoutStageSections().find(panel => checkoutStageFor(panel) === currentCheckoutStage)
+        || els.configureForm;
+      target?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    }
+  }
+
   function showPurchaseStep(nextModal, previousModal = null) {
+    if (nextModal?.hasAttribute?.("data-checkout-stage")) {
+      updateCheckoutStage(checkoutStageFor(nextModal), { scroll: true });
+      return;
+    }
     if (previousModal) closeModal(previousModal);
     openModal(nextModal);
   }
@@ -188,22 +358,94 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return `Card configuration ${configNumber || ""}`.trim();
   }
 
-  function updatePurchaseButtonLabel() {
-    if (!els.purchaseBtn) return;
+  function selectedCardPreviewSource() {
+    if (customLogoEnabled()) return customLogoDataUrl || "images/card-images/card-front-custom.jpg";
+    if (standardCardsEnabled() && selectedCardConfiguration) {
+      return `images/card-images/card-front-${selectedCardConfiguration}.jpg`;
+    }
+    return "images/card-images/card-front-1.jpg";
+  }
 
-    let label = "Purchase Now";
+  function updateCheckoutSummary() {
+    const checkout = getCheckoutData();
+    let typeLabel = "Awaiting selection";
+    let detailLabel = "Choose a card type to personalise your order.";
 
-    if (standardCardsEnabled()) {
-      label = selectedCardConfiguration
-        ? `Purchase Now - Card Type ${selectedCardConfiguration}`
-        : "Purchase Now - Select Card Type";
-    } else if (customLogoEnabled()) {
-      label = els.customLogoFile?.files?.length
-        ? "Purchase Now - Custom Logo"
-        : "Purchase Now - Insert Logo Image";
+    if (customLogoEnabled()) {
+      typeLabel = "Custom company logo card";
+      detailLabel = customLogoMeta?.name
+        ? `Logo file: ${customLogoMeta.name}`
+        : "Upload your logo to complete the custom card.";
+    } else if (standardCardsEnabled() && selectedCardConfiguration) {
+      typeLabel = `Residue Card Type ${selectedCardConfiguration}`;
+      detailLabel = configurationLabel(selectedCardConfiguration);
+    } else if (standardCardsEnabled()) {
+      typeLabel = "Standard Residue card";
+      detailLabel = "Choose one of the three Residue layouts.";
     }
 
-    els.purchaseBtn.textContent = label;
+    if (els.summaryPreviewImage) {
+      els.summaryPreviewImage.src = selectedCardPreviewSource();
+      els.summaryPreviewImage.alt = `${typeLabel} preview`;
+    }
+    if (els.summaryCardType) els.summaryCardType.textContent = typeLabel;
+    if (els.summaryCardDetail) els.summaryCardDetail.textContent = detailLabel;
+    if (els.summaryQuantity) els.summaryQuantity.textContent = String(checkout.qty || 0);
+  }
+
+  function updatePurchaseButtonLabel() {
+    if (!els.continueToDeliveryButtons.length) return;
+
+    let label = "Continue to Delivery";
+
+    if (currentCheckoutStage === 2) {
+      label = "Continue to Review & Terms";
+    } else if (currentCheckoutStage === 3) {
+      label = "Review Terms Below";
+    } else if (currentCheckoutStage === 4) {
+      label = selectedPaymentProvider ? "Pay Now" : "Choose a Payment Provider";
+    } else if (standardCardsEnabled()) {
+      label = selectedCardConfiguration
+        ? `Continue to Delivery - Card Type ${selectedCardConfiguration}`
+        : "Continue to Delivery - Select Card Type";
+    } else if (customLogoEnabled()) {
+      label = els.customLogoFile?.files?.length
+        ? "Continue to Delivery - Custom Logo"
+        : "Continue to Delivery - Insert Logo Image";
+    }
+
+    els.continueToDeliveryButtons.forEach((button) => {
+      button.textContent = label;
+    });
+  }
+
+  function buildPendingTermsOrder() {
+    const checkout = getCheckoutData();
+    return {
+      invoice_no: generateInvoiceNo(),
+      customer_name: (els.fullName?.value || "").trim(),
+      customer_title: (els.customerTitle?.value || "").trim(),
+      customer_email: (els.email?.value || "").trim().toLowerCase(),
+      customer_phone: (els.phone?.value || "").trim(),
+      product: customLogoEnabled() ? "custom-company-logo-card" : `card-configuration-${selectedCardConfiguration}`,
+      card_configuration: standardCardsEnabled() ? selectedCardConfiguration : null,
+      custom_logo_requested: customLogoEnabled(),
+      custom_logo_file_name: customLogoMeta?.name || null,
+      quantity: checkout.qty,
+      unit_price: checkout.perItem,
+      subtotal_amount: checkout.subtotal,
+      shipping_amount: checkout.shipping,
+      total_amount: checkout.total,
+      payment_provider: null,
+      payment_status: "PENDING",
+      shipping_name: (els.shippingName?.value || "").trim(),
+      shipping_street: (els.shippingStreet?.value || "").trim(),
+      shipping_suburb: (els.shippingSuburb?.value || "").trim(),
+      shipping_city: (els.shippingCity?.value || "").trim(),
+      shipping_province: (els.shippingProvince?.value || "").trim(),
+      shipping_postal: (els.shippingPostal?.value || "").trim(),
+      created_at: new Date().toISOString()
+    };
   }
 
   function splitName(fullName) {
@@ -585,29 +827,27 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function requiredFieldErrors() {
-    const missing = [];
-    const requiredMain = qsa("[required]", els.configureForm || document);
-    requiredMain.forEach((input) => {
-      if (!input.value.trim()) {
-        const label = qs(`label[for="${input.id}"]`);
-        missing.push(label ? label.textContent.trim() : input.id);
-      }
-    });
-    const { qty } = getCheckoutData();
-    if (qty <= 0) missing.push("Quantity (must be greater than 0)");
-    if (!activeCardType) missing.push("Select a card type");
-    if (standardCardsEnabled() && !selectedCardConfiguration) missing.push("Select a card configuration");
-    if (customLogoEnabled() && !els.customLogoFile?.files?.length) missing.push("Upload custom logo image");
-    return missing;
+    return mainFieldErrors();
   }
 
-  function setSummaryDisplay(subtotal, shipping, total) {
+  function setSidebarSummaryDisplay(subtotal) {
+    const shipping = sidebarShippingAmount();
+    const total = subtotal + shipping;
     if (els.subtotal) els.subtotal.textContent = formatCurrency(subtotal);
     if (els.shipping) els.shipping.textContent = formatCurrency(shipping);
     if (els.total) els.total.textContent = formatCurrency(total);
+  }
+
+  function setPaymentSummaryDisplay(subtotal, shipping, total) {
     if (els.payfastSubtotal) els.payfastSubtotal.textContent = formatCurrency(subtotal);
     if (els.payfastShipping) els.payfastShipping.textContent = formatCurrency(shipping);
     if (els.payfastTotal) els.payfastTotal.textContent = formatCurrency(total);
+  }
+
+  function unlockSidebarShippingSummary() {
+    if (summaryShippingUnlocked) return;
+    summaryShippingUnlocked = true;
+    setSidebarSummaryDisplay(getCheckoutData().subtotal);
   }
 
   function updatePriceDisplay() {
@@ -618,14 +858,14 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (els.configurePriceNote) {
       if (!activeCardType || checkout.qty <= 0 || (standardCardsEnabled() && !selectedCardConfiguration)) {
         els.configurePriceNote.textContent = "Select a quantity and card type.";
-        return;
-      }
-      if (customLogoEnabled()) {
+      } else if (customLogoEnabled()) {
         els.configurePriceNote.textContent = `${checkout.qty} custom card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each. Includes custom logo at ${formatCurrency(checkout.logoFee)} per card.`;
-        return;
+      } else {
+        els.configurePriceNote.textContent = `${checkout.qty} card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each.`;
       }
-      els.configurePriceNote.textContent = `${checkout.qty} card${checkout.qty === 1 ? "" : "s"} at ${formatCurrency(checkout.perItem)} each.`;
     }
+    setSidebarSummaryDisplay(checkout.subtotal);
+    updateCheckoutSummary();
     updatePurchaseButtonLabel();
   }
 
@@ -640,6 +880,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         option.setAttribute("aria-pressed", "true");
         selectedCardConfiguration = Number(option.getAttribute("data-card-config")) || null;
         updatePriceDisplay();
+        invalidateStageProgress(2);
       });
     });
   }
@@ -647,6 +888,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function updateCustomLogoFileName() {
     if (!els.customLogoFileName) return;
     els.customLogoFileName.textContent = els.customLogoFile?.files?.[0]?.name || "No logo selected.";
+    updateCheckoutSummary();
     updatePurchaseButtonLabel();
   }
 
@@ -658,6 +900,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (els.standardCardPanel) els.standardCardPanel.hidden = type !== "standard";
     if (els.customLogoPanel) els.customLogoPanel.hidden = type !== "custom";
     updatePriceDisplay();
+    invalidateStageProgress(2);
   }
 
   function resetCardTypeSelection() {
@@ -668,6 +911,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (els.standardCardPanel) els.standardCardPanel.hidden = true;
     if (els.customLogoPanel) els.customLogoPanel.hidden = true;
     updatePriceDisplay();
+    invalidateStageProgress(2);
   }
 
   function wireCardTypeToggle() {
@@ -683,6 +927,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         customLogoDataUrl = "";
         customLogoMeta = null;
         updateCustomLogoFileName();
+        invalidateStageProgress(2);
         return;
       }
       if (!(file.type || "").startsWith("image/")) {
@@ -691,11 +936,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         customLogoDataUrl = "";
         customLogoMeta = null;
         updateCustomLogoFileName();
+        invalidateStageProgress(2);
         return;
       }
       customLogoMeta = { name: file.name, type: file.type || "", size: file.size || 0 };
       customLogoDataUrl = await readFileAsDataUrl(file);
       updateCustomLogoFileName();
+      invalidateStageProgress(2);
     });
 
   }
@@ -758,7 +1005,45 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     };
   }
 
+  async function proceedWithSelectedProvider() {
+    if (!pendingTermsOrder) {
+      updateCheckoutStage(3, { scroll: true });
+      return;
+    }
+
+    if (!selectedPaymentProvider) {
+      setPayFastStatus("Choose a payment provider before continuing.", "error");
+      updateCheckoutStage(4, { scroll: true });
+      return;
+    }
+
+    if (selectedPaymentProvider === "payfast") {
+      await proceedToPayFast(pendingTermsOrder);
+    } else {
+      await proceedToStitch(pendingTermsOrder);
+    }
+
+    if (!els.payfastConfirmStatus?.classList.contains("error")) {
+      pendingTermsOrder = null;
+    }
+  }
+
   async function onPurchaseClick() {
+    if (currentCheckoutStage === 2) {
+      await onShippingNextClick();
+      return;
+    }
+
+    if (currentCheckoutStage === 4) {
+      await proceedWithSelectedProvider();
+      return;
+    }
+
+    if (currentCheckoutStage === 3) {
+      updateCheckoutStage(currentCheckoutStage, { scroll: true });
+      return;
+    }
+
     const missing = requiredFieldErrors();
     if (missing.length > 0) {
       residueTelemetry.logPurchaseEvent({
@@ -768,15 +1053,14 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         detail: "Checkout validation failed.",
         metadata: { missing_fields: missing }
       });
-      els.missingFields.innerHTML = missing
-        .map((field) => `<div style="padding:4px 0; color:var(--muted);">&bull; ${field}</div>`)
-        .join("");
-      openModal(els.validationModal);
+      showValidationModal(missing);
       return;
     }
 
     const summary = getCheckoutData();
-    setSummaryDisplay(summary.subtotal, summary.shipping, summary.total);
+    setSidebarSummaryDisplay(summary.subtotal);
+    setPaymentSummaryDisplay(summary.subtotal, summary.shipping, summary.total);
+    updateCheckoutSummary();
     if (els.shippingName && !els.shippingName.value.trim()) {
       els.shippingName.value = (els.fullName?.value || "").trim();
     }
@@ -785,49 +1069,24 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   async function onShippingNextClick() {
-    const shippingName = (els.shippingName?.value || "").trim();
-    const shippingStreet = (els.shippingStreet?.value || "").trim();
-    const shippingSuburb = (els.shippingSuburb?.value || "").trim();
-    const shippingCity = (els.shippingCity?.value || "").trim();
-    const shippingProvince = (els.shippingProvince?.value || "").trim();
-    const shippingPostal = (els.shippingPostal?.value || "").trim();
-    if (!shippingName || !shippingStreet || !shippingSuburb || !shippingCity || !shippingProvince || !shippingPostal) {
+    const missing = shippingFieldErrors();
+    if (missing.length > 0) {
       residueTelemetry.logPurchaseEvent({
         stage: "shipping_validate",
         outcome: "failure",
         email: (els.email?.value || "").trim().toLowerCase(),
         detail: "Shipping details incomplete before payment."
       });
-      setPayFastStatus("Complete shipping details before payment.", "error");
+      setPayFastStatus("Complete all delivery fields before moving to review.", "error");
       return;
     }
 
-    const checkout = getCheckoutData();
-    pendingTermsOrder = {
-      invoice_no: generateInvoiceNo(),
-      customer_name: (els.fullName?.value || "").trim(),
-      customer_title: (els.customerTitle?.value || "").trim(),
-      customer_email: (els.email?.value || "").trim().toLowerCase(),
-      customer_phone: (els.phone?.value || "").trim(),
-      product: customLogoEnabled() ? "custom-company-logo-card" : `card-configuration-${selectedCardConfiguration}`,
-      card_configuration: standardCardsEnabled() ? selectedCardConfiguration : null,
-      custom_logo_requested: customLogoEnabled(),
-      custom_logo_file_name: customLogoMeta?.name || null,
-      quantity: checkout.qty,
-      unit_price: checkout.perItem,
-      subtotal_amount: checkout.subtotal,
-      shipping_amount: checkout.shipping,
-      total_amount: checkout.total,
-      payment_provider: null,
-      payment_status: "PENDING",
-      shipping_name: shippingName,
-      shipping_street: shippingStreet,
-      shipping_suburb: shippingSuburb,
-      shipping_city: shippingCity,
-      shipping_province: shippingProvince,
-      shipping_postal: shippingPostal,
-      created_at: new Date().toISOString()
-    };
+    const summary = getCheckoutData();
+    pendingTermsOrder = buildPendingTermsOrder();
+    termsAccepted = false;
+    setPayFastStatus("");
+    setPaymentSummaryDisplay(summary.subtotal, summary.shipping, summary.total);
+    unlockSidebarShippingSummary();
 
     showPurchaseStep(els.termsModal, els.paymentModal);
   }
@@ -1111,70 +1370,122 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
   }
 
+  function goToCheckoutStep(step) {
+    const targetStep = Math.max(1, Math.min(4, Number(step) || 1));
+
+    if (targetStep === 1) {
+      updateCheckoutStage(1, { scroll: true });
+      return;
+    }
+
+    const mainMissing = requiredFieldErrors();
+    if (mainMissing.length > 0) {
+      residueTelemetry.logPurchaseEvent({
+        stage: "checkout_validate",
+        outcome: "failure",
+        email: (els.email?.value || "").trim().toLowerCase(),
+        detail: "Attempted to advance before completing purchase details.",
+        metadata: { missing_fields: mainMissing }
+      });
+      showValidationModal(mainMissing);
+      updateCheckoutStage(1, { scroll: true });
+      return;
+    }
+
+    if (targetStep === 2) {
+      const summary = getCheckoutData();
+      setPaymentSummaryDisplay(summary.subtotal, summary.shipping, summary.total);
+      if (els.shippingName && !els.shippingName.value.trim()) {
+        els.shippingName.value = (els.fullName?.value || "").trim();
+      }
+      updateCheckoutStage(2, { scroll: true });
+      return;
+    }
+
+    const shippingMissing = shippingFieldErrors();
+    if (shippingMissing.length > 0) {
+      setPayFastStatus("Complete all delivery fields before moving to review.", "error");
+      updateCheckoutStage(2, { scroll: true });
+      return;
+    }
+
+    if (!pendingTermsOrder) {
+      pendingTermsOrder = buildPendingTermsOrder();
+    }
+
+    if (targetStep === 3) {
+      const summary = getCheckoutData();
+      termsAccepted = false;
+      setPayFastStatus("");
+      setPaymentSummaryDisplay(summary.subtotal, summary.shipping, summary.total);
+      unlockSidebarShippingSummary();
+      updateCheckoutStage(3, { scroll: true });
+      return;
+    }
+
+    if (!termsAccepted) {
+      setPayFastStatus("Agree to the terms before opening payment methods.", "error");
+      updateCheckoutStage(3, { scroll: true });
+      return;
+    }
+
+    const summary = getCheckoutData();
+    setPaymentSummaryDisplay(summary.subtotal, summary.shipping, summary.total);
+    updateCheckoutStage(4, { scroll: true });
+  }
+
   function wireModalClose() {
-    els.payClose?.addEventListener("click", () => closeModal(els.paymentModal));
-    els.paymentModal?.addEventListener("click", (e) => {
-      if (e.target === els.paymentModal) closeModal(els.paymentModal);
-    });
+    els.payClose?.addEventListener("click", () => updateCheckoutStage(1, { scroll: true }));
 
     const dismissTermsModal = () => {
       pendingTermsOrder = null;
-      closeModal(els.termsModal);
+      termsAccepted = false;
+      updateCheckoutStage(2, { scroll: true });
     };
 
     els.termsClose?.addEventListener("click", dismissTermsModal);
     els.termsDisagreeBtn?.addEventListener("click", dismissTermsModal);
     els.termsBackBtn?.addEventListener("click", () => {
-      closeModal(els.termsModal);
-      openModal(els.paymentModal);
+      termsAccepted = false;
+      updateCheckoutStage(2, { scroll: true });
     });
     els.termsAgreeBtn?.addEventListener("click", async () => {
       if (!pendingTermsOrder) {
-        closeModal(els.termsModal);
+        updateCheckoutStage(2, { scroll: true });
         return;
       }
+      termsAccepted = true;
       setPaymentProviderButtonsDisabled(false);
       setPayFastStatus("");
-      showPurchaseStep(els.payfastConfirmModal, els.termsModal);
+      showPurchaseStep(els.payfastConfirmModal);
     });
-    els.termsModal?.addEventListener("click", (e) => {
-      if (e.target === els.termsModal) dismissTermsModal();
-    });
+    if (els.termsModal && !els.termsModal.hasAttribute("data-checkout-stage")) {
+      els.termsModal.addEventListener("click", (e) => {
+        if (e.target === els.termsModal) dismissTermsModal();
+      });
+    }
 
     const dismissPayFastConfirm = () => {
       setPaymentProviderButtonsDisabled(false);
-      closeModal(els.payfastConfirmModal);
+      updateCheckoutStage(3, { scroll: true });
     };
 
     els.payfastConfirmClose?.addEventListener("click", dismissPayFastConfirm);
     els.payfastBackBtn?.addEventListener("click", () => {
       setPaymentProviderButtonsDisabled(false);
-      closeModal(els.payfastConfirmModal);
-      openModal(els.termsModal);
+      updateCheckoutStage(3, { scroll: true });
     });
-    els.payfastContinueBtn?.addEventListener("click", async () => {
-      if (!pendingTermsOrder) {
-        dismissPayFastConfirm();
-        return;
-      }
-      await proceedToPayFast(pendingTermsOrder);
-      if (!els.payfastConfirmStatus?.classList.contains("error")) {
-        pendingTermsOrder = null;
-      }
+    els.payfastContinueBtn?.addEventListener("click", () => {
+      setSelectedPaymentProvider("payfast");
     });
-    els.stitchContinueBtn?.addEventListener("click", async () => {
-      if (!pendingTermsOrder) {
-        dismissPayFastConfirm();
-        return;
-      }
-      await proceedToStitch(pendingTermsOrder);
-      if (!els.payfastConfirmStatus?.classList.contains("error")) {
-        pendingTermsOrder = null;
-      }
+    els.stitchContinueBtn?.addEventListener("click", () => {
+      setSelectedPaymentProvider("stitch");
     });
-    els.payfastConfirmModal?.addEventListener("click", (e) => {
-      if (e.target === els.payfastConfirmModal) dismissPayFastConfirm();
-    });
+    if (els.payfastConfirmModal && !els.payfastConfirmModal.hasAttribute("data-checkout-stage")) {
+      els.payfastConfirmModal.addEventListener("click", (e) => {
+        if (e.target === els.payfastConfirmModal) dismissPayFastConfirm();
+      });
+    }
 
     const validationClose = qs("#validation-modal .close-btn");
     validationClose?.addEventListener("click", () => closeModal(els.validationModal));
@@ -1192,9 +1503,35 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     setCardConfigurationSelection();
     wireCardTypeToggle();
     wireModalClose();
-    els.purchaseBtn?.addEventListener("click", onPurchaseClick);
+    els.continueToDeliveryButtons.forEach((button) => {
+      button.addEventListener("click", onPurchaseClick);
+    });
+    els.checkoutStepItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        const step = Number(item.getAttribute("data-checkout-step") || 1);
+        goToCheckoutStep(step);
+      });
+    });
+    [els.fullName, els.customerTitle, els.email, els.phone].forEach((input) => {
+      input?.addEventListener("input", () => invalidateStageProgress(2));
+    });
+    els.quantity?.addEventListener("input", () => {
+      updatePriceDisplay();
+      invalidateStageProgress(2);
+    });
+    [
+      els.shippingName,
+      els.shippingStreet,
+      els.shippingSuburb,
+      els.shippingCity,
+      els.shippingProvince,
+      els.shippingPostal
+    ].forEach((input) => {
+      input?.addEventListener("input", () => invalidateStageProgress(3));
+      input?.addEventListener("change", () => invalidateStageProgress(3));
+    });
+    els.shippingBackBtn?.addEventListener("click", () => updateCheckoutStage(1, { scroll: true }));
     els.shippingNextBtn?.addEventListener("click", onShippingNextClick);
-    els.quantity?.addEventListener("input", updatePriceDisplay);
     els.redirectBtn?.addEventListener("click", () => {
       clearThankYouRedirect();
       window.location.href = "index.html";
@@ -1203,6 +1540,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   document.addEventListener("DOMContentLoaded", async () => {
     wireEvents();
+    updateCheckoutStage(1);
     updateCustomLogoFileName();
     updatePriceDisplay();
     await handlePaymentReturn();
