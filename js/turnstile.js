@@ -3,6 +3,7 @@
   const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js";
   const WIDGET_SELECTOR = ".cf-turnstile, [data-turnstile-widget]";
   const widgets = new Map();
+  const tokens = new WeakMap();
   let scriptPromise = null;
 
   const getSiteKey = () => String(window.env?.TURNSTILE_SITE_KEY || "").trim();
@@ -60,8 +61,18 @@
   };
 
   const tokenFieldFor = container => {
-    const selector = container.getAttribute("data-turnstile-token");
-    if (selector) return document.querySelector(selector);
+    const selector = String(
+      container.getAttribute("data-turnstile-target")
+      || container.getAttribute("data-turnstile-token")
+      || ""
+    ).trim();
+    if (selector) {
+      try {
+        return document.querySelector(selector);
+      } catch (err) {
+        console.warn(`Invalid Turnstile token field selector: ${selector}`);
+      }
+    }
     const root = container.closest("form") || container.closest("[data-turnstile-root]") || container.parentElement;
     return root?.querySelector('input[name="turnstile_token"]') || null;
   };
@@ -72,9 +83,11 @@
   };
 
   const setToken = (container, token = "") => {
-    container.dataset.turnstileToken = token;
+    const value = String(token || "").trim();
+    if (value) tokens.set(container, value);
+    else tokens.delete(container);
     const field = tokenFieldFor(container);
-    if (field) field.value = token;
+    if (field) field.value = value;
   };
 
   const clearResponse = container => {
@@ -103,7 +116,7 @@
   const tokenFor = container => {
     const field = tokenFieldFor(container);
     const responseField = responseFieldFor(container);
-    return String(container.dataset.turnstileToken || field?.value || responseField?.value || "").trim();
+    return String(tokens.get(container) || field?.value || responseField?.value || "").trim();
   };
 
   const render = async container => {
@@ -150,7 +163,7 @@
 
       widgets.set(container, widgetId);
       window.setTimeout(() => {
-        if (widgets.get(container) === widgetId && !hasVisibleFrame(container) && !container.dataset.turnstileToken) {
+        if (widgets.get(container) === widgetId && !hasVisibleFrame(container) && !tokens.get(container)) {
           showError(container, "Security check is not visible. Check the Turnstile site key and allowed hostname.");
         }
       }, 6000);
