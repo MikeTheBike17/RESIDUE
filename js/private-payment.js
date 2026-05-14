@@ -355,6 +355,14 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
   }
 
+  function buildSiteApiUrl(path) {
+    try {
+      return new URL(`/api/${path}`, window.location.origin).toString();
+    } catch {
+      return `/api/${path}`;
+    }
+  }
+
   async function getFunctionsRequestHeaders() {
     const headers = {
       apikey: cfg.SUPABASE_ANON_KEY || "",
@@ -424,15 +432,10 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   async function createStitchPaymentRequest(order) {
-    const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
-    if (!functionsBaseUrl) {
-      throw new Error("Could not determine the Supabase Functions URL.");
-    }
-
     const headers = await getFunctionsRequestHeaders();
     headers["Content-Type"] = "application/json";
 
-    const response = await fetch(`${functionsBaseUrl}/stitch-payment-request`, {
+    const response = await fetch(buildSiteApiUrl("stitch-payment-request"), {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -460,13 +463,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   async function getStitchPaymentStatus(requestId) {
-    const functionsBaseUrl = buildSupabaseFunctionsBaseUrl();
-    if (!functionsBaseUrl) {
-      throw new Error("Could not determine the Supabase Functions URL.");
-    }
-
     const headers = await getFunctionsRequestHeaders();
-    const response = await fetch(`${functionsBaseUrl}/stitch-payment-status?id=${encodeURIComponent(requestId)}`, {
+    const response = await fetch(`${buildSiteApiUrl("stitch-payment-status")}?id=${encodeURIComponent(requestId)}`, {
       method: "GET",
       headers
     });
