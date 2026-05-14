@@ -411,6 +411,13 @@ body.drop-page .card img {
   align-items: stretch;
 }
 
+.muted-aligned-right {
+  width: 100%;
+  margin: 22px 0 0;
+  color: var(--muted);
+  text-align: right;
+}
+
 .card-layout-flip {
   display: block;
   width: 100%;
@@ -1011,6 +1018,10 @@ body.how-page .hero {
   line-height: 1.55;
 }
 
+.about-line{
+  align-items: center;
+  text-align: center;
+}
 .hero-lines {
   display: grid;
   gap: 12px;
@@ -1174,6 +1185,75 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   padding: 24px 18px 8px;
 }
 
+.card-cta-animation {
+  --card-cta-width: clamp(164px, 24vw, 220px);
+  --card-cta-height: calc(var(--card-cta-width) * 0.6294);
+  --card-cta-stage-height: calc(var(--card-cta-width) * 0.96);
+  --card-cta-radius: clamp(8px, 1.6vw, 14px);
+  position: relative;
+  width: var(--card-cta-width);
+  height: var(--card-cta-stage-height);
+  display: grid;
+  place-items: center;
+  perspective: 1200px;
+  perspective-origin: 50% 45%;
+}
+
+.card-cta-loader-spin {
+  position: relative;
+  z-index: 1;
+  width: var(--card-cta-width);
+  height: var(--card-cta-height);
+  transform-style: preserve-3d;
+  animation: howCardCtaSpin 9s linear infinite;
+}
+
+.card-cta-loader-tilt {
+  position: absolute;
+  inset: 0;
+  transform: rotateZ(45deg);
+  transform-style: preserve-3d;
+}
+
+.card-cta-loader-3d {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.card-cta-loader-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--card-cta-radius);
+  background: #000;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  box-shadow: none;
+}
+
+.card-cta-loader-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.card-cta-loader-front {
+  transform: translateZ(1px);
+}
+
+.card-cta-loader-back {
+  transform: rotateY(180deg) translateZ(1px);
+}
+
+.card-cta-shadow {
+  display: none;
+}
+
 .how-card-cta-copy {
   margin: 0;
   max-width: 50ch;
@@ -1225,6 +1305,22 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   border-top: 1px solid currentColor;
   border-right: 1px solid currentColor;
   transform: translateY(-50%) rotate(45deg);
+}
+
+@keyframes howCardCtaSpin {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-cta-loader-spin {
+    animation-duration: 1ms;
+    animation-iteration-count: 1;
+  }
 }
 
 .inside-purchase-cta .container {
@@ -1442,6 +1538,36 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 
 .center {
   text-align: center;
+}
+
+.index-quote-lockup {
+  display: inline-grid;
+  justify-items: center;
+  gap: 22px;
+  width: min(100%, 72rem);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.index-quote-lockup .eyebrow,
+.index-quote-lockup .h2 {
+  margin: 0;
+}
+
+.index-quote-lockup .eyebrow {
+  justify-self: center;
+}
+
+.index-quote-lockup .about-line {
+  max-width: 18ch;
+  font-size: clamp(2.4rem, 5.8vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 18px 46px rgba(0, 0, 0, 0.26);
 }
 
 .about-hero {
@@ -3524,8 +3650,44 @@ footer {
 
 .footer-meta {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.footer-nav {
+  width: 100%;
+  display: flex;
   justify-content: center;
   align-items: center;
+  gap: clamp(12px, 2vw, 26px);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.footer-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.footer-nav a {
+  color: var(--muted);
+  font-size: clamp(0.76rem, 1.4vw, 0.95rem);
+  letter-spacing: 0.04em;
+  transition: color var(--transition);
+}
+
+.footer-nav a:hover,
+.footer-nav a:focus-visible {
+  color: var(--text);
+}
+
+.footer-divider {
+  width: min(100%, 760px);
+  height: 1px;
+  background: var(--border);
 }
 
 .footer-copy {
