@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/env.js"></script>
 </head>
-<body data-theme="dark" class="page-fade-in">
+<body data-theme="dark" class="page-fade-in private-page">
   <header>
     <nav class="nav" aria-label="Main navigation">
       <a class="brand" href="index.html">Residue</a>
@@ -41,116 +41,347 @@
     </div>
   </header>
 
-  <main>
-    <section class="hero premium-hero private-hero full-bleed fade-edges" id="top">
-      <div class="hero-overlay" aria-hidden="true"></div>
-      <div class="hero-content">
-        <div class="eyebrow premium">Purchase</div>
-        <h1>Configure your card layout.</h1>
-        <div class="subhead premium">Design your card appearance.</div>
-        <div class="accent-bar premium"></div>
-      </div>
-    </section>
-
+  <main id="top">
     <!--PURCHASE SECTION-->
-    <section class="configure reveal" id="purchase" aria-label="Configure your card">
-      <div class="container">
-        <div class="eyebrow premium">Purchase details</div>
-        <h2 class="h2">Purchase a Card</h2>
-        <p class="muted">Set the signal. We handle the deployment.</p>
+    <section class="configure reveal checkout-page" id="purchase" aria-label="Configure your card">
+      <div class="container checkout-shell">
+        <div class="checkout-header">
+          <div class="checkout-header-copy">
+            <div class="eyebrow premium">Secure checkout</div>
+            <h2 class="h2">Purchase a Card</h2>
+          </div>
+        </div>
 
-        <!-- NOTE: you had a closing </form> later, but no opening <form>.
-             If you already have one in your real file, keep yours and remove this.
-             Otherwise, this fixes the markup. -->
-        <form class="configure-form" action="#" method="post">
-          <label for="full-name">Full name</label>
-          <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
+        <div class="checkout-stepper" aria-label="Residue checkout progress">
+          <button class="checkout-stepper-item is-active" data-checkout-step="1" type="button">
+            <span class="purchase-step is-active">1</span>
+            <span class="checkout-stepper-text">
+              <strong>Card Selection</strong>
+              <small>Choose your card</small>
+            </span>
+          </button>
+          <span class="checkout-stepper-line" aria-hidden="true"></span>
+          <button class="checkout-stepper-item" data-checkout-step="2" type="button">
+            <span class="purchase-step">2</span>
+            <span class="checkout-stepper-text">
+              <strong>Delivery</strong>
+              <small>Add shipping details</small>
+            </span>
+          </button>
+          <span class="checkout-stepper-line" aria-hidden="true"></span>
+          <button class="checkout-stepper-item" data-checkout-step="3" type="button">
+            <span class="purchase-step">3</span>
+            <span class="checkout-stepper-text">
+              <strong>Review &amp; Terms</strong>
+              <small>Confirm the order</small>
+            </span>
+          </button>
+          <span class="checkout-stepper-line" aria-hidden="true"></span>
+          <button class="checkout-stepper-item" data-checkout-step="4" type="button">
+            <span class="purchase-step">4</span>
+            <span class="checkout-stepper-text">
+              <strong>Payment</strong>
+              <small>Choose provider</small>
+            </span>
+          </button>
+        </div>
 
-          <label for="customer-title">Title</label>
-          <input id="customer-title" name="customer-title" type="text" autocomplete="organization-title" placeholder="Manager" required>
+        <div class="checkout-layout">
+          <div class="checkout-main">
+            <div class="checkout-card checkout-flow-card" id="checkout-flow-card">
+              <form class="configure-form checkout-section checkout-inline-stage" data-checkout-stage="1" aria-hidden="false" action="#" method="post">
+                <section class="checkout-section-block checkout-section-intro">
+                  <div class="checkout-section-heading">
+                    <span class="checkout-section-index" aria-hidden="true">1</span>
+                    <div>
+                      <p class="checkout-section-label">Purchase details</p>
+                      <h3 class="checkout-section-title">Your card configuration</h3>
+                    </div>
+                  </div>
+                  <p class="checkout-section-copy muted">Enter your details, choose a card route, and set the quantity before continuing to delivery.</p>
+                </section>
 
-          <label for="email-config">Email</label>
-          <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
+                <section class="checkout-section-block checkout-details-block">
+                  <div class="checkout-subsection-head">
+                    <h4>Your details</h4>
+                    <p class="muted small">We use these details for the invoice and order record.</p>
+                  </div>
+                  <div class="checkout-field-grid">
+                    <div class="checkout-field">
+                      <label for="full-name">Full name</label>
+                      <input id="full-name" name="full-name" type="text" autocomplete="name" placeholder="Full Last" required>
+                    </div>
+                    <div class="checkout-field">
+                      <label for="customer-title">Title</label>
+                      <input id="customer-title" name="customer-title" type="text" autocomplete="organization-title" placeholder="Manager" required>
+                    </div>
+                    <div class="checkout-field">
+                      <label for="email-config">Email</label>
+                      <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
+                    </div>
+                    <div class="checkout-field">
+                      <label for="phone">Phone number</label>
+                      <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="012 345 6789" required>
+                    </div>
+                    <div class="checkout-field checkout-field-wide">
+                      <label for="quantity">Quantity</label>
+                      <div class="checkout-quantity-panel">
+                        <input id="quantity" name="quantity" type="number" min="0" step="1" placeholder="0">
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
-          <label for="phone">Phone number</label>
-          <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+27 0123 4567" required>
+                <section class="checkout-section-block checkout-card-selection">
+                  <div class="checkout-subsection-head">
+                    <h4>Card type</h4>
+                  </div>
 
-          <label for="quantity">Quantity</label>
-          <input id="quantity" name="quantity" type="number" min="0" step="1" placeholder="0">
+                  <section class="card-configurator" aria-labelledby="card-config-title">
+                    <div class="card-config-choice-row" role="group" aria-label="Card type">
+                      <button type="button" class="btn btn-outline premium-btn card-config-choice-btn" data-card-type="standard" aria-pressed="false" aria-controls="standard-card-panel">
+                        <span>Standard cards</span>
+                        <small>Choose one of the Residue layouts</small>
+                      </button>
+                      <button type="button" class="btn btn-outline premium-btn card-config-choice-btn" data-card-type="custom" aria-pressed="false" aria-controls="custom-logo-panel">
+                        <span>Custom company logo</span>
+                        <small>Add your own mark for R100 per card</small>
+                      </button>
+                    </div>
 
-          <section class="card-configurator" aria-labelledby="card-config-title">
-            <div class="eyebrow premium">Configure card</div>
-            <h3 class="h3 card-config-title" id="card-config-title">Choose your card type</h3>
-            <div class="card-config-choice-row" role="group" aria-label="Card type">
-              <button type="button" class="btn btn-outline premium-btn card-config-choice-btn" data-card-type="standard" aria-pressed="false" aria-controls="standard-card-panel">
-                Standard cards
-              </button>
-              <button type="button" class="btn btn-outline premium-btn card-config-choice-btn" data-card-type="custom" aria-pressed="false" aria-controls="custom-logo-panel">
-                Custom company logo on card + R100
-              </button>
+                    <div id="standard-card-panel" class="card-config-panel" hidden>
+                      <div class="checkout-subsection-head checkout-subsection-head-tight">
+                        <h4 class="card-config-title" id="card-config-title">Select card layout</h4>
+                        <p class="muted small">Each option keeps the existing selection behaviour and image assets.</p>
+                      </div>
+                      <div class="card-config-grid">
+                        <button class="card-config-box" type="button" data-card-config="1" aria-pressed="false">
+                          <span class="card-config-number">1</span>
+                          <span class="card-config-face-label">Front</span>
+                          <img class="card-config-image" src="images/card-images/card-front-1.jpg" alt="Card configuration 1 front" loading="lazy" decoding="async">
+                        </button>
+                        <button class="card-config-box" type="button" data-card-config="2" aria-pressed="false">
+                          <span class="card-config-number">2</span>
+                          <span class="card-config-face-label">Front</span>
+                          <img class="card-config-image" src="images/card-images/card-front-2.jpg" alt="Card configuration 2 front" loading="lazy" decoding="async">
+                        </button>
+                        <button class="card-config-box" type="button" data-card-config="3" aria-pressed="false">
+                          <span class="card-config-number">3</span>
+                          <span class="card-config-face-label">Front</span>
+                          <img class="card-config-image" src="images/card-images/card-front-3.jpg" alt="Card configuration 3 front" loading="lazy" decoding="async">
+                        </button>
+                      </div>
+                    </div>
+
+                    <div id="custom-logo-panel" class="card-config-logo-panel card-config-panel" hidden>
+                      <div class="checkout-subsection-head checkout-subsection-head-tight">
+                        <h4 class="card-config-title">Upload your custom card image</h4>
+                        <p class="muted small">We keep the same upload requirement and store the file preview for engraving prep.</p>
+                      </div>
+                      <div class="card-config-custom-preview">
+                        <div class="card-config-face-label">Front preview</div>
+                        <img class="card-config-image card-config-custom-image" src="images/card-images/card-front-custom.jpg" alt="Custom company logo card front preview" loading="lazy" decoding="async">
+                        <p class="muted small">Note that the image will be converted to white and black as for engraving purposes.</p>
+                      </div>
+                      <label for="custom-logo-file">Upload logo image</label>
+                      <input id="custom-logo-file" name="custom-logo-file" type="file" accept="image/*">
+                      <p class="muted small" id="custom-logo-file-name">No logo selected.</p>
+                    </div>
+                  </section>
+
+                  <div class="checkout-section-actions">
+                    <div class="checkout-stage-note">
+                    </div>
+                    <button class="btn checkout-inline-cta" type="button" data-checkout-continue="delivery">Continue to Delivery</button>
+                  </div>
+                </section>
+              </form>
+
+              <section id="payment-modal" class="checkout-stage-panel checkout-section checkout-inline-stage hidden" data-checkout-stage="2" aria-hidden="true">
+                <div class="checkout-section-heading">
+                  <span class="checkout-section-index" aria-hidden="true">2</span>
+                  <div>
+                    <p class="checkout-section-label">Delivery</p>
+                    <h3 class="checkout-section-title">Where should we send it?</h3>
+                  </div>
+                </div>
+                <div class="checkout-field-grid checkout-field-grid-delivery">
+                  <div class="checkout-field checkout-field-wide">
+                    <label for="shipping-name">Full Name</label>
+                    <input id="shipping-name" name="shipping-name" type="text" placeholder="Full Name" required>
+                  </div>
+                  <div class="checkout-field checkout-field-wide">
+                    <label for="shipping-street">Street Address</label>
+                    <input id="shipping-street" name="shipping-street" type="text" placeholder="Street Address" required>
+                  </div>
+                  <div class="checkout-field">
+                    <label for="shipping-suburb">Suburb</label>
+                    <input id="shipping-suburb" name="shipping-suburb" type="text" placeholder="Suburb" required>
+                  </div>
+                  <div class="checkout-field">
+                    <label for="shipping-city">City</label>
+                    <input id="shipping-city" name="shipping-city" type="text" placeholder="City" required>
+                  </div>
+                  <div class="checkout-field">
+                    <label for="shipping-province">Province</label>
+                    <select id="shipping-province" name="shipping-province" autocomplete="address-level1" required>
+                      <option value="">Select Province</option>
+                      <option value="Eastern Cape">Eastern Cape</option>
+                      <option value="Free State">Free State</option>
+                      <option value="Gauteng">Gauteng</option>
+                      <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                      <option value="Limpopo">Limpopo</option>
+                      <option value="Mpumalanga">Mpumalanga</option>
+                      <option value="North West">North West</option>
+                      <option value="Northern Cape">Northern Cape</option>
+                      <option value="Western Cape">Western Cape</option>
+                    </select>
+                  </div>
+                  <div class="checkout-field">
+                    <label for="shipping-postal">Postal Code</label>
+                    <input id="shipping-postal" name="shipping-postal" type="text" placeholder="Postal Code" required>
+                  </div>
+                </div>
+                <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
+                <div class="purchase-modal-actions checkout-inline-actions">
+                  <button id="shipping-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+                  <button id="shipping-next-btn" class="btn btn-outline premium-btn" type="button">Continue to Review</button>
+                </div>
+              </section>
+
+              <section id="terms-modal" class="checkout-stage-panel checkout-section checkout-inline-stage hidden" data-checkout-stage="3" aria-hidden="true">
+                <div class="checkout-section-heading">
+                  <span class="checkout-section-index" aria-hidden="true">3</span>
+                  <div>
+                    <p class="checkout-section-label">Review &amp; Terms</p>
+                    <h3 class="checkout-section-title">Confirm the order terms</h3>
+                  </div>
+                </div>
+                <p class="checkout-section-copy muted">The legal text is still here in full, but you only need to expand it when you want the complete detail.</p>
+                <details class="checkout-terms-details">
+                  <summary>View full Terms &amp; Conditions</summary>
+                  <div class="terms-scroll-box" id="terms-scroll-box">
+                    <p>By proceeding with payment, you confirm that all purchase, shipping, and card configuration details submitted are accurate and complete.</p>
+                    <p>Residue card production only starts after successful payment confirmation. Lead times may vary depending on production volume, logo preparation, and delivery region.</p>
+                    <p>Custom company logo uploads must be owned by you or provided with full authorization for use. You accept responsibility for any trademark, copyright, or brand-use claims arising from submitted artwork.</p>
+                    <p>Uploaded logo files may be adjusted for placement, sizing, engraving suitability, and technical production requirements. Residue may reject files that are low quality, unsuitable, or unlawful to reproduce.</p>
+                    <p>Card configuration selections, quantity selections, and custom logo requests are treated as part of the final order instructions once payment is submitted.</p>
+                    <p>Orders containing custom card production or personalized branding may not be refundable once manufacturing has started, except where required by law.</p>
+                    <p>Shipping timelines are estimates and may be affected by courier delays, customs handling, or events outside Residue's control.</p>
+                    <p>Residue reserves the right to cancel, pause, or refuse fulfillment where fraud, abuse, payment failure, unauthorized branding, or invalid shipping information is detected.</p>
+                    <p>Proceeding to payment means you agree to these terms and consent to Residue storing the relevant purchase, shipping, and card configuration data needed to fulfill your order.</p>
+                  </div>
+                </details>
+                <div class="terms-actions checkout-inline-actions">
+                  <button id="terms-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+                  <button id="terms-agree-btn" class="btn btn-outline premium-btn" type="button">Agree &amp; Continue</button>
+                </div>
+              </section>
+
+              <section id="payfast-confirm-modal" class="checkout-stage-panel checkout-section checkout-inline-stage hidden" data-checkout-stage="4" aria-hidden="true">
+                <div class="checkout-section-heading">
+                  <span class="checkout-section-index" aria-hidden="true">4</span>
+                  <div>
+                    <p class="checkout-section-label">Payment</p>
+                    <h3 class="checkout-section-title">Choose Provider</h3>
+                  </div>
+                </div>
+                <p class="payment-provider-intro">Choose your preferred payment provider.</p>
+                <div class="status configure-status" id="payfast-confirm-status" aria-live="polite" hidden></div>
+
+                <div class="payment-provider-grid" aria-label="Payment providers">
+                  <button id="payfast-continue-btn" class="payment-provider-card payment-provider-card-payfast" type="button" data-payment-provider="payfast" aria-pressed="false">
+                    <div class="payment-provider-media">
+                      <img
+                        class="payment-provider-image"
+                        src="images/payment-providers/payfast-logo.jpg"
+                        alt="PayFast provider logo"
+                        loading="lazy"
+                        decoding="async"
+                      >
+                    </div>
+                    <div class="payment-provider-copy-block">
+                      <strong>PayFast</strong>
+                      <span>Card and local payment checkout</span>
+                    </div>
+                  </button>
+
+                  <button id="stitch-continue-btn" class="payment-provider-card payment-provider-card-stitch" type="button" data-payment-provider="stitch" aria-pressed="false">
+                    <div class="payment-provider-media">
+                      <img
+                        class="payment-provider-image"
+                        src="images/payment-providers/stitch-express-logo.png"
+                        alt="Stitch provider logo"
+                        loading="lazy"
+                        decoding="async"
+                      >
+                    </div>
+                    <div class="payment-provider-copy-block">
+                      <strong>Stitch</strong>
+                      <span>Premium hosted card checkout</span>
+                    </div>
+                  </button>
+                </div>
+                <div class="purchase-modal-actions checkout-inline-actions">
+                  <button id="payfast-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+                </div>
+              </section>
             </div>
+          </div>
 
-            <div id="standard-card-panel" class="card-config-panel" hidden>
-              <h3 class="h3 card-config-title">Choose your card layout</h3>
-              <div class="card-config-grid">
-                <button class="card-config-box" type="button" data-card-config="1" aria-pressed="false">
-                  <span class="card-config-number">1</span>
-                  <span class="card-config-face-label">Front</span>
-                  <img class="card-config-image" src="images/card-images/card-front-1.jpg" alt="Card configuration 1 front" loading="lazy" decoding="async">
-                </button>
-                <button class="card-config-box" type="button" data-card-config="2" aria-pressed="false">
-                  <span class="card-config-number">2</span>
-                  <span class="card-config-face-label">Front</span>
-                  <img class="card-config-image" src="images/card-images/card-front-2.jpg" alt="Card configuration 2 front" loading="lazy" decoding="async">
-                </button>
-                <button class="card-config-box" type="button" data-card-config="3" aria-pressed="false">
-                  <span class="card-config-number">3</span>
-                  <span class="card-config-face-label">Front</span>
-                  <img class="card-config-image" src="images/card-images/card-front-3.jpg" alt="Card configuration 3 front" loading="lazy" decoding="async">
-                </button>
+          <aside class="checkout-summary">
+            <div class="checkout-summary-sticky">
+              <div class="checkout-summary-card">
+                <div class="checkout-summary-head">
+                  <div>
+                    <p class="checkout-summary-label">Order Summary</p>
+                    <h3>Residue NFC Card</h3>
+                  </div>
+                  <span class="checkout-summary-security">Secure checkout</span>
+                </div>
+
+                <div class="checkout-summary-preview">
+                  <img id="summary-preview-image" class="checkout-summary-preview-image" src="images/card-images/card-front-1.jpg" alt="Selected Residue card preview" loading="lazy" decoding="async">
+                  <div class="checkout-summary-preview-copy">
+                    <strong id="summary-card-type">Awaiting selection</strong>
+                    <span id="summary-card-detail">Choose a card type to personalise your order.</span>
+                  </div>
+                  <div class="checkout-summary-qty">
+                    <span>Qty</span>
+                    <strong id="summary-quantity">0</strong>
+                  </div>
+                </div>
+
+                <div class="price-summary-block checkout-summary-price" aria-labelledby="price-summary-title">
+                  <div class="eyebrow premium" id="price-summary-title">Cards subtotal</div>
+                  <div class="price-summary-amount" id="configure-price">R0</div>
+                  <p class="muted small price-summary-note" id="configure-price-note">Select a quantity and card configuration.</p>
+                </div>
+
+                <div class="order-summary checkout-summary-breakdown">
+                  <div class="summary-line">
+                    <span>Subtotal</span>
+                    <span id="modal-subtotal">R0</span>
+                  </div>
+                  <div class="summary-line">
+                    <span>Shipping</span>
+                    <span id="modal-shipping">R0</span>
+                  </div>
+                  <div class="summary-line total">
+                    <span>Total</span>
+                    <span id="modal-total">R0</span>
+                  </div>
+                </div>
+
+                <button id="purchase-btn" type="button" class="btn checkout-primary-cta" data-checkout-continue="delivery">Continue to Delivery</button>
+
+                <div class="checkout-summary-trust">
+                  <p>Secure checkout</p>
+                  <span>Payment confirmation after purchase. Delivery and provider details stay exactly in the current flow.</span>
+                </div>
               </div>
             </div>
-
-            <div id="custom-logo-panel" class="card-config-logo-panel card-config-panel" hidden>
-              <h3 class="h3 card-config-title">Upload your custom card image</h3>
-              <div class="card-config-custom-preview">
-                <div class="card-config-face-label">Front preview</div>
-                <img class="card-config-image card-config-custom-image" src="images/card-images/card-front-custom.jpg" alt="Custom company logo card front preview" loading="lazy" decoding="async">
-                <p class="muted small">Note that the image will be converted to white and black as for engraving purposes.</p>
-              </div>
-              <label for="custom-logo-file">Upload logo image</label>
-              <input id="custom-logo-file" name="custom-logo-file" type="file" accept="image/*">
-              <p class="muted small" id="custom-logo-file-name">No logo selected.</p>
-            </div>
-          </section>
-
-          <section class="price-summary-block" aria-labelledby="price-summary-title">
-            <div class="eyebrow premium" id="price-summary-title">Price</div>
-            <div class="price-summary-amount" id="configure-price">R0</div>
-            <p class="muted small price-summary-note" id="configure-price-note">Select a quantity and card configuration.</p>
-          </section>
-
-
-
-          <button id="purchase-btn" type="button" class="btn btn-outline premium-btn">Purchase Now</button>
-        </form>
-      </div>
-    </section>
-
-
-    <!--CONTACT-->
-    <section class="support-contact" aria-label="Support contact">
-      <div class="container support-contact-wide">
-        <div class="support-contact-card" style="margin-top: 10rem;">
-          <div class="eyebrow premium support-contact-eyebrow">Need help?</div>
-          <p class="muted support-contact-copy">Contact us for product, billing, or order support.</p>
-          <p class="support-contact-details">
-            <a href="#" data-email-code="bW9jLmxpYW1nQHNkcmFjZXVkaXNlcg==" data-email-rev="1">email support</a>
-            <span class="support-sep" aria-hidden="true">|</span>
-            <a href="tel:+27609965897">+27 60 996 5897</a>
-            <span class="support-sep" aria-hidden="true">|</span>
-            <a href="tel:+27716421975">+27 71 642 1975</a>
-          </p>
+          </aside>
         </div>
       </div>
     </section>
@@ -170,7 +401,7 @@
       </div>
     </div>
 
-    <!--PAYFAST CHECKOUT (modal)-->
+    <template id="legacy-checkout-modals">
     <div id="payment-modal" class="pay-modal hidden" aria-hidden="true">
       <div class="modal-content">
         <button class="close-btn" aria-label="Close payment form">×</button>
@@ -329,6 +560,8 @@
       </div>
     </div>
 
+    </template>
+
     <!--Payfast Form-->
     <form id="payfast-form" action="https://www.payfast.co.za/eng/process" method="post" style="display:none;">
       <!-- Merchant credentials should be injected from a trusted server path, not committed to client config. -->
@@ -379,6 +612,3 @@
   <script type="module" src="js/private-payment.js?v=20260514b"></script>
 </body>
 </html>
-
-
-
