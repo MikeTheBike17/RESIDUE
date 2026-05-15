@@ -240,7 +240,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function showValidationModal(missing) {
     if (!els.missingFields) return;
     els.missingFields.innerHTML = missing
-      .map((field) => `<div style="padding:4px 0; color:var(--muted);">&bull; ${field}</div>`)
+      .map((field) => `<div class="validation-list-item">&bull; ${field}</div>`)
       .join("");
     openModal(els.validationModal);
   }
