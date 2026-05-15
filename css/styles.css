@@ -3249,6 +3249,27 @@ body.private-page {
   background-attachment: scroll, scroll, fixed;
 }
 
+body.private-page .nav {
+  max-width: none;
+  margin: 0;
+  justify-content: space-between;
+}
+
+body.private-page .nav-actions {
+  margin-left: auto;
+}
+
+body.private-page .private-exit-link {
+  color: var(--muted);
+  font-size: 0.95rem;
+  transition: color var(--transition);
+}
+
+body.private-page .private-exit-link:hover,
+body.private-page .private-exit-link:focus-visible {
+  color: var(--text);
+}
+
 .checkout-hero-content {
   max-width: 920px;
   gap: 18px;
