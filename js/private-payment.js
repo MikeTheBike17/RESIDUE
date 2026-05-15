@@ -358,10 +358,15 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     return `Card configuration ${configNumber || ""}`.trim();
   }
 
+  function standardCardPreviewSource(configNumber) {
+    if (String(configNumber || "") === "3") return "images/card-images/card-front-3.jpeg";
+    return `images/card-images/card-front-${configNumber}.jpg`;
+  }
+
   function selectedCardPreviewSource() {
     if (customLogoEnabled()) return customLogoDataUrl || "images/card-images/card-front-custom.jpg";
     if (standardCardsEnabled() && selectedCardConfiguration) {
-      return `images/card-images/card-front-${selectedCardConfiguration}.jpg`;
+      return standardCardPreviewSource(selectedCardConfiguration);
     }
     return "images/card-images/card-front-1.jpg";
   }
