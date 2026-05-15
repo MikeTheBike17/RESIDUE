@@ -189,82 +189,276 @@
       transform: scale(1.05);
     }
 
-    .inside-hero-card-animation {
-      --inside-hero-card-width: clamp(164px, 24vw, 220px);
-      --inside-hero-card-height: calc(var(--inside-hero-card-width) * 0.6294);
-      --inside-hero-card-stage-height: calc(var(--inside-hero-card-width) * 0.96);
-      --inside-hero-card-radius: clamp(8px, 1.6vw, 14px);
+    .inside-hero .inside-hero-title {
       position: absolute;
-      top: 50%;
+      top: calc(50% - clamp(190px, 21vw, 260px) - 65px);
       left: 50%;
-      transform: translate(-50%, -50%);
-      width: var(--inside-hero-card-width);
-      height: var(--inside-hero-card-stage-height);
-      display: grid;
-      place-items: center;
-      perspective: 1200px;
-      perspective-origin: 50% 45%;
-      z-index: 1;
-    }
-
-    .inside-hero-card-spin {
-      position: relative;
-      width: var(--inside-hero-card-width);
-      height: var(--inside-hero-card-height);
-      transform-style: preserve-3d;
-      animation: insideHeroCardSpin 9s linear infinite;
-    }
-
-    .inside-hero-card-tilt {
-      position: absolute;
-      inset: 0;
-      transform: rotateZ(45deg);
-      transform-style: preserve-3d;
-    }
-
-    .inside-hero-card-3d {
-      position: absolute;
-      inset: 0;
-      transform-style: preserve-3d;
-    }
-
-    .inside-hero-card-face {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      border-radius: var(--inside-hero-card-radius);
-      background: #000;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      transform-style: preserve-3d;
-      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.48);
-    }
-
-    .inside-hero-card-face img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      z-index: 2;
+      width: min(calc(100% - 48px), 900px);
+      margin: 0;
+      transform: translateX(-50%);
+      color: rgba(250, 248, 245, 0.92);
+      font-family: 'Space Grotesk', 'Sora', 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: clamp(1.18rem, 2.45vw, 2.22rem);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      line-height: 1.15;
+      text-align: center;
+      text-transform: uppercase;
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.62);
       pointer-events: none;
-      user-select: none;
     }
 
-    .inside-hero-card-front {
-      transform: translateZ(1px);
-    }
+    .inside-hero-card-animation {
+    --inside-hero-card-width: clamp(328px, 48vw, 440px);
+    --inside-hero-card-height: calc(var(--inside-hero-card-width) * 0.6294);
+    --inside-hero-card-stage-height: calc(var(--inside-hero-card-width) * 0.96);
+    --inside-hero-card-radius: clamp(8px, 1.6vw, 14px);
 
-    .inside-hero-card-back {
-      transform: rotateY(180deg) translateZ(1px);
-    }
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: var(--inside-hero-card-width);
+    height: var(--inside-hero-card-stage-height);
+    display: grid;
+    place-items: center;
+    perspective: 1200px;
+    perspective-origin: 50% 45%;
+    z-index: 1;
+  }
 
-    @keyframes insideHeroCardSpin {
-      from {
-        transform: rotateY(0deg);
-      }
-      to {
-        transform: rotateY(360deg);
-      }
-    }
+  /* Golden spotlight from above */
+  .inside-hero-card-animation::before {
+    content: "";
+    position: absolute;
+    top: -48%;
+    left: 50%;
+    width: 145%;
+    height: 115%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 0;
+
+    background:
+      radial-gradient(
+        ellipse at 50% 0%,
+        rgba(255, 199, 95, 0.45) 0%,
+        rgba(255, 176, 64, 0.22) 24%,
+        rgba(255, 176, 64, 0.08) 48%,
+        rgba(255, 176, 64, 0) 72%
+      );
+
+
+    filter: blur(10px);
+    opacity: 0.85;
+  }
+
+  /* Shadow underneath the card */
+  /* Shadow underneath the card */
+  .inside-hero-card-animation::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+
+    /* Places shadow directly under the floating card */
+    top: calc(50% + (var(--inside-hero-card-height) * 0.85));
+
+    width: 68%;
+    height: 13%;
+    transform: translateX(-50%) rotateZ(7deg);
+    pointer-events: none;
+    z-index: 1;
+
+    background:
+      radial-gradient(
+        ellipse at center,
+        rgba(0, 0, 0) 0%,
+        rgba(0, 0, 0) 36%,
+        rgba(0, 0, 0) 62%,
+        rgba(0, 0, 0) 100%
+      );
+
+    filter: blur(14px);
+    opacity: 0.72;
+    animation: insideHeroCardShadow 7.5s ease-in-out infinite;
+  }
+
+  .inside-hero-card-spin {
+    position: relative;
+    width: var(--inside-hero-card-width);
+    height: var(--inside-hero-card-height);
+    transform-style: preserve-3d;
+    z-index: 2;
+
+    animation: insideHeroCardFloatRotate 7.5s ease-in-out infinite;
+  }
+
+  .inside-hero-card-tilt {
+    position: absolute;
+    inset: 0;
+    transform: 
+      rotateZ(7deg);  
+    transform-style: preserve-3d;
+  }
+
+  .inside-hero-card-3d {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: 
+      rotateY(-13deg);
+  }
+
+  .inside-hero-card-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: var(--inside-hero-card-radius);
+    background: #000;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+      0 0 12px rgba(87, 66, 31, 0.05),
+      0 0 0 0.5px rgba(0, 0, 0, 0.3),
+      /* subtle outer golden edge glow */
+      1px -2px 8px rgba(255, 184, 76, 0.025),
+      4px -3px 22px rgba(82, 59, 24, 0.012);
+
+      animation: insideHeroCardEdgeGlow 7.5s ease-in-out infinite;
+  }
+
+  /* Golden light hitting the top-center of the card */
+  .inside-hero-card-face::before {
+    content: "";
+    position: absolute;
+    inset: -4%;
+    pointer-events: none;
+    z-index: 2;
+
+    background:
+      radial-gradient(
+        ellipse at 40% 6%,
+        rgba(255, 196, 93, 0.32) 0%,
+        rgba(255, 183, 73, 0.19) 18%,
+        rgba(255, 168, 48, 0.10) 34%,
+        rgba(255, 168, 48, 0) 58%
+      );
+
+    mix-blend-mode: screen;
+    opacity: 0.85;
+
+    animation: insideHeroCardGoldenLightMove 7.5s ease-in-out infinite;
+  }
+  
+  .inside-hero-card-face::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+
+    
+
+    box-shadow: inset 0 0 0 3px rgba(26, 23, 19, 0.158);
+
+    mix-blend-mode: screen;
+    opacity: 0.55;
+  }
+
+  .inside-hero-card-face img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .inside-hero-card-front {
+    transform: translateZ(1px);
+  }
+
+/* Main card motion: only up/down and slight rotation */
+@keyframes insideHeroCardFloatRotate {
+  0% {
+    transform: translateY(0) rotateZ(-1.8deg) rotateX(2deg) rotateY(-3deg);
+  }
+
+  50% {
+    transform: translateY(-16px) rotateZ(1.8deg) rotateX(4deg) rotateY(3deg);
+  }
+
+  100% {
+    transform: translateY(0) rotateZ(-1.8deg) rotateX(2deg) rotateY(-3deg);
+  }
+}
+
+/* Shadow reacts to card movement */
+@keyframes insideHeroCardShadow {
+  0% {
+    transform: translateX(-50%) rotateZ(7deg) scale(1.6);
+    opacity: 0.82;
+  }
+
+  50% {
+    transform: translateX(-50%) rotateZ(7deg) scale(1.05);
+    opacity: 0.48;
+  }
+
+  100% {
+    transform: translateX(-50%) rotateZ(7deg) scale(1.6);
+    opacity: 0.82;
+  }
+}
+
+@keyframes insideHeroCardEdgeGlow {
+  0% {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+      0 0 12px rgba(87, 66, 31, 0.035),
+      0 0 0 0.5px rgba(0, 0, 0, 0.35),
+      1px -1px 5px rgba(255, 184, 76, 0.012),
+      2px -1px 14px rgba(82, 59, 24, 0.006);
+  }
+
+  50% {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+      0 0 12px rgba(87, 66, 31, 0.035),
+      0 0 0 0.5px rgba(0, 0, 0, 0.35),
+      0.5px -0.5px 4px rgba(255, 184, 76, 0.008),
+      1px -0.5px 10px rgba(82, 59, 24, 0.004);
+  }
+
+  100% {
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.10) inset,
+      0 0 12px rgba(87, 66, 31, 0.035),
+      0 0 0 0.5px rgba(0, 0, 0, 0.35),
+      1px -1px 5px rgba(255, 184, 76, 0.012),
+      2px -1px 14px rgba(82, 59, 24, 0.006);
+  }
+}
+
+@keyframes insideHeroCardGoldenLightMove {
+  0% {
+    transform: translate3d(3%, 1%, 0);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translate3d(-1.4%, -0.6%, 0);
+    opacity: 0.92;
+  }
+
+  100% {
+    transform: translate3d(3%, 1%, 0);
+    opacity: 0.45;
+  }
+}
 
     @media (prefers-reduced-motion: reduce) {
       .inside-hero-card-spin {
@@ -315,15 +509,13 @@
   <main>
     <section class="hero premium-hero inside-hero full-bleed fade-edges" id="top">
       <div class="hero-overlay" aria-hidden="true"></div>
+      <h1 class="inside-hero-title">Welcome to Residue</h1>
       <div class="inside-hero-card-animation" aria-hidden="true">
         <div class="inside-hero-card-spin">
           <div class="inside-hero-card-tilt">
             <div class="inside-hero-card-3d">
               <div class="inside-hero-card-face inside-hero-card-front">
                 <img src="images/card-images/card-front-1.jpg" alt="" loading="lazy" decoding="async">
-              </div>
-              <div class="inside-hero-card-face inside-hero-card-back">
-                <img src="images/card-images/card-back.jpeg" alt="" loading="lazy" decoding="async">
               </div>
             </div>
           </div>
