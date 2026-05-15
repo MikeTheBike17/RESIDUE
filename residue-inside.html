@@ -195,7 +195,7 @@
 
     .inside-hero .inside-hero-title {
       position: absolute;
-      top: calc(50% - clamp(190px, 21vw, 260px) - 65px);
+      top: calc(50% - clamp(190px, 21vw, 260px) - 50px);
       left: 50%;
       z-index: 2;
       width: min(calc(100% - 48px), 900px);
@@ -510,6 +510,90 @@
       .inside-presence-cta-label {
         padding: 24px 14px;
         font-size: 1rem;
+      }
+
+      @media (max-width: 480px) {
+        .inside-hero-card-animation {
+          --inside-hero-card-width: clamp(286px, 82vw, 318px);
+          --inside-hero-card-radius: 10px;
+          perspective: 1000px;
+        }
+
+        .inside-hero-card-animation::before {
+          top: -40%;
+          width: 128%;
+          height: 104%;
+          filter: blur(8px);
+          opacity: 0.72;
+        }
+
+        .inside-hero-card-animation::after {
+          top: calc(50% + (var(--inside-hero-card-height) * 0.8));
+          width: 58%;
+          height: 10%;
+          filter: blur(10px);
+          opacity: 0.58;
+        }
+
+        .inside-hero-card-face {
+          box-shadow:
+            0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+            0 0 8px rgba(87, 66, 31, 0.04),
+            0 0 0 0.5px rgba(0, 0, 0, 0.3),
+            1px -1px 5px rgba(255, 184, 76, 0.018),
+            2px -2px 14px rgba(82, 59, 24, 0.008);
+        }
+
+        .inside-presence-cta {
+          width: min(calc(100% - 38px), 334px);
+          margin-top: 36px;
+          border-radius: 18px;
+          box-shadow:
+            0 0 0 1px rgba(255, 240, 214, 0.18) inset,
+            0 0 24px rgba(214, 176, 112, 0.2),
+            0 14px 28px rgba(0, 0, 0, 0.26);
+        }
+
+        .inside-presence-cta:hover,
+        .inside-presence-cta:focus-visible,
+        .inside-presence-cta:active {
+          box-shadow:
+            0 0 0 1px rgba(255, 240, 214, 0.22) inset,
+            0 0 30px rgba(214, 176, 112, 0.26),
+            0 18px 34px rgba(0, 0, 0, 0.3);
+        }
+
+        .inside-presence-cta-icon {
+          width: 70px;
+          font-size: 1.9rem;
+        }
+
+        .inside-presence-cta-label {
+          padding: 20px 12px;
+          font-size: 0.86rem;
+          letter-spacing: 0.13em;
+        }
+      }
+
+      @media (max-width: 360px) {
+        .inside-hero-card-animation {
+          --inside-hero-card-width: clamp(270px, 80vw, 292px);
+        }
+
+        .inside-presence-cta {
+          width: min(calc(100% - 32px), 312px);
+        }
+
+        .inside-presence-cta-icon {
+          width: 62px;
+          font-size: 1.75rem;
+        }
+
+        .inside-presence-cta-label {
+          padding: 18px 10px;
+          font-size: 0.78rem;
+          letter-spacing: 0.11em;
+        }
       }
     
   </style>
