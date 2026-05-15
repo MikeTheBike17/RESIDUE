@@ -511,7 +511,7 @@
     const MANAGER_ACCESS_KEY = "residue_manager_access";
     const MANAGER_EMAIL = "check.email@residue.com";
     const INSIDE_PAGE = "residue-inside.html";
-    const INSIDE_PAGE_ENTRY = `${INSIDE_PAGE}#top`;
+    const INSIDE_PAGE_ENTRY = INSIDE_PAGE;
     const PRIVATE_PAGE = "residue-private.html";
     const CARD_URLS_PAGE = "card-urls.html";
     const DEFAULT_PROFILE_NAME = "Your name";
