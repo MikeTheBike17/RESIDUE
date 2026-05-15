@@ -8,8 +8,12 @@
   <title>Residue | Welcome Inside</title>
   <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
   <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="preload" as="image" href="images/inside-hero-background.jpeg">
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/env.js"></script>
+  <script>
+    document.documentElement.classList.add('inside-hero-loading');
+  </script>
   <style>
     .inside-page.page-fade-in,
     .inside-page.page-fade-out {
@@ -226,6 +230,17 @@
     perspective: 1200px;
     perspective-origin: 50% 45%;
     z-index: 1;
+  }
+
+  html.inside-hero-loading:not(.inside-hero-background-ready) .inside-hero-card-animation {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  html.inside-hero-background-ready .inside-hero-card-animation {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 420ms ease;
   }
 
   /* Golden spotlight from above */
@@ -538,5 +553,33 @@
 
   <script type="module" src="js/supabase-telemetry.js"></script>
   <script src="js/script.js"></script>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const revealHeroCard = () => {
+        root.classList.add('inside-hero-background-ready');
+        root.classList.remove('inside-hero-loading');
+      };
+
+      const background = new Image();
+      background.src = 'images/inside-hero-background.jpeg';
+
+      if (background.complete) {
+        revealHeroCard();
+        return;
+      }
+
+      if (background.decode) {
+        background.decode().then(revealHeroCard).catch(() => {
+          background.addEventListener('load', revealHeroCard, { once: true });
+          background.addEventListener('error', revealHeroCard, { once: true });
+        });
+        return;
+      }
+
+      background.addEventListener('load', revealHeroCard, { once: true });
+      background.addEventListener('error', revealHeroCard, { once: true });
+    })();
+  </script>
 </body>
 </html>
