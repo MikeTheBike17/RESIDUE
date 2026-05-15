@@ -296,7 +296,10 @@
                         class="payment-provider-image"
                         src="images/payment-providers/payfast-logo.jpg"
                         alt="PayFast provider logo"
-                        loading="lazy"
+                        width="1367"
+                        height="632"
+                        loading="eager"
+                        fetchpriority="high"
                         decoding="async"
                       >
                     </div>
@@ -312,7 +315,10 @@
                         class="payment-provider-image"
                         src="images/payment-providers/stitch-express-logo.png"
                         alt="Stitch provider logo"
-                        loading="lazy"
+                        width="765"
+                        height="144"
+                        loading="eager"
+                        fetchpriority="high"
                         decoding="async"
                       >
                     </div>
@@ -388,12 +394,12 @@
 
     <!-- Validation Error Modal -->
     <div id="validation-modal" class="pay-modal hidden" aria-hidden="true">
-      <div class="modal-content" style="text-align:center;">
+      <div class="modal-content modal-content--center modal-content--has-close validation-modal-content">
         <button class="close-btn" aria-label="Close" style="position:relative; margin-bottom:12px;">×</button>
         <div class="stack" style="gap:16px;">
           <h3 style="margin:0; color:var(--text);">Missing Required Fields</h3>
           <p class="muted small">Please fill in the following fields before proceeding:</p>
-          <div id="missing-fields-list" style="text-align:left; padding:12px 16px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: rgba(255,255,255,0.02);">
+          <div id="missing-fields-list" class="validation-list">
             <!-- Fields will be populated by JS -->
           </div>
           <button id="validation-close-btn" class="btn btn-outline premium-btn" type="button">Understood</button>
@@ -403,7 +409,7 @@
 
     <template id="legacy-checkout-modals">
     <div id="payment-modal" class="pay-modal hidden" aria-hidden="true">
-      <div class="modal-content">
+      <div class="modal-content modal-content--has-close">
         <button class="close-btn" aria-label="Close payment form">×</button>
         <section class="banking-form">
           <div class="stack" style="gap:10px;">
@@ -454,7 +460,7 @@
     </div>
 
     <div id="terms-modal" class="pay-modal hidden" aria-hidden="true">
-      <div class="modal-content terms-modal-content">
+      <div class="modal-content modal-content--has-close terms-modal-content">
         <button class="close-btn" aria-label="Close terms and conditions">&times;</button>
         <div class="stack" style="gap:16px;">
           <div class="purchase-step-indicator" aria-label="Purchase flow step 3 of 4">
@@ -488,7 +494,7 @@
     </div>
 
     <div id="payfast-confirm-modal" class="pay-modal hidden" aria-hidden="true">
-      <div class="modal-content terms-modal-content">
+      <div class="modal-content modal-content--has-close terms-modal-content">
         <button class="close-btn" aria-label="Close payment provider step">&times;</button>
         <div class="stack" style="gap:16px;">
           <div class="purchase-step-indicator" aria-label="Purchase flow step 4 of 4">
@@ -527,7 +533,10 @@
                   class="payment-provider-image"
                   src="images/payment-providers/payfast-logo.jpg"
                   alt="PayFast provider logo"
-                  loading="lazy"
+                  width="1367"
+                  height="632"
+                  loading="eager"
+                  fetchpriority="high"
                   decoding="async"
                 >
               </div>
@@ -540,7 +549,10 @@
                   class="payment-provider-image"
                   src="images/payment-providers/stitch-express-logo.png"
                   alt="Stitch provider logo"
-                  loading="lazy"
+                  width="765"
+                  height="144"
+                  loading="eager"
+                  fetchpriority="high"
                   decoding="async"
                 >
               </div>
@@ -585,7 +597,7 @@
 
     <!-- Thank You Modal -->
     <div id="thank-you-modal" class="pay-modal hidden" aria-hidden="true">
-      <div class="modal-content" style="text-align:center;">
+      <div class="modal-content modal-content--center">
         <div class="stack" style="gap:20px;">
           <div class="eyebrow premium">Thank You!</div>
           <!-- POST PAYMENT MESSAGE START -->

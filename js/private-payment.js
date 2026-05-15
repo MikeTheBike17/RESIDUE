@@ -240,7 +240,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function showValidationModal(missing) {
     if (!els.missingFields) return;
     els.missingFields.innerHTML = missing
-      .map((field) => `<div style="padding:4px 0; color:var(--muted);">&bull; ${field}</div>`)
+      .map((field) => `<div class="validation-list-item">&bull; ${field}</div>`)
       .join("");
     openModal(els.validationModal);
   }
@@ -336,9 +336,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function baseUnitPrice(qty) {
-    if (qty > 4) return 399;
-    if (qty >= 2) return 449;
-    return 499;
+    if (qty > 4) return 400;
+    if (qty >= 2) return 500;
+    return 500;
   }
 
   function standardCardsEnabled() {

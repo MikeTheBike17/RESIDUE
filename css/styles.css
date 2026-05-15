@@ -2776,20 +2776,39 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    16px
+    max(16px, env(safe-area-inset-bottom));
   background: rgba(0,0,0,0.6);
   z-index: 1000;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .pay-modal.hidden {
   display: none;
 }
 .pay-modal .modal-content {
   position: relative;
+  width: min(560px, 100%);
+  margin: auto;
   background: var(--bg);
-  padding: 24px 36px;
-  border-radius: var(--radius);
-  max-width: 90%;
-  max-height: 90%;
+  padding: 24px 28px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  max-width: 100%;
+  max-height: min(88dvh, 820px);
   overflow: auto;
+  box-shadow: 0 24px 54px rgba(0,0,0,0.34);
+}
+
+.pay-modal .modal-content.modal-content--has-close {
+  padding-top: 56px;
+}
+
+.pay-modal .modal-content.modal-content--center {
+  text-align: center;
 }
 
 .purchase-step-indicator {
@@ -2833,18 +2852,49 @@ input:focus, textarea:focus, select:focus {
   background: rgba(216,176,122,0.86);
 }
 .pay-modal .close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: none;
+  position: absolute !important;
+  top: 14px;
+  right: 14px;
+  margin: 0 !important;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
   border: none;
   color: var(--text);
-  font-size: 1.5rem;
+  font-size: 1.9rem;
+  line-height: 1;
   cursor: pointer;
+  z-index: 2;
+}
+
+.pay-modal .close-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.validation-modal-content {
+  width: min(520px, 100%);
+}
+
+.validation-list {
+  text-align: left;
+  padding: 12px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.validation-list-item {
+  padding: 4px 0;
+  color: var(--muted);
 }
 
 .terms-modal-content {
-  width: min(760px, 92vw);
+  width: min(760px, 100%);
 }
 
 .terms-title {
@@ -2923,15 +2973,14 @@ input:focus, textarea:focus, select:focus {
   background: #ffffff;
 }
 
-.payment-provider-card-payfast .payment-provider-media {
-  min-height: 0;
-  display: block;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
+.payment-provider-card-payfast .payment-provider-media,
 .payment-provider-card-stitch .payment-provider-media {
+  min-height: 158px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 20px;
+  border-radius: 0;
   background: #ffffff;
 }
 
@@ -2942,7 +2991,7 @@ input:focus, textarea:focus, select:focus {
   display: block;
   border: 0;
   background: transparent;
-  margin: 0;
+  margin: 0 auto;
   object-fit: contain;
 }
 
@@ -2951,15 +3000,15 @@ input:focus, textarea:focus, select:focus {
 }
 
 .payment-provider-card-payfast .payment-provider-image {
-  max-width: none;
-  max-height: none;
+  max-width: 252px;
+  max-height: 94px;
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .payment-provider-card-stitch .payment-provider-image {
-  max-width: 236px;
-  max-height: 82px;
+  max-width: 238px;
+  max-height: 72px;
 }
 
 .payment-provider-card:hover {
@@ -5356,6 +5405,33 @@ body::after { opacity: 0.04; }
 }
 
 @media (max-width: 680px) {
+  .pay-modal {
+    align-items: flex-start;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      12px
+      max(12px, calc(env(safe-area-inset-bottom) + 12px));
+  }
+
+  .pay-modal .modal-content {
+    width: 100%;
+    padding: 20px 18px;
+    border-radius: 18px;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  }
+
+  .pay-modal .modal-content.modal-content--has-close {
+    padding-top: 54px;
+  }
+
+  .pay-modal .close-btn {
+    top: 10px;
+    right: 10px;
+    width: 42px;
+    height: 42px;
+    font-size: 1.8rem;
+  }
+
   .checkout-field-grid,
   .checkout-field-grid-delivery,
   .card-config-choice-row,
@@ -5419,6 +5495,21 @@ body::after { opacity: 0.04; }
     min-height: 54px;
   }
 
+  .purchase-step-indicator {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .purchase-step {
+    width: 30px;
+    height: 30px;
+    font-size: 0.88rem;
+  }
+
+  .purchase-step-line {
+    width: 18px;
+  }
+
   .terms-actions,
   .purchase-modal-actions {
     flex-direction: column;
@@ -5427,6 +5518,31 @@ body::after { opacity: 0.04; }
   .terms-actions .btn,
   .purchase-modal-actions .btn {
     width: 100%;
+  }
+
+  .payment-provider-card-payfast .payment-provider-media,
+  .payment-provider-card-stitch .payment-provider-media {
+    min-height: 126px;
+    padding: 18px 16px;
+  }
+
+  .payment-provider-card-payfast .payment-provider-image {
+    max-width: 228px;
+    max-height: 82px;
+  }
+
+  .payment-provider-card-stitch .payment-provider-image {
+    max-width: 214px;
+    max-height: 62px;
+  }
+
+  .terms-scroll-box {
+    max-height: 40dvh;
+    padding: 14px;
+  }
+
+  .validation-list {
+    padding: 12px 14px;
   }
 }
 
