@@ -10,77 +10,341 @@
   <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/env.js"></script>
+  <style>
+    .inside-page.page-fade-in,
+    .inside-page.page-fade-out {
+      animation: none;
+    }
+
+    .inside-page .nav {
+      max-width: none;
+      margin: 0;
+      justify-content: flex-start;
+    }
+
+    .inside-page .full-bleed {
+      margin-bottom: 20px;
+    }
+
+    .inside-page main > section + section {
+      border-top: 0;
+    }
+
+    .inside-page .inside-hero {
+      --inside-hero-image-scale: 1;
+      --inside-hero-image-shift: 0px;
+      --inside-hero-content-scale: 1;
+      --inside-hero-content-shift: 0px;
+      min-height: calc(100svh - 73px);
+      height: calc(100svh - 73px);
+      padding: 0;
+      -webkit-mask-image: none;
+      mask-image: none;
+      filter: none;
+      border-bottom: 0;
+      box-shadow: 
+        0 0 0 3px #000 inset,
+        0 0 36px rgba(0, 0, 0, 1),
+        0 18px 36px rgba(0, 0, 0, 0.3);
+    }
+
+    .inside-page .inside-hero::before {
+      inset: 0;
+      background-image:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.15) 100%),
+        url("images/inside-hero-background.jpeg");
+      background-position: center center;
+      background-size: cover;
+      background-repeat: no-repeat;
+      filter: none;
+      box-shadow: 
+        0 0 0 3px #000 inset,
+        0 0 36px rgba(0, 0, 0, 1),
+        0 18px 36px rgba(0, 0, 0, 0.3);
+    }
+
+    .inside-page .premium-hero::after {
+      display: none;
+    }
+
+    .inside-page .inside-hero .hero-overlay {
+      display: none;
+    }
+
+    .inside-page .inside-hero::before,
+    .inside-page .inside-hero .inside-hero-content {
+      transform: none;
+      transition: none;
+      will-change: auto;
+    }
+
+    .inside-presence-section {
+      padding: 124px 0 24px;
+    }
+
+
+    .inside-presence-shell {
+      width: min(100%, 840px);
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .inside-presence-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: clamp(18px, 3vw, 34px);
+      color: #d6b070;
+      font-size: clamp(0.95rem, 1.5vw, 1.3rem);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+    }
+
+    .inside-presence-eyebrow::before,
+    .inside-presence-eyebrow::after {
+      content: "";
+      width: clamp(76px, 14vw, 116px);
+      height: 1px;
+      background: rgba(214, 176, 112, 0.42);
+    }
+
+    .inside-presence-title {
+      margin: 28px 0 0;
+      font-size: clamp(3.6rem, 8vw, 5.9rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      font-weight: 500;
+      color: #faf8f5;
+    }
+
+    .inside-presence-title-accent {
+      color: #d6b070;
+    }
+
+    .inside-presence-copy {
+      width: min(100%, 620px);
+      margin: 28px auto 0;
+      color: rgba(198, 199, 207, 0.78);
+      font-size: clamp(1.35rem, 2.5vw, 2rem);
+      line-height: 1.45;
+      font-weight: 400;
+    }
+
+    .inside-presence-cta {
+      display: flex;
+      align-items: stretch;
+      width: min(100%, 376px);
+      margin: 48px auto 0;
+      border-radius: 24px;
+      overflow: hidden;
+      text-decoration: none;
+      color: #171411;
+      background: linear-gradient(135deg, #efcb8c 0%, #d3a763 100%);
+      box-shadow:
+        0 0 0 1px rgba(255, 240, 214, 0.2) inset,
+        0 0 36px rgba(214, 176, 112, 0.26),
+        0 18px 36px rgba(0, 0, 0, 0.3);
+      transition: transform 200ms ease, box-shadow 200ms ease;
+      will-change: transform;
+    }
+
+    .inside-presence-cta:hover,
+    .inside-presence-cta:focus-visible,
+    .inside-presence-cta:active {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(255, 240, 214, 0.24) inset,
+        0 0 42px rgba(214, 176, 112, 0.32),
+        0 22px 42px rgba(0, 0, 0, 0.34);
+    }
+
+    .inside-presence-cta-icon {
+      width: 118px;
+      display: grid;
+      place-items: center;
+      font-size: clamp(2.35rem, 4vw, 3.4rem);
+      line-height: 1;
+      border-right: 1px solid rgba(23, 20, 17, 0.16);
+      flex-shrink: 0;
+    }
+
+    .inside-presence-cta-label {
+      flex: 1;
+      display: grid;
+      place-items: center;
+      padding: 30px 24px;
+      font-size: clamp(1.2rem, 2vw, 1.9rem);
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: center;
+      transition: transform 200ms ease;
+    }
+
+    .inside-presence-cta:hover .inside-presence-cta-label,
+    .inside-presence-cta:hover .inside-presence-cta-icon {
+      transform: scale(1.1);
+    }
+    .inside-presence-cta:focus-visible .inside-presence-cta-label,
+    .inside-presence-cta:active .inside-presence-cta-label {
+      transform: scale(1.05);
+    }
+
+    .inside-hero-card-animation {
+      --inside-hero-card-width: clamp(164px, 24vw, 220px);
+      --inside-hero-card-height: calc(var(--inside-hero-card-width) * 0.6294);
+      --inside-hero-card-stage-height: calc(var(--inside-hero-card-width) * 0.96);
+      --inside-hero-card-radius: clamp(8px, 1.6vw, 14px);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: var(--inside-hero-card-width);
+      height: var(--inside-hero-card-stage-height);
+      display: grid;
+      place-items: center;
+      perspective: 1200px;
+      perspective-origin: 50% 45%;
+      z-index: 1;
+    }
+
+    .inside-hero-card-spin {
+      position: relative;
+      width: var(--inside-hero-card-width);
+      height: var(--inside-hero-card-height);
+      transform-style: preserve-3d;
+      animation: insideHeroCardSpin 9s linear infinite;
+    }
+
+    .inside-hero-card-tilt {
+      position: absolute;
+      inset: 0;
+      transform: rotateZ(45deg);
+      transform-style: preserve-3d;
+    }
+
+    .inside-hero-card-3d {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+    }
+
+    .inside-hero-card-face {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: var(--inside-hero-card-radius);
+      background: #000;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform-style: preserve-3d;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.48);
+    }
+
+    .inside-hero-card-face img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .inside-hero-card-front {
+      transform: translateZ(1px);
+    }
+
+    .inside-hero-card-back {
+      transform: rotateY(180deg) translateZ(1px);
+    }
+
+    @keyframes insideHeroCardSpin {
+      from {
+        transform: rotateY(0deg);
+      }
+      to {
+        transform: rotateY(360deg);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .inside-hero-card-spin {
+        animation-duration: 1ms;
+        animation-iteration-count: 1;
+      }
+    }
+      .inside-page.inside-page-fade-out .inside-hero .inside-hero-card-spin {
+        height: calc(100svh - 61px);
+      }
+
+      .inside-presence-section {
+        padding: 124px 0 24px;
+      }
+
+      .inside-presence-title {
+        font-size: 3.1rem;
+      }
+
+      .inside-presence-copy {
+        font-size: 1.16rem;
+      }
+
+      .inside-presence-cta {
+        margin-top: 40px;
+        border-radius: 20px;
+      }
+
+      .inside-presence-cta-icon {
+        width: 88px;
+        font-size: 2.2rem;
+      }
+
+      .inside-presence-cta-label {
+        padding: 24px 14px;
+        font-size: 1rem;
+      }
+    
+  </style>
 </head>
 <body data-theme="dark" class="page-fade-in inside-page">
   <header>
     <nav class="nav" aria-label="Main navigation">
       <a class="brand" href="index.html">Residue</a>
-      <div class="nav-links" aria-label="Primary">
-        <a href="residue-inside.html">Inside</a>
-        <a href="residue-private.html">Purchase</a>
-        <a href="index.html">Exit</a>
-      </div>
-      <div class="nav-actions">
-        <button class="theme-toggle" type="button" aria-pressed="true" aria-label="Toggle theme">
-          <span class="dot" aria-hidden="true"></span>
-          <span class="theme-label">Dark</span>
-        </button>
-        <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
-          <span></span>
-        </button>
-      </div>
     </nav>
-    <div class="mobile-nav" aria-label="Mobile navigation">
-      <a href="residue-inside.html">Inside</a>
-      <a href="residue-private.html">Purchase</a>
-      <a href="index.html">Exit</a>
-      <button class="theme-toggle" type="button" aria-pressed="true" aria-label="Toggle theme (mobile)">
-        <span class="dot" aria-hidden="true"></span>
-        <span class="theme-label">Dark</span>
-      </button>
-    </div>
   </header>
 
   <main>
     <section class="hero premium-hero inside-hero full-bleed fade-edges" id="top">
       <div class="hero-overlay" aria-hidden="true"></div>
-      <div class="hero-content inside-hero-content">
-        <div class="eyebrow premium">Access Granted</div>
-        <h1>Welcome Inside.</h1>
-        <div class="subhead premium">Residue circulates intentionally.</div>
-      </div>
-    </section>
-
-    <section class="brand-immersion reveal" aria-label="Brand immersion">
-      <div class="container narrow">
-        <div class="eyebrow premium">Presence</div>
-        <h2 class="h2">You Now Carry It.</h2>
-        <p class="muted">Thank you for signing up. Please navigate to the purchase section to get your Residue card.</p>
-      </div>
-    </section>
-
-    <section class="panel reveal center inside-purchase-cta" aria-label="Purchase call to action" style="padding: 72px 0;">
-      <div class="container">
-        <h2 class="h2 inside-purchase-title" style="margin-bottom: 12px;">RESIDUE</h2>
-        <div class="inside-purchase-row how-card-cta-row">
-          <span class="how-card-cta-arrow" aria-hidden="true"></span>
-          <a class="btn btn-outline premium-btn" href="residue-private.html#purchase" style="margin-top: 18px;">Purchase a Card</a>
+      <div class="inside-hero-card-animation" aria-hidden="true">
+        <div class="inside-hero-card-spin">
+          <div class="inside-hero-card-tilt">
+            <div class="inside-hero-card-3d">
+              <div class="inside-hero-card-face inside-hero-card-front">
+                <img src="images/card-images/card-front-1.jpg" alt="" loading="lazy" decoding="async">
+              </div>
+              <div class="inside-hero-card-face inside-hero-card-back">
+                <img src="images/card-images/card-back.jpeg" alt="" loading="lazy" decoding="async">
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
+
+    <section class="inside-presence-section" aria-label="Residue presence">
+      <div class="inside-presence-shell">
+        <div class="inside-presence-eyebrow">Presence</div>
+        <h2 class="inside-presence-title">Carry Your <span class="inside-presence-title-accent">Identity.</span></h2>
+        <p class="inside-presence-copy">Precision-crafted stainless steel NFC cards designed to be remembered.</p>
+        <a class="inside-presence-cta" href="residue-private.html#purchase">
+          <span class="inside-presence-cta-icon" aria-hidden="true">&rarr;</span>
+          <span class="inside-presence-cta-label">Purchase Your Card</span>
+        </a>
       </div>
     </section>
   </main>
 
-  <footer>
-    <div class="container footer-meta">
-      <span class="footer-copy">RESIDUE. Leave your mark.</span>
-    </div>
-  </footer>
-
   <script type="module" src="js/supabase-telemetry.js"></script>
   <script src="js/script.js"></script>
-  <script src="js/residue-inside.js"></script>
 </body>
 </html>
-
-
-
