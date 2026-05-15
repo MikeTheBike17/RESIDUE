@@ -336,9 +336,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function baseUnitPrice(qty) {
-    if (qty > 4) return 399;
-    if (qty >= 2) return 449;
-    return 499;
+    if (qty > 4) return 400;
+    if (qty >= 2) return 500;
+    return 500;
   }
 
   function standardCardsEnabled() {

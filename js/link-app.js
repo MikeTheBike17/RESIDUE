@@ -2800,9 +2800,9 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const totalDue = document.getElementById('total-due');
   const formatRand = n => 'R' + n.toLocaleString('en-ZA');
   const getUnitPrice = qty => {
-    if (qty >= 5) return 499;
-    if (qty >= 2) return 549;
-    return 599;
+    if (qty >= 5) return 500;
+    if (qty >= 2) return 600;
+    return 600;
   };
   const updateTotal = () => {
     if (!qtyInput || !totalDue) return;

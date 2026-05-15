@@ -2923,15 +2923,14 @@ input:focus, textarea:focus, select:focus {
   background: #ffffff;
 }
 
-.payment-provider-card-payfast .payment-provider-media {
-  min-height: 0;
-  display: block;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
+.payment-provider-card-payfast .payment-provider-media,
 .payment-provider-card-stitch .payment-provider-media {
+  min-height: 158px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 20px;
+  border-radius: 0;
   background: #ffffff;
 }
 
@@ -2942,7 +2941,7 @@ input:focus, textarea:focus, select:focus {
   display: block;
   border: 0;
   background: transparent;
-  margin: 0;
+  margin: 0 auto;
   object-fit: contain;
 }
 
@@ -2951,15 +2950,15 @@ input:focus, textarea:focus, select:focus {
 }
 
 .payment-provider-card-payfast .payment-provider-image {
-  max-width: none;
-  max-height: none;
+  max-width: 252px;
+  max-height: 94px;
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .payment-provider-card-stitch .payment-provider-image {
-  max-width: 236px;
-  max-height: 82px;
+  max-width: 238px;
+  max-height: 72px;
 }
 
 .payment-provider-card:hover {
@@ -5427,6 +5426,22 @@ body::after { opacity: 0.04; }
   .terms-actions .btn,
   .purchase-modal-actions .btn {
     width: 100%;
+  }
+
+  .payment-provider-card-payfast .payment-provider-media,
+  .payment-provider-card-stitch .payment-provider-media {
+    min-height: 126px;
+    padding: 18px 16px;
+  }
+
+  .payment-provider-card-payfast .payment-provider-image {
+    max-width: 228px;
+    max-height: 82px;
+  }
+
+  .payment-provider-card-stitch .payment-provider-image {
+    max-width: 214px;
+    max-height: 62px;
   }
 }
 
