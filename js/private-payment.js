@@ -233,6 +233,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function shippingFieldErrors() {
     const missing = [];
     [
+      els.email,
+      els.phone,
       els.shippingName,
       els.shippingStreet,
       els.shippingSuburb,
