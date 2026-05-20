@@ -61,7 +61,7 @@
             <span class="purchase-step">4</span>
             <span class="checkout-stepper-text">
               <strong>Payment</strong>
-              <small>Choose provider</small>
+              <small>Pay securely</small>
             </span>
           </button>
         </div>
@@ -225,7 +225,7 @@
                 <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
                 <div class="purchase-modal-actions checkout-inline-actions">
                   <button id="shipping-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
-                  <button id="shipping-next-btn" class="btn btn-outline premium-btn" type="button">Continue to Review</button>
+                  <button id="shipping-next-btn" class="btn btn-outline premium-btn" type="button">Continue to T&Cs</button>
                 </div>
               </section>
 
@@ -263,51 +263,11 @@
                   <span class="checkout-section-index" aria-hidden="true">4</span>
                   <div>
                     <p class="checkout-section-label">Payment</p>
-                    <h3 class="checkout-section-title">Choose Provider</h3>
+                    <h3 class="checkout-section-title">Secure Payment</h3>
                   </div>
                 </div>
-                <p class="payment-provider-intro">Choose your preferred payment provider.</p>
+                <p class="payment-provider-intro">PayFast is the secure payment provider for this order.</p>
                 <div class="status configure-status" id="payfast-confirm-status" aria-live="polite" hidden></div>
-
-                <div class="payment-provider-grid" aria-label="Payment providers">
-                  <button id="payfast-continue-btn" class="payment-provider-card payment-provider-card-payfast" type="button" data-payment-provider="payfast" aria-pressed="false">
-                    <div class="payment-provider-media">
-                      <img
-                        class="payment-provider-image"
-                        src="images/payment-providers/payfast-logo.jpg"
-                        alt="PayFast provider logo"
-                        width="1367"
-                        height="632"
-                        loading="eager"
-                        fetchpriority="high"
-                        decoding="async"
-                      >
-                    </div>
-                    <div class="payment-provider-copy-block">
-                      <strong>PayFast</strong>
-                      <span>Card and local payment checkout</span>
-                    </div>
-                  </button>
-
-                  <button id="stitch-continue-btn" class="payment-provider-card payment-provider-card-stitch" type="button" data-payment-provider="stitch" aria-pressed="false">
-                    <div class="payment-provider-media">
-                      <img
-                        class="payment-provider-image"
-                        src="images/payment-providers/stitch-express-logo.png"
-                        alt="Stitch provider logo"
-                        width="765"
-                        height="144"
-                        loading="eager"
-                        fetchpriority="high"
-                        decoding="async"
-                      >
-                    </div>
-                    <div class="payment-provider-copy-block">
-                      <strong>Stitch</strong>
-                      <span>Premium hosted card checkout</span>
-                    </div>
-                  </button>
-                </div>
                 <div class="purchase-modal-actions checkout-inline-actions">
                   <button id="payfast-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
                 </div>
@@ -359,11 +319,13 @@
                   </div>
                 </div>
 
+                <div class="status configure-status" id="summary-payment-status" aria-live="polite" hidden></div>
                 <button id="purchase-btn" type="button" class="btn checkout-primary-cta" data-checkout-continue="delivery">Continue to Delivery</button>
+                <p class="checkout-payfast-redirect-note" id="payfast-redirect-note" hidden>You will be redirected to PayFast for secure payment.</p>
 
                 <div class="checkout-summary-trust">
                   <p>Secure checkout</p>
-                  <span>Payment confirmation after purchase. Delivery and provider details stay exactly in the current flow.</span>
+                  <span>Payment confirmation after purchase. PayFast processes the secure payment for this order.</span>
                 </div>
               </div>
             </div>
@@ -475,7 +437,7 @@
 
     <div id="payfast-confirm-modal" class="pay-modal hidden" aria-hidden="true">
       <div class="modal-content modal-content--has-close terms-modal-content">
-        <button class="close-btn" aria-label="Close payment provider step">&times;</button>
+        <button class="close-btn" aria-label="Close payment step">&times;</button>
         <div class="stack" style="gap:16px;">
           <div class="purchase-step-indicator" aria-label="Purchase flow step 4 of 4">
             <span class="purchase-step is-complete">1</span>
@@ -503,46 +465,8 @@
             </div>
           </div>
 
-          <p class="payment-provider-intro">Choose your preferred payment provider.</p>
-
-          <!-- PAYMENT PROVIDER OPTIONS START -->
-          <div class="payment-provider-grid" aria-label="Payment providers">
-            <button id="payfast-continue-btn" class="payment-provider-card payment-provider-card-payfast" type="button">
-              <div class="payment-provider-media">
-                <img
-                  class="payment-provider-image"
-                  src="images/payment-providers/payfast-logo.jpg"
-                  alt="PayFast provider logo"
-                  width="1367"
-                  height="632"
-                  loading="eager"
-                  fetchpriority="high"
-                  decoding="async"
-                >
-              </div>
-            </button>
-
-            <!-- STITCH PAYMENT OPTION START -->
-            <button id="stitch-continue-btn" class="payment-provider-card payment-provider-card-stitch" type="button">
-              <div class="payment-provider-media">
-                <img
-                  class="payment-provider-image"
-                  src="images/payment-providers/stitch-express-logo.png"
-                  alt="Stitch provider logo"
-                  width="765"
-                  height="144"
-                  loading="eager"
-                  fetchpriority="high"
-                  decoding="async"
-                >
-              </div>
-            </button>
-            <!-- STITCH PAYMENT OPTION END -->
-          </div>
-          <!-- PAYMENT PROVIDER OPTIONS END -->
-
           <p class="muted">
-            Choose a payment provider to complete your order securely.<br>
+            You will be redirected to PayFast for secure payment.<br>
             After payment you will be redirected back to Residue with a confirmation message.
           </p>
           <div class="purchase-modal-actions">

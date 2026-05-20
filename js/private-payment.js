@@ -21,6 +21,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   const els = {
     checkoutFlowCard: qs("#checkout-flow-card"),
+    checkoutLayout: qs(".checkout-layout"),
+    checkoutSummaryCard: qs(".checkout-summary-card"),
     configureForm: qs(".configure-form"),
     checkoutStagePanels: qsa("[data-checkout-stage]"),
     fullName: qs("#full-name"),
@@ -61,6 +63,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     shippingNextBtn: qs("#shipping-next-btn"),
     payfastStatus: qs("#payfast-status"),
     payfastConfirmStatus: qs("#payfast-confirm-status"),
+    summaryPaymentStatus: qs("#summary-payment-status"),
     payfastConfirmModal: qs("#payfast-confirm-modal"),
     payfastConfirmClose: qs("#payfast-confirm-modal .close-btn"),
     payfastSubtotal: qs("#payfast-subtotal"),
@@ -70,6 +73,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     payfastContinueBtn: qs("#payfast-continue-btn"),
     stitchContinueBtn: qs("#stitch-continue-btn"),
     paymentProviderButtons: qsa("[data-payment-provider]"),
+    payfastRedirectNote: qs("#payfast-redirect-note"),
     payfastForm: qs("#payfast-form"),
     thankYouModal: qs("#thank-you-modal"),
     thankYouHeading: qs("#thank-you-heading"),
@@ -116,7 +120,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   let currentCheckoutStage = 1;
   let termsAccepted = false;
   let summaryShippingUnlocked = false;
-  let selectedPaymentProvider = "";
+  let selectedPaymentProvider = "payfast";
 
   function setStatus(el, message, type = "") {
     if (!el) return;
@@ -129,10 +133,17 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function setPayFastStatus(message, type = "") {
     setStatus(els.payfastStatus, message, type);
     setStatus(els.payfastConfirmStatus, message, type);
+    setStatus(els.summaryPaymentStatus, message, type);
+  }
+
+  function shippingAmountForQuantity(qty) {
+    if (qty >= 20) return 340;
+    if (qty >= 10) return 220;
+    return SHIPPING_FEE;
   }
 
   function sidebarShippingAmount() {
-    return summaryShippingUnlocked ? SHIPPING_FEE : 0;
+    return summaryShippingUnlocked ? shippingAmountForQuantity(getCheckoutData().qty) : 0;
   }
 
   function setPaymentProviderButtonsDisabled(disabled) {
@@ -142,8 +153,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (els.purchaseBtn) els.purchaseBtn.disabled = Boolean(disabled && currentCheckoutStage === 4);
   }
 
-  function setSelectedPaymentProvider(provider = "") {
-    const normalized = provider === "stitch" ? "stitch" : provider === "payfast" ? "payfast" : "";
+  function setSelectedPaymentProvider(provider = "payfast") {
+    const normalized = "payfast";
     selectedPaymentProvider = normalized;
     els.paymentProviderButtons.forEach((button) => {
       const isSelected = button.getAttribute("data-payment-provider") === normalized;
@@ -309,9 +320,13 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     });
 
     updatePurchaseButtonLabel();
+    els.checkoutLayout?.classList.toggle("is-payment-focus", currentCheckoutStage === 4);
+    if (els.payfastRedirectNote) els.payfastRedirectNote.hidden = currentCheckoutStage !== 4;
 
     if (scroll) {
-      const target = els.checkoutFlowCard
+      const target = currentCheckoutStage === 4
+        ? els.checkoutSummaryCard || els.payfastRedirectNote || els.purchaseBtn
+        : els.checkoutFlowCard
         || checkoutStageSections().find(panel => checkoutStageFor(panel) === currentCheckoutStage)
         || els.configureForm;
       target?.scrollIntoView?.({ behavior: "smooth", block: "start" });
@@ -408,7 +423,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     } else if (currentCheckoutStage === 3) {
       label = "Review Terms Below";
     } else if (currentCheckoutStage === 4) {
-      label = selectedPaymentProvider ? "Pay Now" : "Choose a Payment Provider";
+      label = "Pay Now";
     } else if (standardCardsEnabled()) {
       label = selectedCardConfiguration
         ? `Continue to Delivery - Card Type ${selectedCardConfiguration}`
@@ -826,7 +841,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     const logoFee = customLogoFeePerCard();
     const perItem = basePerItem + logoFee;
     const subtotal = safeQty * perItem;
-    const shipping = SHIPPING_FEE;
+    const shipping = shippingAmountForQuantity(safeQty);
     const total = subtotal + shipping;
     return { qty: safeQty, basePerItem, logoFee, perItem, subtotal, shipping, total };
   }
@@ -1016,17 +1031,8 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       return;
     }
 
-    if (!selectedPaymentProvider) {
-      setPayFastStatus("Choose a payment provider before continuing.", "error");
-      updateCheckoutStage(4, { scroll: true });
-      return;
-    }
-
-    if (selectedPaymentProvider === "payfast") {
-      await proceedToPayFast(pendingTermsOrder);
-    } else {
-      await proceedToStitch(pendingTermsOrder);
-    }
+    selectedPaymentProvider = "payfast";
+    await proceedToPayFast(pendingTermsOrder);
 
     if (!els.payfastConfirmStatus?.classList.contains("error")) {
       pendingTermsOrder = null;
@@ -1460,6 +1466,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         return;
       }
       termsAccepted = true;
+      setSelectedPaymentProvider("payfast");
       setPaymentProviderButtonsDisabled(false);
       setPayFastStatus("");
       showPurchaseStep(els.payfastConfirmModal);
@@ -1482,9 +1489,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     });
     els.payfastContinueBtn?.addEventListener("click", () => {
       setSelectedPaymentProvider("payfast");
-    });
-    els.stitchContinueBtn?.addEventListener("click", () => {
-      setSelectedPaymentProvider("stitch");
     });
     if (els.payfastConfirmModal && !els.payfastConfirmModal.hasAttribute("data-checkout-stage")) {
       els.payfastConfirmModal.addEventListener("click", (e) => {
