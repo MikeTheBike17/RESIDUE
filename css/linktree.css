@@ -732,11 +732,11 @@
 
 .lt-access-code-panel__summary {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 32px;
+  grid-template-columns: minmax(0, 1fr) 34px;
   align-items: center;
-  gap: 14px;
-  min-height: 84px;
-  padding: 16px 18px;
+  gap: 10px;
+  min-height: 68px;
+  padding: 12px 14px;
   cursor: pointer;
   list-style: none;
 }
@@ -755,8 +755,10 @@
 }
 
 .lt-access-code-panel__copy {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
   min-width: 0;
 }
 
@@ -765,21 +767,26 @@
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  line-height: 1;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lt-access-code-panel__label::after {
+  content: ":";
 }
 
 .lt-access-code-panel__value {
   display: inline-flex;
   width: fit-content;
   max-width: 100%;
-  padding: 8px 12px;
+  padding: 7px 11px;
   border: 1px solid rgba(181, 134, 77, 0.38);
   border-radius: 999px;
   background: rgba(181,134,77,0.14);
   color: var(--lt-text);
-  font-size: clamp(1.08rem, 4.8vw, 1.36rem);
+  font-size: clamp(1rem, 4.2vw, 1.22rem);
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
@@ -813,7 +820,7 @@
 
 .lt-access-code-panel__note {
   margin: 0;
-  padding: 0 18px 18px;
+  padding: 0 14px 16px;
   color: var(--lt-muted);
   font-size: 0.98rem;
   line-height: 1.55;
