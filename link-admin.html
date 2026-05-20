@@ -84,14 +84,18 @@
 
     <!--CONFIGURE CARD-->
     <div class="admin-card lt-admin lt-admin-remodel" id="lt-editor" hidden>
-      <div class="lt-admin-topbar" aria-label="Profile actions">
-        <div class="lt-admin-topbar__copy">
-          <div class="lt-admin-topbar__row">
-            <div class="lt-label lt-admin-topbar__title">Access code: res-1738</div>
-          </div>
-          <p class="lt-note">You can share this code with others to grant them access to purchase a card.</p>
-        </div>
-      </div>
+      <details class="lt-access-code-panel">
+        <summary class="lt-access-code-panel__summary">
+          <span class="lt-access-code-panel__copy">
+            <span class="lt-access-code-panel__label">Access code</span>
+            <span class="lt-access-code-panel__value">res-1738</span>
+          </span>
+          <span class="lt-access-code-panel__chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="m6 9 6 6 6-6"></path></svg>
+          </span>
+        </summary>
+        <p class="lt-access-code-panel__note">You can share this code with others to grant them access to purchase a card.</p>
+      </details>
 
       <div class="lt-admin-topbar" aria-label="Profile actions">
         <div class="lt-admin-topbar__copy">
