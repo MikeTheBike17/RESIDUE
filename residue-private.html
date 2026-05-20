@@ -78,13 +78,13 @@
                       <h3 class="checkout-section-title">Your card configuration</h3>
                     </div>
                   </div>
-                  <p class="checkout-section-copy muted">Enter your details, choose a card route, and set the quantity before continuing to delivery.</p>
+                  <p class="checkout-section-copy muted">Enter your details, set the quantity, and choose a card type before continuing to shipping.</p>
                 </section>
 
                 <section class="checkout-section-block checkout-details-block">
                   <div class="checkout-subsection-head">
                     <h4>Your details</h4>
-                    <p class="muted small">We use these details for the invoice and order record.</p>
+                    <p class="muted small">We use these details for the order record.</p>
                   </div>
                   <div class="checkout-field-grid">
                     <div class="checkout-field">
@@ -94,14 +94,6 @@
                     <div class="checkout-field">
                       <label for="customer-title">Title</label>
                       <input id="customer-title" name="customer-title" type="text" autocomplete="organization-title" placeholder="Manager" required>
-                    </div>
-                    <div class="checkout-field">
-                      <label for="email-config">Email</label>
-                      <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
-                    </div>
-                    <div class="checkout-field">
-                      <label for="phone">Phone number</label>
-                      <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="012 345 6789" required>
                     </div>
                     <div class="checkout-field checkout-field-wide">
                       <label for="quantity">Quantity</label>
@@ -189,6 +181,14 @@
                   <div class="checkout-field checkout-field-wide">
                     <label for="shipping-name">Full Name</label>
                     <input id="shipping-name" name="shipping-name" type="text" placeholder="Full Name" required>
+                  </div>
+                  <div class="checkout-field">
+                    <label for="email-config">Email</label>
+                    <input id="email-config" name="email-config" type="email" autocomplete="email" placeholder="you@domain.com" required>
+                  </div>
+                  <div class="checkout-field">
+                    <label for="phone">Phone number</label>
+                    <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="012 345 6789" required>
                   </div>
                   <div class="checkout-field checkout-field-wide">
                     <label for="shipping-street">Street Address</label>
