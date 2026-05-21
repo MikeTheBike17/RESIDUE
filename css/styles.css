@@ -4477,6 +4477,23 @@ body::after { opacity: 0.04; }
   min-width: 220px;
 }
 
+.card-urls-check-col {
+  width: 96px;
+  text-align: center !important;
+}
+
+.card-urls-check {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent-premium);
+  cursor: pointer;
+}
+
+.card-urls-check:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
 .card-urls-copy-btn {
   width: 42px;
   height: 42px;
