@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { createHash } from "node:crypto";
+import { Resend } from "npm:resend@4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,6 +21,10 @@ const PAYFAST_VALID_HOSTS = (Deno.env.get("PAYFAST_VALID_HOSTS") ?? "www.payfast
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const INVOICE_TABLE = Deno.env.get("SUPABASE_INVOICES_TABLE") || "purchase_invoices";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+const PURCHASE_CONFIRMATION_FROM_EMAIL = Deno.env.get("PURCHASE_CONFIRMATION_FROM_EMAIL")
+  ?? Deno.env.get("FROM_EMAIL")
+  ?? "Residue <orders@residue.cc>";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -133,9 +138,58 @@ function isMissingColumnError(error: { message?: string } | null) {
   return /(column .* does not exist|could not find .* column .* schema cache)/i.test(error?.message || "");
 }
 
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function firstNameFromNameOrEmail(name: unknown, email: unknown) {
+  const cleanName = String(name || "").trim();
+  if (cleanName) return cleanName.split(/\s+/)[0];
+  return String(email || "").split("@")[0] || "there";
+}
+
 function reject(error: string, detail: string, extra: Record<string, unknown> = {}) {
   console.error("PayFast ITN rejected", { error, detail, ...extra });
   return json({ error, detail, ...extra }, 400);
+}
+
+async function sendPurchaseConfirmationEmail(invoice: Record<string, unknown>) {
+  const email = String(invoice.customer_email || "").trim().toLowerCase();
+  if (!RESEND_API_KEY || !email) return { skipped: true };
+
+  const firstName = escapeHtml(firstNameFromNameOrEmail(invoice.customer_name, email));
+  const invoiceNo = escapeHtml(invoice.invoice_no);
+  const resend = new Resend(RESEND_API_KEY);
+
+  const { error } = await resend.emails.send({
+    from: PURCHASE_CONFIRMATION_FROM_EMAIL,
+    to: [email],
+    subject: "Your Residue order is being processed",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;max-width:560px">
+        <h2 style="margin:0 0 16px">Congratulations on your purchase, ${firstName}.</h2>
+        <p>Thank you for your Residue order. Your payment has been received successfully and your order is now being processed.</p>
+        <p>Your invoice will be sent to you within the next 48 hours via email.</p>
+        <p style="margin:24px 0 0;color:#555">Order reference: <strong>${invoiceNo}</strong></p>
+      </div>
+    `,
+    text: [
+      `Congratulations on your purchase, ${firstName}.`,
+      "",
+      "Thank you for your Residue order. Your payment has been received successfully and your order is now being processed.",
+      "Your invoice will be sent to you within the next 48 hours via email.",
+      "",
+      `Order reference: ${invoiceNo}`
+    ].join("\n")
+  });
+
+  if (error) throw new Error(error.message || "Purchase confirmation email failed.");
+  return { sent: true };
 }
 
 Deno.serve(async req => {
@@ -238,7 +292,7 @@ Deno.serve(async req => {
 
   const { data: invoice, error: invoiceError } = await supabase
     .from(INVOICE_TABLE)
-    .select("invoice_no,payment_status,total_amount")
+    .select("invoice_no,customer_name,customer_email,payment_status,total_amount")
     .eq("invoice_no", invoiceNo)
     .maybeSingle();
 
@@ -288,6 +342,21 @@ Deno.serve(async req => {
     return json({ error: "Could not update invoice.", detail: updateError.message }, 500);
   }
 
+  let emailResult: Record<string, unknown> = { skipped: true };
+  if (nextStatus === "COMPLETE" && existingStatus !== "COMPLETE") {
+    try {
+      emailResult = await sendPurchaseConfirmationEmail(invoice);
+    } catch (error) {
+      emailResult = {
+        error: error instanceof Error ? error.message : "Purchase confirmation email failed."
+      };
+      console.error("Purchase confirmation email failed", {
+        invoice: invoiceNo,
+        detail: emailResult.error
+      });
+    }
+  }
+
   await supabase.from("purchase_activity_log").insert({
     visitor_id: "payfast-itn",
     invoice_no: invoiceNo,
@@ -302,7 +371,8 @@ Deno.serve(async req => {
     metadata: {
       pf_payment_id: paymentReference,
       amount_fee: data.amount_fee || null,
-      amount_net: data.amount_net || null
+      amount_net: data.amount_net || null,
+      confirmation_email: emailResult
     }
   });
 
