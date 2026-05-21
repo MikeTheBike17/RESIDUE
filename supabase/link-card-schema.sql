@@ -201,6 +201,8 @@ create table if not exists public.purchase_invoices (
   total_amount numeric(12,2),
   payment_provider text,
   payment_status text not null default 'PENDING',
+  invoice_sent_to_client boolean not null default false,
+  order_sent_to_client boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -263,6 +265,10 @@ alter table public.purchase_invoices
   add column if not exists payment_provider text;
 alter table public.purchase_invoices
   add column if not exists payment_status text not null default 'PENDING';
+alter table public.purchase_invoices
+  add column if not exists invoice_sent_to_client boolean not null default false;
+alter table public.purchase_invoices
+  add column if not exists order_sent_to_client boolean not null default false;
 alter table public.purchase_invoices
   add column if not exists created_at timestamptz not null default now();
 alter table public.purchase_invoices
@@ -402,6 +408,14 @@ on public.purchase_invoices
 for select
 to authenticated
 using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'check.email@residue.com');
+
+drop policy if exists "purchase invoices manager update fulfilment flags" on public.purchase_invoices;
+create policy "purchase invoices manager update fulfilment flags"
+on public.purchase_invoices
+for update
+to authenticated
+using (lower(coalesce(auth.jwt() ->> 'email', '')) = 'check.email@residue.com')
+with check (lower(coalesce(auth.jwt() ->> 'email', '')) = 'check.email@residue.com');
 
 create or replace function public.create_code_for_user(p_owner uuid)
 returns public.codes

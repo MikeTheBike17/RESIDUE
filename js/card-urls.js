@@ -26,6 +26,7 @@ const isCardUrlsPage = !!urlsBody;
 const isInvoicingPage = !!invoiceBody && !urlsBody;
 let profileRowsCache = [];
 let invoiceRowsCache = [];
+const INVOICE_TABLE_COLSPAN = 13;
 
 function normalizeEmail(value) {
   return (value || '').trim().toLowerCase();
@@ -184,7 +185,7 @@ function formatShipping(row) {
 function renderInvoiceRows(rows, emptyMessage = 'No invoices found.') {
   if (!invoiceBody) return;
   if (!rows.length) {
-    invoiceBody.innerHTML = `<tr><td colspan="11" class="card-urls-empty">${emptyMessage}</td></tr>`;
+    invoiceBody.innerHTML = `<tr><td colspan="${INVOICE_TABLE_COLSPAN}" class="card-urls-empty">${emptyMessage}</td></tr>`;
     return;
   }
 
@@ -227,8 +228,58 @@ function renderInvoiceRows(rows, emptyMessage = 'No invoices found.') {
     paymentTd.textContent = row.payment_status || '';
     tr.appendChild(paymentTd);
 
+    const invoiceSentTd = document.createElement('td');
+    invoiceSentTd.className = 'card-urls-check-col';
+    invoiceSentTd.appendChild(buildInvoiceFlagCheckbox(row, 'invoice_sent_to_client', 'invoice sent'));
+    tr.appendChild(invoiceSentTd);
+
+    const orderSentTd = document.createElement('td');
+    orderSentTd.className = 'card-urls-check-col';
+    orderSentTd.appendChild(buildInvoiceFlagCheckbox(row, 'order_sent_to_client', 'order sent'));
+    tr.appendChild(orderSentTd);
+
     invoiceBody.appendChild(tr);
   });
+}
+
+function buildInvoiceFlagCheckbox(row, field, label) {
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.className = 'card-urls-check';
+  input.checked = !!row[field];
+  input.setAttribute('aria-label', `Mark ${label} for invoice ${row.invoice_no || 'unknown'}`);
+  input.addEventListener('change', () => updateInvoiceFlag(row, field, input.checked, input));
+  return input;
+}
+
+async function updateInvoiceFlag(row, field, value, input) {
+  if (!supabase || !row.invoice_no) return;
+
+  const previousValue = !!row[field];
+  row[field] = value;
+  input.disabled = true;
+  setStatus('Saving invoice status...', 'loading');
+
+  const { error } = await supabase
+    .from(INVOICE_TABLE)
+    .update({
+      [field]: value,
+      updated_at: new Date().toISOString()
+    })
+    .eq('invoice_no', row.invoice_no);
+
+  input.disabled = false;
+
+  if (error) {
+    row[field] = previousValue;
+    input.checked = previousValue;
+    setStatus(error.message || 'Could not save invoice status.', 'error');
+    return;
+  }
+
+  const cachedRow = invoiceRowsCache.find(item => item.invoice_no === row.invoice_no);
+  if (cachedRow) cachedRow[field] = value;
+  setStatus('Invoice status saved.', 'success');
 }
 
 function applySearchFilter() {
@@ -291,7 +342,7 @@ async function fetchProfileRows() {
 async function fetchInvoiceRows() {
   const { data, error } = await supabase
     .from(INVOICE_TABLE)
-    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_province, shipping_postal, payment_status, created_at')
+    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_province, shipping_postal, payment_status, invoice_sent_to_client, order_sent_to_client, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message || 'Could not load invoices.');
@@ -309,7 +360,9 @@ async function fetchInvoiceRows() {
     custom_logo_image: row.custom_logo_image || '',
     custom_logo_file_name: row.custom_logo_file_name || '',
     shipping: formatShipping(row),
-    payment_status: paymentLabel(row.payment_status)
+    payment_status: paymentLabel(row.payment_status),
+    invoice_sent_to_client: !!row.invoice_sent_to_client,
+    order_sent_to_client: !!row.order_sent_to_client
   }));
 }
 
