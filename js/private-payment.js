@@ -139,6 +139,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   function shippingAmountForQuantity(qty) {
     if (qty >= 20) return 340;
     if (qty >= 10) return 220;
+    if (qty > 0 && qty < 5) return 60;
     return SHIPPING_FEE;
   }
 
