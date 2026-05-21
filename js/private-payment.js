@@ -811,7 +811,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       .update(payload)
       .eq("invoice_no", invoiceNo);
 
-    if (error && /column .* does not exist/i.test(error.message || "")) {
+    if (error && /(column .* does not exist|could not find .* column .* schema cache)/i.test(error.message || "")) {
       const fallbackPayload = {
         payment_provider: payload.payment_provider,
         payment_status: payload.payment_status,
@@ -828,11 +828,20 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   async function fetchInvoicePaymentState(invoiceNo) {
     if (!supabase || !invoiceNo) return null;
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from(INVOICE_TABLE)
       .select("payment_provider,payment_status,payment_reference")
       .eq("invoice_no", invoiceNo)
       .maybeSingle();
+
+    if (error && /(column .* does not exist|could not find .* column .* schema cache)/i.test(error.message || "")) {
+      ({ data, error } = await supabase
+        .from(INVOICE_TABLE)
+        .select("payment_provider,payment_status")
+        .eq("invoice_no", invoiceNo)
+        .maybeSingle());
+    }
+
     if (error) return null;
     return data || null;
   }
