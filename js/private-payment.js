@@ -765,6 +765,10 @@ import { residueTelemetry } from "./supabase-telemetry.js";
       shipping_city: order.shipping_city,
       shipping_province: order.shipping_province,
       shipping_postal: order.shipping_postal,
+      unit_price: order.unit_price,
+      subtotal_amount: order.subtotal_amount,
+      shipping_amount: order.shipping_amount,
+      total_amount: order.total_amount,
       payment_provider: order.payment_provider,
       payment_status: order.payment_status,
       created_at: order.created_at,
@@ -777,7 +781,22 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     const { error } = await supabase
       .from(INVOICE_TABLE)
       .upsert(buildInvoiceRecord(order, userId), { onConflict: "invoice_no" });
-    if (error) throw new Error(`Could not save invoice in Supabase: ${error.message}`);
+    if (!error) return;
+
+    if (/column .* does not exist/i.test(error.message || "")) {
+      const fallbackRecord = buildInvoiceRecord(order, userId);
+      delete fallbackRecord.unit_price;
+      delete fallbackRecord.subtotal_amount;
+      delete fallbackRecord.shipping_amount;
+      delete fallbackRecord.total_amount;
+      const { error: fallbackError } = await supabase
+        .from(INVOICE_TABLE)
+        .upsert(fallbackRecord, { onConflict: "invoice_no" });
+      if (!fallbackError) return;
+      throw new Error(`Could not save invoice in Supabase: ${fallbackError.message}`);
+    }
+
+    throw new Error(`Could not save invoice in Supabase: ${error.message}`);
   }
 
   async function updateInvoiceStatus(invoiceNo, updates) {
@@ -805,6 +824,17 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
 
     if (error) throw new Error(`Could not update invoice in Supabase: ${error.message}`);
+  }
+
+  async function fetchInvoicePaymentState(invoiceNo) {
+    if (!supabase || !invoiceNo) return null;
+    const { data, error } = await supabase
+      .from(INVOICE_TABLE)
+      .select("payment_provider,payment_status,payment_reference")
+      .eq("invoice_no", invoiceNo)
+      .maybeSingle();
+    if (error) return null;
+    return data || null;
   }
 
   async function configurePayFastForm(order) {
@@ -1258,16 +1288,27 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   async function handleReturnFromPayFast(state, pendingOrder) {
-    const status = state.paymentStatus || "PENDING";
     const invoice = state.invoice || pendingOrder?.invoice_no || "";
+    const returnedStatus = state.paymentStatus || "PENDING";
+    let status = returnedStatus === "CANCELLED" ? "CANCELLED" : "PENDING";
 
     try {
-      await updateInvoiceStatus(invoice, {
-        payment_provider: "payfast",
-        payment_status: status,
-        payment_reference: state.payfastPaymentId || null,
-        payment_updated_at: new Date().toISOString()
-      });
+      const currentPaymentState = await fetchInvoicePaymentState(invoice);
+      const currentStatus = normalizePayFastStatus(currentPaymentState?.payment_status || "");
+
+      if (currentStatus === "COMPLETE") {
+        status = "COMPLETE";
+      } else if (status === "CANCELLED") {
+        await updateInvoiceStatus(invoice, {
+          payment_provider: "payfast",
+          payment_status: "CANCELLED",
+          payment_reference: state.payfastPaymentId || currentPaymentState?.payment_reference || null,
+          payment_updated_at: new Date().toISOString()
+        });
+      } else if (currentStatus && currentStatus !== "PENDING") {
+        status = currentStatus;
+      }
+
       residueTelemetry.logPurchaseEvent({
         stage: "payment_return",
         outcome: "success",
@@ -1279,7 +1320,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
         amount_total: pendingOrder?.total_amount ?? null,
         product: pendingOrder?.product ?? null,
         quantity: pendingOrder?.quantity ?? null,
-        detail: "Processed PayFast return state."
+        detail: "Processed PayFast browser return state. Trusted paid status is handled by PayFast ITN."
       });
     } catch (err) {
       console.error(err);
