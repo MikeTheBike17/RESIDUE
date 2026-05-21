@@ -101,6 +101,10 @@ function amountsMatch(expected: unknown, paid: string | null) {
     && Math.abs(expectedAmount - paidAmount) < 0.01;
 }
 
+function isMissingColumnError(error: { message?: string } | null) {
+  return /(column .* does not exist|could not find .* column .* schema cache)/i.test(error?.message || "");
+}
+
 Deno.serve(async req => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -174,7 +178,7 @@ Deno.serve(async req => {
   const nextStatus = existingStatus === "COMPLETE" ? "COMPLETE" : paymentStatus;
   const now = new Date().toISOString();
 
-  const { error: updateError } = await supabase
+  let { error: updateError } = await supabase
     .from(INVOICE_TABLE)
     .update({
       payment_provider: "payfast",
@@ -184,6 +188,17 @@ Deno.serve(async req => {
       updated_at: now
     })
     .eq("invoice_no", invoiceNo);
+
+  if (isMissingColumnError(updateError)) {
+    ({ error: updateError } = await supabase
+      .from(INVOICE_TABLE)
+      .update({
+        payment_provider: "payfast",
+        payment_status: nextStatus,
+        updated_at: now
+      })
+      .eq("invoice_no", invoiceNo));
+  }
 
   if (updateError) {
     return json({ error: "Could not update invoice.", detail: updateError.message }, 500);
