@@ -5,7 +5,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   const cfg = window.env || {};
   const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || "purchase_invoices";
   const CARD_CONFIG_TABLE = "card_configs";
-  const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 120);
+  const SHIPPING_FEE = 0;
   const PAYFAST_PROCESS_URL = cfg.PAYFAST_PROCESS_URL || "https://www.payfast.co.za/eng/process";
   const PENDING_ORDER_KEY = "residue_pending_order";
   const THANK_YOU_REDIRECT_MS = 7000;
@@ -137,8 +137,6 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function shippingAmountForQuantity(qty) {
-    if (qty >= 20) return 340;
-    if (qty >= 10) return 220;
     return SHIPPING_FEE;
   }
 
@@ -353,6 +351,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   }
 
   function baseUnitPrice(qty) {
+    if (standardCardsEnabled()) return 5;
     if (qty > 4) return 400;
     if (qty >= 2) return 500;
     return 500;
