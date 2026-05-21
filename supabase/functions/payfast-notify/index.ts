@@ -12,6 +12,7 @@ const PAYFAST_MERCHANT_ID = Deno.env.get("PAYFAST_MERCHANT_ID") ?? "";
 const PAYFAST_MERCHANT_KEY = Deno.env.get("PAYFAST_MERCHANT_KEY") ?? "";
 const PAYFAST_PASSPHRASE = Deno.env.get("PAYFAST_PASSPHRASE") ?? "";
 const PAYFAST_VALIDATE_URL = Deno.env.get("PAYFAST_VALIDATE_URL") ?? "https://www.payfast.co.za/eng/query/validate";
+const PAYFAST_ENFORCE_SOURCE_IP = String(Deno.env.get("PAYFAST_ENFORCE_SOURCE_IP") || "").trim().toLowerCase() === "true";
 const PAYFAST_VALID_HOSTS = (Deno.env.get("PAYFAST_VALID_HOSTS") ?? "www.payfast.co.za,w1w.payfast.co.za,w2w.payfast.co.za,sandbox.payfast.co.za")
   .split(",")
   .map(host => host.trim().toLowerCase())
@@ -141,15 +142,29 @@ Deno.serve(async req => {
   const receivedSignature = String(data.signature || "").trim().toLowerCase();
   const expectedSignature = md5(PAYFAST_PASSPHRASE ? `${paramString}&passphrase=${payFastEncode(PAYFAST_PASSPHRASE)}` : paramString);
   if (!receivedSignature || receivedSignature !== expectedSignature) {
-    return json({ error: "Invalid PayFast signature." }, 400);
+    return json({
+      error: "Invalid PayFast signature.",
+      detail: PAYFAST_PASSPHRASE
+        ? "The function is validating with PAYFAST_PASSPHRASE. Remove that Supabase secret if no passphrase is configured in PayFast."
+        : "The function is validating without a passphrase. If PayFast has a passphrase configured, add the exact value as PAYFAST_PASSPHRASE.",
+      passphrase_configured: !!PAYFAST_PASSPHRASE
+    }, 400);
   }
 
-  if (!(await validPayFastSource(req))) {
-    return json({ error: "Invalid PayFast source." }, 400);
+  if (PAYFAST_ENFORCE_SOURCE_IP && !(await validPayFastSource(req))) {
+    return json({
+      error: "Invalid PayFast source.",
+      detail: "The ITN signature passed, but the request IP did not match PayFast's resolved hosts.",
+      checked_hosts: PAYFAST_VALID_HOSTS
+    }, 400);
   }
 
   if (!(await validServerConfirmation(paramString))) {
-    return json({ error: "PayFast server validation failed." }, 400);
+    return json({
+      error: "PayFast server validation failed.",
+      detail: "The ITN signature and source checks passed, but PayFast did not return VALID from the server validation endpoint.",
+      validate_url: PAYFAST_VALIDATE_URL
+    }, 400);
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -171,7 +186,12 @@ Deno.serve(async req => {
   }
 
   if (!amountsMatch(invoice.total_amount, String(data.amount_gross || ""))) {
-    return json({ error: "Amount mismatch.", invoice: invoiceNo }, 400);
+    return json({
+      error: "Amount mismatch.",
+      invoice: invoiceNo,
+      expected_amount: invoice.total_amount,
+      payfast_amount: data.amount_gross || null
+    }, 400);
   }
 
   const existingStatus = normalizeStatus(String(invoice.payment_status || ""));

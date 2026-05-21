@@ -14,6 +14,7 @@ Optional test/sandbox values:
 
 - `PAYFAST_VALIDATE_URL` defaults to `https://www.payfast.co.za/eng/query/validate`
 - `PAYFAST_VALID_HOSTS` defaults to `www.payfast.co.za,w1w.payfast.co.za,w2w.payfast.co.za,sandbox.payfast.co.za`
+- `PAYFAST_ENFORCE_SOURCE_IP` defaults to off. Set to `true` only if your Edge Function receives PayFast source IP headers reliably.
 
 Do not place these values in:
 
@@ -51,7 +52,9 @@ supabase functions deploy payfast-notify --no-verify-jwt
 
 PayFast cannot send a Supabase JWT to the webhook, so this function must be
 publicly reachable. The function verifies PayFast itself with signature,
-source, server-confirmation, and amount checks before updating an invoice.
+server-confirmation, merchant, invoice, and amount checks before updating an
+invoice. Source IP checking is optional because proxy/edge platforms may not
+expose the original PayFast IP headers to the function.
 
 Before testing live invoice updates, run `supabase/purchase-invoices-amounts.sql`
 in the Supabase SQL editor so the webhook can compare `amount_gross` against
