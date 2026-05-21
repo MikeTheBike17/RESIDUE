@@ -49,6 +49,25 @@ function buildPayFastParamStringFromKeys(form: URLSearchParams, keys: string[]) 
     .join("&");
 }
 
+function buildRawPayFastParamString(bodyText: string, includeEmpty = false) {
+  return bodyText
+    .split("&")
+    .map(part => {
+      const [rawKey = "", ...rawValueParts] = part.split("=");
+      return [rawKey, rawValueParts.join("=")] as [string, string];
+    })
+    .filter(([key, value]) => key !== "signature" && key !== "" && (includeEmpty || value !== ""))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("&");
+}
+
+function buildPayFastParamStringWithEmpty(entries: [string, string][]) {
+  return entries
+    .filter(([key]) => key !== "signature")
+    .map(([key, value]) => `${key}=${payFastEncode(String(value))}`)
+    .join("&");
+}
+
 function md5(value: string) {
   return createHash("md5").update(value).digest("hex");
 }
@@ -152,6 +171,9 @@ Deno.serve(async req => {
   }
 
   const notifyParamString = buildPayFastParamString(entries);
+  const notifyParamStringWithEmpty = buildPayFastParamStringWithEmpty(entries);
+  const rawNotifyParamString = buildRawPayFastParamString(bodyText);
+  const rawNotifyParamStringWithEmpty = buildRawPayFastParamString(bodyText, true);
   const checkoutSignatureKeys = [
     "merchant_id",
     "merchant_key",
@@ -171,7 +193,13 @@ Deno.serve(async req => {
     "custom_str4"
   ];
   const checkoutParamString = buildPayFastParamStringFromKeys(form, checkoutSignatureKeys);
-  const signatureParamStrings = [notifyParamString, checkoutParamString].filter(Boolean);
+  const signatureParamStrings = [
+    notifyParamString,
+    notifyParamStringWithEmpty,
+    rawNotifyParamString,
+    rawNotifyParamStringWithEmpty,
+    checkoutParamString
+  ].filter(Boolean);
   const receivedSignature = String(data.signature || "").trim().toLowerCase();
   const signatureMatches = signatureParamStrings.some(paramString => {
     const signedString = PAYFAST_PASSPHRASE ? `${paramString}&passphrase=${payFastEncode(PAYFAST_PASSPHRASE)}` : paramString;
@@ -186,6 +214,7 @@ Deno.serve(async req => {
       {
         passphrase_configured: !!PAYFAST_PASSPHRASE,
         received_signature: !!receivedSignature,
+        signature_variants_checked: signatureParamStrings.length,
         fields_received: entries.map(([key]) => key)
       }
     );
