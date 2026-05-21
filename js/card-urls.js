@@ -134,7 +134,7 @@ function renderUrlRows(rows, emptyMessage = 'No users found.') {
 
 function paymentLabel(status) {
   const normalized = String(status || '').toUpperCase();
-  if (normalized === 'COMPLETE') return 'Complete';
+  if (normalized === 'COMPLETE') return 'Paid';
   if (normalized === 'FAILED' || normalized === 'CANCELLED') return 'Declined';
   return normalized || 'Pending';
 }
