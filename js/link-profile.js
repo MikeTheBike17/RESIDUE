@@ -101,6 +101,22 @@ window.addEventListener('DOMContentLoaded', () => {
     return !(s === '0' || s === 'false' || s === 'no' || s === 'off');
   };
 
+  const normalizeWhatsappUrl = url => {
+    const rawUrl = String(url || '').trim();
+    if (!rawUrl) return rawUrl;
+    try {
+      const parsed = new URL(rawUrl);
+      const host = parsed.hostname.toLowerCase();
+      if (host !== 'wa.me' && !host.endsWith('.wa.me')) return rawUrl;
+      const number = parsed.pathname.replace(/^\/+/, '').split('/')[0] || '';
+      if (!/^0\d+$/.test(number)) return rawUrl;
+      parsed.pathname = `/27${number.slice(1)}`;
+      return parsed.toString();
+    } catch {
+      return rawUrl;
+    }
+  };
+
   const renderNormalLinks = (entries, { showEmptyState = true } = {}) => {
     const linksWrap = document.getElementById('lt-links');
     if (!linksWrap) return;
@@ -116,7 +132,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     entries.forEach(link => {
       const a = document.createElement('a');
-      a.href = link.url;
+      a.href = normalizeWhatsappUrl(link.url);
       a.textContent = link.label;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';

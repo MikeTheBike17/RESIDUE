@@ -260,6 +260,13 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const ADMIN_ONBOARDING_SESSION_KEY_PREFIX = 'residue_link_admin_onboarding_';
   const ADMIN_ONBOARDING_GAP_PX = 16;
   const ADMIN_ONBOARDING_REPOSITION_DELAY_MS = 320;
+
+  function normalizeWhatsappNumber(value) {
+    const digits = String(value || '').replace(/[^\d]/g, '');
+    if (!digits) return '';
+    return digits.startsWith('0') ? `27${digits.slice(1)}` : digits;
+  }
+
   const socialConfig = [
     { id: 'social', label: 'LinkedIn', toggle: 'show-social' },
     { id: 'social-2', label: 'Instagram', toggle: 'show-social-2' },
@@ -1674,12 +1681,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const messageInput = document.getElementById('whatsapp-message');
     const showWhatsapp = document.getElementById('show-whatsapp');
     const showMessage = document.getElementById('show-whatsapp-message');
-    const rawNumber = (numInput?.value || '').replace(/[^\d]/g, '');
-    if (!rawNumber) return null;
+    const whatsappNumber = normalizeWhatsappNumber(numInput?.value || '');
+    if (!whatsappNumber) return null;
     if (showWhatsapp && !showWhatsapp.checked) {
       return {
         label: 'WhatsApp',
-        url: `https://wa.me/${rawNumber}`,
+        url: `https://wa.me/${whatsappNumber}`,
         hidden: true
       };
     }
@@ -1689,7 +1696,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const encoded = text ? `?text=${encodeURIComponent(text)}` : '';
     return {
       label: 'WhatsApp',
-      url: `https://wa.me/${rawNumber}${encoded}`,
+      url: `https://wa.me/${whatsappNumber}${encoded}`,
       hidden: false
     };
   }
