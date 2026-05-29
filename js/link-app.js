@@ -235,6 +235,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const USERS_KEY = 'residue_users';
   const CURRENT_USER_KEY = 'residue_current_user';
   const LOCAL_PROFILE_KEY_PREFIX = 'residue_link_profile_';
+  const PROFILE_ACCESS_CODES_TABLE = 'profile_access_codes';
+  const ACCESS_CODE_MIN = 10000;
+  const ACCESS_CODE_MAX = 99999;
+  const ACCESS_CODE_MAX_ATTEMPTS = 20;
+  const ACCESS_CODE_GENERATION_ERROR = 'Unable to generate access code. Please refresh and try again.';
   const META_PREFIX = '__meta__';
   const BIO_MAX_CHARS = 180;
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
@@ -1100,6 +1105,160 @@ import { residueTelemetry } from './supabase-telemetry.js';
     }
   }
 
+  function getAdminAccessCodeElements() {
+    const valueEl = document.querySelector('.lt-access-code-panel__value');
+    const noteEl = document.querySelector('.lt-access-code-panel__note');
+    if (noteEl && !noteEl.dataset.defaultText) {
+      noteEl.dataset.defaultText = noteEl.textContent || '';
+    }
+    return { valueEl, noteEl };
+  }
+
+  function setAdminAccessCodeDisplay(value, { note = '', isError = false } = {}) {
+    const { valueEl, noteEl } = getAdminAccessCodeElements();
+    if (valueEl) {
+      valueEl.textContent = value || '-----';
+      valueEl.dataset.state = isError ? 'error' : 'ready';
+    }
+    if (noteEl) {
+      noteEl.textContent = note || noteEl.dataset.defaultText || '';
+    }
+  }
+
+  function generateFiveDigitAccessCode() {
+    return String(Math.floor(Math.random() * (ACCESS_CODE_MAX - ACCESS_CODE_MIN + 1)) + ACCESS_CODE_MIN);
+  }
+
+  function isUniqueConstraintError(error) {
+    const message = String(error?.message || '').toLowerCase();
+    return error?.code === '23505'
+      || message.includes('duplicate key')
+      || message.includes('unique constraint');
+  }
+
+  async function getProfileAccessCodeRow(value, { column = 'slug' } = {}) {
+    if (!supabase) return null;
+    const queryValue = column === 'slug'
+      ? resolveSlug(value || '', '')
+      : String(value || '').trim();
+    if (!queryValue) return null;
+    const { data, error } = await supabase
+      .from(PROFILE_ACCESS_CODES_TABLE)
+      .select('slug, access_code')
+      .eq(column, queryValue)
+      .maybeSingle();
+    if (error) throw error;
+    return data || null;
+  }
+
+  async function moveProfileAccessCode(previousSlug, nextSlug) {
+    const normalizedPreviousSlug = resolveSlug(previousSlug || '', '');
+    const normalizedNextSlug = resolveSlug(nextSlug || '', '');
+    if (!normalizedPreviousSlug || !normalizedNextSlug || normalizedPreviousSlug === normalizedNextSlug) {
+      return null;
+    }
+    const previousRow = await getProfileAccessCodeRow(normalizedPreviousSlug);
+    if (!previousRow?.access_code) return null;
+    const { data, error } = await supabase
+      .from(PROFILE_ACCESS_CODES_TABLE)
+      .update({
+        slug: normalizedNextSlug,
+        updated_at: new Date().toISOString()
+      })
+      .eq('slug', normalizedPreviousSlug)
+      .select('slug, access_code')
+      .maybeSingle();
+    if (error) throw error;
+    return data || previousRow;
+  }
+
+  async function ensureProfileAccessCode(slug, { previousSlug = '' } = {}) {
+    const normalizedSlug = resolveSlug(slug || '', '');
+    const normalizedPreviousSlug = resolveSlug(previousSlug || '', '');
+    if (!supabase || !normalizedSlug) {
+      return { ok: false, error: ACCESS_CODE_GENERATION_ERROR };
+    }
+
+    try {
+      const existingRow = await getProfileAccessCodeRow(normalizedSlug);
+      if (existingRow?.access_code) {
+        return { ok: true, accessCode: existingRow.access_code };
+      }
+
+      if (normalizedPreviousSlug && normalizedPreviousSlug !== normalizedSlug) {
+        try {
+          const movedRow = await moveProfileAccessCode(normalizedPreviousSlug, normalizedSlug);
+          if (movedRow?.access_code) {
+            return { ok: true, accessCode: movedRow.access_code };
+          }
+        } catch (error) {
+          if (!isUniqueConstraintError(error)) throw error;
+          const movedExistingRow = await getProfileAccessCodeRow(normalizedSlug);
+          if (movedExistingRow?.access_code) {
+            return { ok: true, accessCode: movedExistingRow.access_code };
+          }
+        }
+      }
+
+      for (let attempt = 1; attempt <= ACCESS_CODE_MAX_ATTEMPTS; attempt += 1) {
+        const nextCode = generateFiveDigitAccessCode();
+        const conflictingCode = await getProfileAccessCodeRow(nextCode, { column: 'access_code' });
+        if (conflictingCode) continue;
+
+        try {
+          const { data, error } = await supabase
+            .from(PROFILE_ACCESS_CODES_TABLE)
+            .insert({
+              slug: normalizedSlug,
+              access_code: nextCode
+            })
+            .select('slug, access_code')
+            .maybeSingle();
+          if (error) throw error;
+          if (data?.access_code) {
+            return { ok: true, accessCode: data.access_code };
+          }
+        } catch (error) {
+          if (!isUniqueConstraintError(error)) throw error;
+          const existingSlugRow = await getProfileAccessCodeRow(normalizedSlug);
+          if (existingSlugRow?.access_code) {
+            return { ok: true, accessCode: existingSlugRow.access_code };
+          }
+        }
+      }
+
+      console.error('Unable to generate unique access code after maximum retries.', {
+        slug: normalizedSlug,
+        attempts: ACCESS_CODE_MAX_ATTEMPTS
+      });
+    } catch (error) {
+      console.error('Failed to ensure profile access code.', {
+        slug: normalizedSlug,
+        error
+      });
+    }
+
+    return { ok: false, error: ACCESS_CODE_GENERATION_ERROR };
+  }
+
+  async function syncAdminAccessCodeDisplay(slug, { previousSlug = '' } = {}) {
+    const normalizedSlug = resolveSlug(slug || '', '');
+    if (!normalizedSlug) {
+      setAdminAccessCodeDisplay('-----');
+      return;
+    }
+    setAdminAccessCodeDisplay('Loading...');
+    const result = await ensureProfileAccessCode(normalizedSlug, { previousSlug });
+    if (result.ok) {
+      setAdminAccessCodeDisplay(result.accessCode);
+      return;
+    }
+    setAdminAccessCodeDisplay('-----', {
+      note: ACCESS_CODE_GENERATION_ERROR,
+      isError: true
+    });
+  }
+
   function syncAutoSlug(nameValue, fallbackSource = '') {
     const generatedSlug = resolveSlug(nameValue, fallbackSource);
     updatePublicUrl(generatedSlug || '');
@@ -1484,6 +1643,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const snapshot = cardConfig?.config_data || null;
     const snapshotLinks = Array.isArray(snapshot?.links) ? snapshot.links : [];
     const effectiveLinks = (links && links.length) ? links : snapshotLinks;
+    const previousSlug = resolveSlug(profile?.slug || '', '');
     profile = await maybeAdoptRequestedSlug(profile, effectiveLinks, user, snapshot);
     const mergedProfile = {
       ...(snapshot?.profile || {}),
@@ -1492,6 +1652,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const hydratedLinks = hydrateStoredLinks(effectiveLinks || []);
     syncAdminOnboardingState(mergedProfile || {}, hydratedLinks, user, snapshot);
     fillEditor(mergedProfile || {}, hydratedLinks, user, snapshot);
+    await syncAdminAccessCodeDisplay(mergedProfile?.slug || profile?.slug || adminSlug, { previousSlug });
   }
 
   function toggleEditor(show) {

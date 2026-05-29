@@ -229,138 +229,68 @@
 
   const ACCESS_GRANTED_KEY = 'residue-access';
   const AUTH_INTENT_KEY = 'residue-auth-intent';
-  const FALLBACK_ACCESS_CODE_SHA256 = '01810e66ba6d21239428f3815c311d944035f6ff43228352ea372752c0a6f10d';
+  const PROFILE_ACCESS_CODES_TABLE = 'profile_access_codes';
+  const ACCESS_CODE_PATTERN = /^\d{5}$/;
+  const INVALID_ACCESS_CODE_MESSAGE = 'Invalid access code. Please check your code and try again.';
   const publicEnv = window.env || {};
   let signupUnlockedForAuth = false;
 
   function normalizeAccessCode(value) {
-    return String(value ?? '').trim().toLowerCase();
+    return String(value ?? '').trim();
   }
 
-  async function sha256Hex(value) {
-    const source = normalizeAccessCode(value);
-    const bytes = new TextEncoder().encode(source);
-    const digest = await crypto.subtle.digest('SHA-256', bytes);
-    return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+  function buildAccessRedirectUrl(slug) {
+    const normalizedSlug = resolveSlug(slug || '', '');
+    return normalizedSlug
+      ? `${window.location.origin}/link-profile.html?u=${encodeURIComponent(normalizedSlug)}`
+      : '';
   }
 
-  async function verifyAccessCodeFallback(code) {
+  async function verifyAccessCode(code) {
     const normalizedCode = normalizeAccessCode(code);
     if (!normalizedCode) {
       return { ok: false, error: 'Enter an access code.' };
     }
+    if (!ACCESS_CODE_PATTERN.test(normalizedCode)) {
+      return { ok: false, error: INVALID_ACCESS_CODE_MESSAGE };
+    }
 
     try {
-      const submittedHash = await sha256Hex(normalizedCode);
-      if (submittedHash === FALLBACK_ACCESS_CODE_SHA256) {
+      const supabase = await getSupabaseClient();
+      if (!supabase) {
         return {
-          ok: true,
-          fallback: true
+          ok: false,
+          error: 'Access verification is unavailable right now.'
         };
       }
-    } catch {
-      // If hashing fails, keep the standard error path below.
-    }
 
-    return { ok: false, error: 'Invalid access code.' };
-  }
-
-  function buildAccessCodeVerifyEndpoints() {
-    const explicitEndpoint = String(publicEnv.ACCESS_CODE_VERIFY_ENDPOINT || '').trim();
-    const sameOriginEndpoint = `${window.location.origin}/api/access-code-verify`;
-    const supabaseBase = String(publicEnv.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-    const supabaseEndpoint = supabaseBase ? `${supabaseBase}/functions/v1/access-code-verify` : '';
-    return [...new Set([
-      explicitEndpoint,
-      sameOriginEndpoint,
-      supabaseEndpoint
-    ].filter(Boolean))];
-  }
-
-  function isSupabaseFunctionEndpoint(endpoint) {
-    return /supabase\.co\/functions\/v1\//i.test(String(endpoint || ''));
-  }
-
-  async function requestAccessCodeVerification(endpoint, code) {
-    const anonKey = String(publicEnv.SUPABASE_ANON_KEY || '').trim();
-    if (!endpoint) {
-      return {
-        ok: false,
-        error: 'Access verification is unavailable right now.',
-        retryable: false
-      };
-    }
-
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 8000);
-    try {
-      const headers = {
-        'content-type': 'application/json'
-      };
-      if (isSupabaseFunctionEndpoint(endpoint)) {
-        if (!anonKey) {
-          return {
-            ok: false,
-            error: 'Access verification is unavailable right now.',
-            retryable: false
-          };
-        }
-        headers.apikey = anonKey;
-        headers.Authorization = `Bearer ${anonKey}`;
+      const { data, error } = await supabase
+        .from(PROFILE_ACCESS_CODES_TABLE)
+        .select('slug')
+        .eq('access_code', normalizedCode)
+        .maybeSingle();
+      if (error) {
+        console.error('Access code lookup failed.', error);
+        return { ok: false, error: 'Could not verify the access code.' };
       }
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ code }),
-        signal: controller.signal
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (res.ok && payload?.ok) {
-        return { ok: true, retryable: false };
+
+      const slug = resolveSlug(data?.slug || '', '');
+      if (!slug) {
+        return { ok: false, error: INVALID_ACCESS_CODE_MESSAGE };
       }
+
       return {
-        ok: false,
-        error: payload?.error || (res.status === 401 ? 'Invalid access code.' : 'Could not verify the access code.'),
-        retryable: res.status >= 500 || res.status === 404
+        ok: true,
+        slug,
+        redirectUrl: buildAccessRedirectUrl(slug)
       };
     } catch (error) {
+      console.error('Access code lookup failed.', error);
       return {
         ok: false,
-        error: error?.name === 'AbortError'
-          ? 'Access verification timed out. Please try again.'
-          : 'Could not verify the access code.',
-        retryable: true
-      };
-    } finally {
-      window.clearTimeout(timeoutId);
-    }
-  }
-
-  async function verifyAccessCode(code) {
-    const endpoints = buildAccessCodeVerifyEndpoints();
-    if (!endpoints.length) {
-      const fallbackResult = await verifyAccessCodeFallback(code);
-      if (fallbackResult.ok) return fallbackResult;
-      return {
-        ok: false,
-        error: 'Access verification is unavailable right now.'
+        error: 'Could not verify the access code.'
       };
     }
-
-    let lastError = 'Could not verify the access code.';
-    for (const endpoint of endpoints) {
-      const result = await requestAccessCodeVerification(endpoint, code);
-      if (result.ok) return { ok: true };
-      lastError = result.error || lastError;
-      if (!result.retryable || lastError === 'Invalid access code.') {
-        return { ok: false, error: lastError };
-      }
-    }
-
-    const fallbackResult = await verifyAccessCodeFallback(code);
-    if (fallbackResult.ok) return fallbackResult;
-
-    return { ok: false, error: lastError };
   }
 
   function normalizeAuthIntent(value) {
@@ -468,7 +398,6 @@
       }
 
       if (result.ok) {
-        localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
         logAuth({
           action: 'access_code_check',
           outcome: 'success',
@@ -477,11 +406,24 @@
         });
         statusEl.textContent = 'Access granted.';
         statusEl.className = 'status success';
-        signupUnlockedForAuth = true;
-        if (typeof window.openAuthModal === 'function') {
-          window.openAuthModal(getPendingAuthMode('create'));
+        const pendingAuthMode = getPendingAuthMode('');
+        if (pendingAuthMode === 'create' && typeof window.openAuthModal === 'function') {
+          localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
+          signupUnlockedForAuth = true;
+          window.openAuthModal('create');
           clearPendingAuthMode();
+          return;
         }
+        const redirectUrl = result.redirectUrl || buildAccessRedirectUrl(result.slug);
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+          return;
+        }
+        statusEl.textContent = INVALID_ACCESS_CODE_MESSAGE;
+        statusEl.className = 'status error';
+        gateButton && (gateButton.disabled = false);
+        codeInput && (codeInput.disabled = false);
+        codeInput?.focus();
         return;
       }
 
