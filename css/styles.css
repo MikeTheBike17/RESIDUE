@@ -1857,6 +1857,18 @@ input:focus, textarea:focus, select:focus {
   margin-top: 8px;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .gate-form label {
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -3633,16 +3645,176 @@ body.private-page .private-exit-link:focus-visible {
 }
 
 .gate-form {
-  margin-top: 18px;
+  width: min(100%, 680px);
+  margin: 14px auto 0;
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  justify-items: center;
 }
 
 .code-row {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(52px, 92px));
+  gap: clamp(8px, 1.6vw, 16px);
   align-items: center;
+  justify-content: center;
+  width: min(100%, 540px);
+  margin: 0 auto;
+}
+
+.access-entry-panel {
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+body.access-page .access-entry-panel {
+  padding: clamp(18px, 3vw, 34px) clamp(18px, 4vw, 52px) clamp(22px, 3.6vw, 34px);
+  background:
+    linear-gradient(180deg, rgba(18, 18, 20, 0.9), rgba(7, 7, 8, 0.86)),
+    radial-gradient(circle at top, rgba(216, 176, 122, 0.07), transparent 52%);
+  border-color: rgba(216,176,122,0.28);
+}
+
+body.access-page .access-entry-panel .brandmark {
+  color: var(--accent-premium);
+  letter-spacing: 0.11em;
+}
+
+body.access-page .access-entry-panel .h2 {
+  font-size: clamp(2.75rem, 6vw, 4.2rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+}
+
+body.access-page .access-entry-panel .gate-intro {
+  margin-top: 8px;
+  font-size: clamp(0.84rem, 1.25vw, 0.98rem);
+  letter-spacing: 0.26em;
+  color: rgba(244, 244, 245, 0.86);
+}
+
+.gate-code-digit {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 1 / 0.92;
+  border: 1px solid rgba(216, 176, 122, 0.78);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(20, 20, 22, 0.92), rgba(10, 10, 12, 0.86));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03),
+    0 14px 30px rgba(0,0,0,0.16);
+  color: #f7f2ea;
+  text-align: center;
+  font-size: clamp(1.7rem, 3.6vw, 2.55rem);
+  font-weight: 500;
+  line-height: 1;
+  padding: 0;
+  caret-color: #f7f2ea;
+}
+
+body.access-page .gate-code-digit {
+  background:
+    linear-gradient(180deg, rgba(18, 18, 22, 0.96), rgba(10, 10, 12, 0.88));
+}
+
+.gate-code-digit:focus {
+  outline: none;
+  border-color: #f0c78f;
+  box-shadow:
+    0 0 0 1px rgba(240, 199, 143, 0.35),
+    0 22px 48px rgba(0,0,0,0.24);
+  transform: translateY(-1px);
+}
+
+.gate-submit {
+  width: min(100%, 300px);
+  min-height: 54px;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.gate-status {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.gate-request-link-wrap {
+  margin-top: 10px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .access-entry-panel {
+    max-width: 100%;
+  }
+
+  body.access-page .access-entry-panel {
+    padding: 20px 16px 24px;
+  }
+
+  body.access-page .access-entry-panel .h2 {
+    font-size: clamp(2.4rem, 13vw, 3.5rem);
+  }
+
+  body.access-page .access-entry-panel .gate-intro {
+    letter-spacing: 0.2em;
+  }
+
+  .gate-form {
+    width: min(100%, 420px);
+    margin-top: 12px;
+    gap: 12px;
+  }
+
+  .code-row {
+    grid-template-columns: repeat(5, minmax(48px, 1fr));
+    width: min(100%, 392px);
+    gap: 8px;
+  }
+
+  .gate-code-digit {
+    aspect-ratio: 1 / 0.95;
+    border-radius: 8px;
+    font-size: clamp(1.45rem, 6vw, 2rem);
+  }
+
+  .gate-submit {
+    width: min(100%, 260px);
+    min-height: 50px;
+    letter-spacing: 0.16em;
+  }
+}
+
+@media (max-width: 480px) {
+  body.access-page .access-entry-panel {
+    padding: 18px 12px 22px;
+  }
+
+  .gate-form {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .code-row {
+    grid-template-columns: repeat(5, minmax(42px, 1fr));
+    width: 100%;
+    gap: 6px;
+  }
+
+  .gate-code-digit {
+    font-size: clamp(1.25rem, 6.2vw, 1.7rem);
+  }
+
+  .gate-submit {
+    width: min(100%, 220px);
+    min-height: 46px;
+    font-size: 0.86rem;
+  }
 }
 
 .password-reveal-field {

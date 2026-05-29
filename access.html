@@ -57,21 +57,28 @@
   </header>
 
   <main class="container" style="padding-top: 120px;">
-    <section class="panel reveal center">
+    <section class="panel reveal center access-entry-panel">
       <div class="stack" style="align-items:center; text-align:center;">
         <div class="brandmark">Residue</div>
         <h1 class="h2" style="margin: 0;">Access</h1>
         <p class="muted gate-intro">ENTER YOUR CODE.</p>
-      </div><br>
+      </div>
     <!--ACCESS CODE-->
-      <form class="gate-form" method="post" style="max-width: 420px; margin: 0 auto;">
-        <div class="code-row" style="justify-content:center;">
-          <input id="access-code" name="access-code" type="password" placeholder="•••••••••" autocomplete="one-time-code" required>
-          <button type="submit" class="btn">Unlock</button>
+      <form class="gate-form" method="post" novalidate>
+        <label class="sr-only" for="access-code">Enter your 5-digit access code</label>
+        <input id="access-code" name="access-code" type="hidden" autocomplete="one-time-code" required>
+        <div class="code-row" role="group" aria-labelledby="access-code-group-label">
+          <span class="sr-only" id="access-code-group-label">Enter your 5-digit access code</span>
+          <input class="gate-code-digit" data-access-code-digit type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Access code digit 1 of 5">
+          <input class="gate-code-digit" data-access-code-digit type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Access code digit 2 of 5">
+          <input class="gate-code-digit" data-access-code-digit type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Access code digit 3 of 5">
+          <input class="gate-code-digit" data-access-code-digit type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Access code digit 4 of 5">
+          <input class="gate-code-digit" data-access-code-digit type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Access code digit 5 of 5">
         </div>
+        <button type="submit" class="btn gate-submit">Unlock</button>
         <div class="status gate-status" aria-live="polite" hidden>Access not recognised.</div>
       </form>
-      <div style="margin-top: 16px;">
+      <div class="gate-request-link-wrap">
         <a href="#request-access" class="muted" style="text-decoration: underline;">Request access instead</a>
       </div>
     </section>
@@ -211,5 +218,3 @@
   <script src="js/script.js"></script>
 </body>
 </html>
-
-
