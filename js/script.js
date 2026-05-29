@@ -239,13 +239,6 @@
     return String(value ?? '').trim();
   }
 
-  function buildAccessRedirectUrl(slug) {
-    const normalizedSlug = resolveSlug(slug || '', '');
-    return normalizedSlug
-      ? `${window.location.origin}/link-profile.html?u=${encodeURIComponent(normalizedSlug)}`
-      : '';
-  }
-
   async function verifyAccessCode(code) {
     const normalizedCode = normalizeAccessCode(code);
     if (!normalizedCode) {
@@ -281,8 +274,7 @@
 
       return {
         ok: true,
-        slug,
-        redirectUrl: buildAccessRedirectUrl(slug)
+        slug
       };
     } catch (error) {
       console.error('Access code lookup failed.', error);
@@ -406,24 +398,12 @@
         });
         statusEl.textContent = 'Access granted.';
         statusEl.className = 'status success';
-        const pendingAuthMode = getPendingAuthMode('');
-        if (pendingAuthMode === 'create' && typeof window.openAuthModal === 'function') {
-          localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
-          signupUnlockedForAuth = true;
-          window.openAuthModal('create');
+        localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
+        signupUnlockedForAuth = true;
+        if (typeof window.openAuthModal === 'function') {
+          window.openAuthModal(getPendingAuthMode('create'));
           clearPendingAuthMode();
-          return;
         }
-        const redirectUrl = result.redirectUrl || buildAccessRedirectUrl(result.slug);
-        if (redirectUrl) {
-          window.location.href = redirectUrl;
-          return;
-        }
-        statusEl.textContent = INVALID_ACCESS_CODE_MESSAGE;
-        statusEl.className = 'status error';
-        gateButton && (gateButton.disabled = false);
-        codeInput && (codeInput.disabled = false);
-        codeInput?.focus();
         return;
       }
 
