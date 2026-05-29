@@ -117,13 +117,14 @@ body.access-page {
   --nav-glass: rgba(5, 5, 6, 0.78);
   --nav-glass-strong: rgba(5, 5, 6, 0.9);
   --layer: rgba(10,10,12,0.82);
+  --access-reveal-x: 50vw;
+  --access-reveal-y: 32vh;
+  --access-reveal-core: clamp(150px, 16vw, 270px);
+  --access-reveal-feather: clamp(210px, 21vw, 380px);
   background-color: #050505;
   background-image:
-    linear-gradient(180deg, rgba(6,6,8,0.94), rgba(6,6,8,0.97)),
-    image-set(
-      url('../images/residue-card-brand-leave-your-mark-edc-scene..webp') type('image/webp'),
-      url('../images/residue-card-brand-leave-your-mark-edc-scene..jpg') type('image/jpeg')
-    );
+    linear-gradient(180deg, rgba(6,6,8,0.12), rgba(6,6,8,0.32)),
+    url('../images/residue-card-set-flatlay-brand-message-collection.webp');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
@@ -136,26 +137,22 @@ body.access-page::before {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(6,6,8,0.9), rgba(6,6,8,0.96));
+    radial-gradient(
+      circle var(--access-reveal-feather) at var(--access-reveal-x) var(--access-reveal-y),
+      rgba(6,6,8,0) 0%,
+      rgba(6,6,8,0.05) 14%,
+      rgba(6,6,8,0.24) 32%,
+      rgba(6,6,8,0.58) 52%,
+      rgba(6,6,8,0.84) 74%,
+      rgba(6,6,8,0.94) 100%
+    ),
+    linear-gradient(180deg, rgba(6,6,8,0.4), rgba(6,6,8,0.72));
   mix-blend-mode: multiply;
   z-index: 0;
 }
 
 body.access-page::after {
-  content: '';
-  position: fixed;
-  inset: -12%;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.05), transparent 28%),
-    radial-gradient(circle at 78% 22%, rgba(216, 176, 122, 0.16), transparent 24%),
-    radial-gradient(circle at 58% 72%, rgba(148, 132, 108, 0.12), transparent 30%),
-    radial-gradient(circle at 34% 84%, rgba(255, 244, 224, 0.05), transparent 18%);
-  filter: blur(42px);
-  opacity: 0.72;
-  mix-blend-mode: soft-light;
-  animation: accessAuroraDrift 18s ease-in-out infinite alternate;
-  z-index: 0;
+  content: none;
 }
 
 .access-antigravity {
@@ -163,15 +160,16 @@ body.access-page::after {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+  isolation: isolate;
   z-index: 0;
 }
 
+.access-antigravity::before {
+  content: none;
+}
+
 .access-antigravity-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  opacity: 0.8;
-  filter: saturate(0.82) blur(0.1px);
+  display: none;
 }
 
 body.access-page header,
@@ -182,27 +180,31 @@ body.access-page footer {
 }
 
 body.access-page header {
-  background: rgba(10, 8, 18, 0.82);
+  background: rgba(10, 8, 18, 0.58);
   border-color: rgba(216,176,122,0.3);
 }
 
 body.access-page .panel {
   background:
-    linear-gradient(180deg, rgba(18, 18, 20, 0.88), rgba(8, 8, 9, 0.82)),
-    radial-gradient(circle at top, rgba(216, 176, 122, 0.06), transparent 48%);
+    linear-gradient(180deg, rgba(18, 18, 20, 0.72), rgba(8, 8, 9, 0.6)),
+    radial-gradient(circle at top, rgba(216, 176, 122, 0.08), transparent 48%);
   border: 1px solid rgba(216,176,122,0.22);
   border-radius: 8px;
   padding: 28px 26px;
   box-shadow:
-    0 20px 60px rgba(0,0,0,0.45),
+    0 20px 60px rgba(0,0,0,0.34),
     inset 0 1px 0 rgba(255,255,255,0.03);
+  backdrop-filter: blur(14px) saturate(112%);
+  -webkit-backdrop-filter: blur(14px) saturate(112%);
 }
 
 body.access-page details {
-  background: rgba(14,10,22,0.75);
+  background: rgba(14,10,22,0.62);
   border: 1px solid rgba(216,176,122,0.24);
   border-radius: 8px;
   padding: 14px 16px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 body.access-page details summary {
@@ -775,6 +777,37 @@ header.scrolled {
   margin-left: 16px;
 }
 
+@media (min-width: 841px) {
+  body.home-page .nav,
+  body.access-page .nav,
+  body.about-page .nav,
+  body.contact-page .nav,
+  body.how-page .nav {
+    position: relative;
+    justify-content: flex-start;
+  }
+
+  body.home-page .nav-links,
+  body.access-page .nav-links,
+  body.about-page .nav-links,
+  body.contact-page .nav-links,
+  body.how-page .nav-links {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max-content;
+    transform: translate(-50%, -50%);
+  }
+
+  body.home-page .nav-actions,
+  body.access-page .nav-actions,
+  body.about-page .nav-actions,
+  body.contact-page .nav-actions,
+  body.how-page .nav-actions {
+    margin-left: auto;
+  }
+}
+
 .nav-links a {
   color: var(--muted);
   font-size: 0.95rem;
@@ -1165,22 +1198,43 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   justify-content: center;
   padding: 12px 22px;
   border-radius: var(--radius);
-  border: 1px solid var(--btn-border);
+  border: 1px solid rgba(216,176,122,0.32);
+  background: rgba(216, 176, 122, 0.08);
   color: var(--text);
-  background: transparent;
   text-decoration: none;
   cursor: pointer;
+  transform-origin: left center;
   transition:
-    border-color var(--transition),
-    color var(--transition),
-    background var(--transition),
-    letter-spacing var(--transition),
-    transform 200ms ease,
-    box-shadow 240ms ease;
+    transform 0.25s ease,
+    font-size 0.25s ease,
+    background 0.25s ease;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 600;
   box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+}
+
+.btn-submit{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: transparent;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    font-size 0.25s ease,
+    background 0.25s ease;
+}
+
+.btn-submit:hover {
+  transform: scaleX(1.02);
+  font-size: 1.01rem;
+  background: rgba(223, 191, 147, 0.08);
 }
 
 .btn-access {
@@ -1194,6 +1248,7 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   border-radius: 4px;
   font-weight: 500;
   text-decoration: none;
+  text-transform: uppercase;
   box-shadow: 1px 1px 4px rgba(216,176,122,0.12);
 
   transform-origin: left center;
@@ -1211,12 +1266,10 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
 }
 
 .btn:hover {
-  border-color: var(--text);
-  color: var(--text);
-  background: rgba(255,255,255,0.04);
-  letter-spacing: 0.16em;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+  transform: scaleX(1.1);
+  font-size: 1.04rem;
+  background: rgba(223, 163, 78, 0.08);
+  border-left: 1px solid rgba(188, 167, 138, 0.24);
 }
 
 .btn-outline {
@@ -1227,10 +1280,14 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   padding: 24px 26px;
   max-width: 400px;
   min-height: 120px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgb(0,0,0), rgb(200, 100, 0, 0.12));
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(216, 176, 122, 0.16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 85% 18%, rgba(216, 176, 122, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(16, 16, 18, 0.92), rgba(10, 10, 12, 0.82));
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.02);
   text-align: center;
 }
 
@@ -1239,6 +1296,7 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   font-size: 1rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--accent-premium);
 }
 
 .get-code p {
@@ -2283,7 +2341,7 @@ input:focus, textarea:focus, select:focus {
 .lifestyle-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  min-height: clamp(420px, 42vh, 520px);
+  min-height: clamp(220px, 22vh, 320px);
   background: var(--bg);
 }
 
@@ -2324,6 +2382,18 @@ input:focus, textarea:focus, select:focus {
 
 .lifestyle + .proof {
   border-top: 0;
+}
+
+@media (min-width: 841px) {
+  body.home-page .index-lifestyle .lifestyle-grid {
+    height: clamp(320px, 37.5vw, 720px);
+    min-height: 0;
+  }
+
+  body.home-page .index-lifestyle .lifestyle-image,
+  body.home-page .index-lifestyle .lifestyle-copy {
+    min-height: 0;
+  }
 }
 
 /* Materiality */
@@ -2647,8 +2717,14 @@ input:focus, textarea:focus, select:focus {
 
 /* Quiet CTA */
 .quiet-cta {
-  padding: 260px 24px 140px;
+  padding: 260px 24px 280px;
   text-align: center;
+  background-image:
+    linear-gradient(180deg, rgba(6, 7, 10, 0.72), rgba(6, 7, 10, 0.8)),
+    url('../images/residue-card-brand-leave-your-mark-edc-scene..webp');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 /* Gallery */
@@ -2908,6 +2984,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 .proof-item {
+  --proof-border-progress: 0;
   position: relative;
   overflow: hidden;
   min-height: 180px;
@@ -2935,10 +3012,12 @@ input:focus, textarea:focus, select:focus {
   right: 16px;
   height: 1px;
   pointer-events: none;
+  transform: scaleX(var(--proof-border-progress));
 }
 
 .proof-item::before {
   top: 0;
+  transform-origin: left center;
   background: linear-gradient(
     90deg,
     rgba(255,255,255,0) 0%,
@@ -2952,6 +3031,7 @@ input:focus, textarea:focus, select:focus {
 
 .proof-item::after {
   bottom: 0;
+  transform-origin: right center;
   background: linear-gradient(
     90deg,
     rgba(216,176,122,0) 0%,
@@ -4270,6 +4350,14 @@ footer {
     margin-left: 8px;
   }
 
+  body.home-page .nav-actions,
+  body.access-page .nav-actions,
+  body.about-page .nav-actions,
+  body.contact-page .nav-actions,
+  body.how-page .nav-actions {
+    margin-left: auto;
+  }
+
   .nav-auth-button {
     min-height: 36px;
     padding: 8px 10px;
@@ -4278,6 +4366,10 @@ footer {
 }
 
 @media (max-width: 840px) {
+  body.access-page {
+    --access-reveal-feather: clamp(420px, 42vw, 760px);
+  }
+
   .nav-links {
     display: none;
   }
@@ -4509,7 +4601,7 @@ footer {
   }
 
   .quiet-cta {
-    padding: 180px 18px 100px;
+    padding: 180px 18px 180px;
   }
 
   .gallery {
@@ -4571,10 +4663,7 @@ footer {
     margin: 0 auto 18px;
     max-width: 560px;
     padding: 24px 26px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 22px;
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
     text-align: center;
   }
 

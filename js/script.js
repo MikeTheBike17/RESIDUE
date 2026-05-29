@@ -40,6 +40,48 @@
     });
   }
 
+  const initCardLayoutFlips = () => {
+    const flipCards = Array.from(document.querySelectorAll('.card-layout-flip'));
+    if (!flipCards.length) return;
+
+    const touchModeQuery = window.matchMedia('(hover: none), (pointer: coarse)');
+
+    const syncFlipMode = isTouchMode => {
+      flipCards.forEach(card => {
+        if (!isTouchMode) {
+          card.classList.remove('is-flipped');
+          card.setAttribute('aria-pressed', 'false');
+        }
+      });
+    };
+
+    flipCards.forEach(card => {
+      if (card.dataset.flipBound === 'true') return;
+      card.dataset.flipBound = 'true';
+
+      card.addEventListener('click', () => {
+        if (!touchModeQuery.matches) return;
+
+        const nextState = !card.classList.contains('is-flipped');
+        card.classList.toggle('is-flipped', nextState);
+        card.setAttribute('aria-pressed', String(nextState));
+      });
+    });
+
+    syncFlipMode(touchModeQuery.matches);
+
+    const handleFlipModeChange = event => {
+      syncFlipMode(event.matches);
+    };
+
+    if (typeof touchModeQuery.addEventListener === 'function') {
+      touchModeQuery.addEventListener('change', handleFlipModeChange);
+    } else if (typeof touchModeQuery.addListener === 'function') {
+      touchModeQuery.addListener(handleFlipModeChange);
+    }
+  };
+  initCardLayoutFlips();
+
   // Smooth scroll for internal anchors
   document.querySelectorAll('a[href^=\"#\"]').forEach(anchor => {
     anchor.addEventListener('click', evt => {
@@ -1229,6 +1271,38 @@
     window.addEventListener("scroll", requestIndexAnimationUpdate, { passive: true });
     window.addEventListener("resize", requestIndexAnimationUpdate);
     window.addEventListener("load", requestIndexAnimationUpdate, { once: true });
+  }
+
+  const indexProofItems = Array.from(document.querySelectorAll('.index-proof-section .proof-item'));
+  if (indexProofItems.length) {
+    let proofBordersTicking = false;
+
+    const updateProofBorders = () => {
+      proofBordersTicking = false;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
+      const progressStart = viewportHeight * 0.94;
+      const progressEnd = viewportHeight * 0.22;
+      const progressRange = Math.max(1, progressStart - progressEnd);
+
+      indexProofItems.forEach(item => {
+        const rect = item.getBoundingClientRect();
+        const itemMidpoint = rect.top + (rect.height / 2);
+        const rawProgress = (progressStart - itemMidpoint) / progressRange;
+        const progress = Math.max(0, Math.min(1, rawProgress));
+        item.style.setProperty('--proof-border-progress', progress.toFixed(3));
+      });
+    };
+
+    const requestProofBordersUpdate = () => {
+      if (proofBordersTicking) return;
+      proofBordersTicking = true;
+      window.requestAnimationFrame(updateProofBorders);
+    };
+
+    updateProofBorders();
+    window.addEventListener('scroll', requestProofBordersUpdate, { passive: true });
+    window.addEventListener('resize', requestProofBordersUpdate);
+    window.addEventListener('load', requestProofBordersUpdate, { once: true });
   }
 
   // ROTATING HERO HEADER
