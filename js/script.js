@@ -356,18 +356,115 @@
   const gateForm = document.querySelector('.gate-form');
   if (gateForm) {
     const codeInput = gateForm.querySelector('#access-code');
+    const codeDigits = Array.from(gateForm.querySelectorAll('[data-access-code-digit]'));
     const statusEl = gateForm.querySelector('.gate-status');
     const gateButton = gateForm.querySelector('button[type="submit"]');
+    const resetGateStatus = () => {
+      if (!statusEl) return;
+      statusEl.hidden = true;
+      statusEl.textContent = '';
+      statusEl.className = 'status gate-status';
+    };
+    const syncGateCodeValue = () => {
+      const code = codeDigits.map(input => String(input.value || '').replace(/\D/g, '').slice(0, 1)).join('');
+      if (codeInput) codeInput.value = code;
+      return code;
+    };
+    const focusGateDigit = index => {
+      const nextInput = codeDigits[index];
+      nextInput?.focus();
+      nextInput?.select?.();
+    };
+    const focusFirstGateDigit = () => focusGateDigit(0);
+    const focusNextEmptyGateDigit = () => {
+      const nextIndex = codeDigits.findIndex(input => !input.value);
+      focusGateDigit(nextIndex >= 0 ? nextIndex : 0);
+    };
+    const setGateDisabled = disabled => {
+      gateButton && (gateButton.disabled = disabled);
+      codeInput && (codeInput.disabled = disabled);
+      codeDigits.forEach(input => {
+        input.disabled = disabled;
+      });
+    };
+    codeDigits.forEach((input, index) => {
+      input.addEventListener('focus', () => input.select());
+      input.addEventListener('click', () => input.select());
+      input.addEventListener('input', () => {
+        resetGateStatus();
+        const digits = String(input.value || '').replace(/\D/g, '');
+        if (!digits) {
+          input.value = '';
+          syncGateCodeValue();
+          return;
+        }
+        const spreadDigits = digits.split('');
+        let cursor = index;
+        spreadDigits.forEach(digit => {
+          if (!codeDigits[cursor]) return;
+          codeDigits[cursor].value = digit;
+          cursor += 1;
+        });
+        syncGateCodeValue();
+        if (cursor < codeDigits.length) {
+          focusGateDigit(cursor);
+        }
+      });
+      input.addEventListener('keydown', evt => {
+        if (evt.key === 'Backspace' && !input.value && index > 0) {
+          evt.preventDefault();
+          codeDigits[index - 1].value = '';
+          syncGateCodeValue();
+          focusGateDigit(index - 1);
+          return;
+        }
+        if (evt.key === 'ArrowLeft' && index > 0) {
+          evt.preventDefault();
+          focusGateDigit(index - 1);
+          return;
+        }
+        if (evt.key === 'ArrowRight' && index < codeDigits.length - 1) {
+          evt.preventDefault();
+          focusGateDigit(index + 1);
+        }
+      });
+      input.addEventListener('paste', evt => {
+        evt.preventDefault();
+        resetGateStatus();
+        const pastedDigits = String(evt.clipboardData?.getData('text') || '').replace(/\D/g, '');
+        if (!pastedDigits) return;
+        let cursor = index;
+        pastedDigits.split('').forEach(digit => {
+          if (!codeDigits[cursor]) return;
+          codeDigits[cursor].value = digit;
+          cursor += 1;
+        });
+        syncGateCodeValue();
+        if (cursor < codeDigits.length) {
+          focusGateDigit(cursor);
+        } else {
+          codeDigits[codeDigits.length - 1]?.focus();
+        }
+      });
+    });
+    syncGateCodeValue();
     gateForm.addEventListener('submit', async evt => {
       evt.preventDefault();
-      const code = (codeInput?.value || '').trim();
+      const code = syncGateCodeValue().trim();
       const codePrefix = code.slice(0, 8).toUpperCase();
       if (!statusEl) return;
       if (!code) {
         statusEl.hidden = false;
         statusEl.textContent = 'Enter an access code.';
         statusEl.className = 'status error';
-        codeInput?.focus();
+        focusFirstGateDigit();
+        return;
+      }
+      if (codeDigits.length && code.length !== codeDigits.length) {
+        statusEl.hidden = false;
+        statusEl.textContent = 'Enter your 5-digit access code.';
+        statusEl.className = 'status error';
+        focusNextEmptyGateDigit();
         return;
       }
       logAuth({
@@ -379,8 +476,7 @@
       statusEl.hidden = false;
       statusEl.textContent = 'Checking code...';
       statusEl.className = 'status loading-dots';
-      gateButton && (gateButton.disabled = true);
-      codeInput && (codeInput.disabled = true);
+      setGateDisabled(true);
 
       const startedAt = performance.now();
       const result = await verifyAccessCode(code);
@@ -415,9 +511,8 @@
       });
       statusEl.textContent = result.error || 'Invalid access code.';
       statusEl.className = 'status error';
-      gateButton && (gateButton.disabled = false);
-      codeInput && (codeInput.disabled = false);
-      codeInput?.focus();
+      setGateDisabled(false);
+      focusNextEmptyGateDigit();
     });
   }
 
@@ -610,7 +705,7 @@
 
     function focusAccessCodeField(delay = prefersReducedMotion ? 0 : 60) {
       window.setTimeout(() => {
-        $("#access-code")?.focus();
+        document.querySelector('[data-access-code-digit]')?.focus();
       }, delay);
     }
 
