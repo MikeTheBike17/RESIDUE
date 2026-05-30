@@ -2,6 +2,7 @@
 [hidden] { display: none !important; }
 
 :root {
+  --lt-page-solid: #0b0c10;
   --lt-bg: radial-gradient(120% 140% at 18% 10%, rgba(216,176,122,0.12), transparent 32%),
             radial-gradient(140% 120% at 82% 0%, rgba(96,116,168,0.10), transparent 34%),
             #0b0c10;
@@ -15,6 +16,7 @@
 }
 
 [data-theme="light"] {
+  --lt-page-solid: #f5f7fa;
   --lt-bg: radial-gradient(120% 140% at 18% 10%, rgba(181,134,77,0.14), transparent 30%),
             radial-gradient(140% 120% at 82% 0%, rgba(96,116,168,0.14), transparent 34%),
             #f5f7fa;
@@ -27,14 +29,23 @@
   --lt-shadow: 0 28px 80px -52px rgba(0,0,0,0.2);
 }
 
+html,
+body {
+  min-height: 100%;
+  background-color: var(--lt-page-solid);
+}
+
 .lt-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--lt-bg);
+  background-color: var(--lt-page-solid);
   color: var(--lt-text);
   font-family: 'Space Grotesk', 'Sora', system-ui, -apple-system, sans-serif;
 }
 
 .lt-page--admin[data-theme="light"] {
+  --lt-page-solid: #aeb9ca;
   background:
     radial-gradient(120% 140% at 18% 10%, rgba(181,134,77,0.18), transparent 28%),
     radial-gradient(140% 120% at 82% 0%, rgba(96,116,168,0.18), transparent 32%),
@@ -79,7 +90,7 @@
 .admin-card {
   width: 100%;
   max-width: 720px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0.4));
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.6));
   border: 1px solid var(--lt-border);
   border-radius: 16px;
   padding: 32px;
@@ -231,6 +242,23 @@
   color: var(--lt-text);
   font-size: 1rem;
   transition: border-color 140ms ease, background 140ms ease;
+}
+
+.lt-input-name{
+  width: 100%;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--lt-border);
+  border-radius: 12px;
+  padding: 13px 14px;
+  color: var(--lt-text);
+  font-size: 1rem;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.lt-input-name:focus {
+  outline: none;
+  border-color: var(--lt-accent);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .lt-textarea { min-height: 90px; resize: vertical; }
@@ -448,7 +476,7 @@
   min-height: 52px;
   padding: 10px 12px;
   border: 1px solid var(--lt-border);
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.7);
 }
 
 .lt-file-input {
