@@ -1272,6 +1272,25 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   border-left: 1px solid rgba(188, 167, 138, 0.24);
 }
 
+.btn-smooth{
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform, background-color, border-color, box-shadow;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn-smooth:hover,
+.btn-smooth:focus-visible {
+  transform: translate3d(0, -2px, 0) scaleX(1.1) !important;
+  background: rgba(223, 163, 78, 0.08);
+  border-color: rgba(188, 167, 138, 0.28);
+  box-shadow: 0 14px 28px rgba(0,0,0,0.18);
+}
+
 .btn-outline {
   border-color: var(--text);
 }
@@ -1659,11 +1678,11 @@ section[aria-label="How to get a card"] .get-code {
   gap: 14px;
 }
 
-.card-config-choice-btn {
+.private-card-config-choice-btn {
   width: 100%;
 }
 
-.card-config-choice-btn[aria-pressed="true"] {
+.private-card-config-choice-btn[aria-pressed="true"] {
   border-color: rgba(216,176,122,0.88);
   background: rgba(216,176,122,0.08);
   box-shadow: 0 16px 36px rgba(0,0,0,0.2);
@@ -3616,6 +3635,100 @@ body.private-page .private-exit-link {
 body.private-page .private-exit-link:hover,
 body.private-page .private-exit-link:focus-visible {
   color: var(--text);
+}
+
+body.private-page .btn,
+body.private-page button.btn,
+body.private-page .card-config-box,
+body.private-page .checkout-stepper-item,
+body.private-page .close-btn {
+  transform-origin: center center;
+}
+
+body.private-page .btn,
+body.private-page button.btn {
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.private-page .btn:hover,
+body.private-page .btn:focus-visible,
+body.private-page button.btn:hover,
+body.private-page button.btn:focus-visible {
+  transform: translateY(-2px);
+  font-size: inherit;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+}
+
+body.private-page .checkout-inline-cta,
+body.private-page .checkout-primary-cta {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  will-change: transform, box-shadow, background-color, border-color;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+  transition:
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.private-page .checkout-inline-cta:hover,
+body.private-page .checkout-inline-cta:focus-visible,
+body.private-page .checkout-primary-cta:hover,
+body.private-page .checkout-primary-cta:focus-visible {
+  transform: translate3d(0, -1px, 0);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.24);
+}
+
+body.private-page .card-config-box {
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.private-page .card-config-box:hover,
+body.private-page .card-config-box:focus-visible {
+  transform: translateY(-2px);
+}
+
+body.private-page .private-card-config-choice-btn {
+  transition:
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.private-page .private-card-config-choice-btn:hover,
+body.private-page .private-card-config-choice-btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(0,0,0,0.2);
+}
+
+body.private-page .checkout-stepper-item,
+body.private-page .close-btn {
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.private-page .checkout-stepper-item:hover,
+body.private-page .checkout-stepper-item:focus-visible,
+body.private-page .close-btn:hover,
+body.private-page .close-btn:focus-visible {
+  transform: translateY(-1px);
 }
 
 .checkout-hero-content {
@@ -5596,7 +5709,7 @@ body::after { opacity: 0.04; }
   gap: 20px;
 }
 
-.card-config-choice-btn {
+.private-card-config-choice-btn {
   min-height: 92px;
   display: grid;
   gap: 6px;
@@ -5607,12 +5720,12 @@ body::after { opacity: 0.04; }
   background: #111419;
 }
 
-.card-config-choice-btn span {
+.private-card-config-choice-btn span {
   font-size: 1rem;
   font-weight: 600;
 }
 
-.card-config-choice-btn small {
+.private-card-config-choice-btn small {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.5;
@@ -5972,7 +6085,7 @@ body::after { opacity: 0.04; }
 }
 
 .checkout-primary-cta:focus-visible,
-.card-config-choice-btn:focus-visible,
+.private-card-config-choice-btn:focus-visible,
 .card-config-box:focus-visible,
 .payment-provider-card:focus-visible,
 .checkout-terms-details summary:focus-visible {
