@@ -35,6 +35,19 @@ body {
   background-color: var(--lt-page-solid);
 }
 
+html.lt-admin-html[data-theme="light"] {
+  background:
+    radial-gradient(120% 140% at 18% 10%, rgba(181,134,77,0.18), transparent 28%),
+    radial-gradient(140% 120% at 82% 0%, rgba(96,116,168,0.18), transparent 32%),
+    linear-gradient(180deg, #c1cad8 0%, #aeb9ca 100%);
+  background-color: #aeb9ca;
+}
+
+html.lt-admin-html[data-theme="dark"] {
+  background: var(--lt-bg);
+  background-color: #0b0c10;
+}
+
 .lt-page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -46,10 +59,15 @@ body {
 
 .lt-page--admin[data-theme="light"] {
   --lt-page-solid: #aeb9ca;
-  background:
+  --lt-admin-page-bg:
     radial-gradient(120% 140% at 18% 10%, rgba(181,134,77,0.18), transparent 28%),
     radial-gradient(140% 120% at 82% 0%, rgba(96,116,168,0.18), transparent 32%),
     linear-gradient(180deg, #c1cad8 0%, #aeb9ca 100%);
+  background: var(--lt-admin-page-bg);
+}
+
+.lt-page--admin[data-theme="dark"] {
+  --lt-admin-page-bg: var(--lt-bg);
 }
 
 .lt-page--admin[data-theme="light"] .lt-auth-card .lt-input {
@@ -1746,6 +1764,11 @@ body {
   transition: opacity 240ms ease;
 }
 
+.lt-page--admin .lt-overlay {
+  background: var(--lt-admin-page-bg, var(--lt-bg));
+  background-color: var(--lt-page-solid);
+}
+
 .lt-overlay.active {
   opacity: 1;
   pointer-events: all;
@@ -1777,6 +1800,10 @@ body {
   text-align: center;
   text-transform: none;
   transform: translateY(-6vh);
+}
+
+.lt-page--admin .lt-overlay-box {
+  color: var(--lt-text);
 }
 
 .lt-loader-card {
