@@ -1775,11 +1775,6 @@ html.lt-admin-html[data-theme="dark"] {
   transition: opacity 240ms ease;
 }
 
-.lt-page--admin .lt-overlay {
-  background: transparent;
-  background-color: transparent;
-}
-
 .lt-overlay.active {
   opacity: 1;
   pointer-events: all;
@@ -1811,10 +1806,6 @@ html.lt-admin-html[data-theme="dark"] {
   text-align: center;
   text-transform: none;
   transform: translateY(-6vh);
-}
-
-.lt-page--admin .lt-overlay-box {
-  color: var(--lt-text);
 }
 
 .lt-loader-card {
