@@ -4518,7 +4518,7 @@ body.access-page .gate-code-digit {
 .password-reveal-toggle:hover,
 .password-reveal-toggle:focus-visible {
   border-color: rgba(216,176,122,0.9);
-  color: var(--text);
+  color: rgba(255,255,255,0.92);
   background: rgba(18, 18, 22, 0.94);
   outline: none;
 }
