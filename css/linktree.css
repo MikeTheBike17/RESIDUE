@@ -36,12 +36,12 @@ body {
 }
 
 html.lt-admin-html[data-theme="light"] {
-  --lt-page-solid: #aeb9ca;
+  --lt-page-solid: #1c1b1a;
   --lt-admin-page-bg:
-    radial-gradient(130% 150% at 10% 8%, rgba(181,134,77,0.22), transparent 32%),
-    radial-gradient(145% 120% at 88% 0%, rgba(96,116,168,0.18), transparent 32%),
-    linear-gradient(180deg, #c1cad8 0%, #aeb9ca 100%);
-  background-color: #aeb9ca;
+    radial-gradient(46% 40% at 92% 88%, rgba(216,176,122,0.2), transparent 0 62%),
+    linear-gradient(180deg, #2c2a28 0%, #1c1b1a 100%);
+  --lt-loader-overlay-bg: var(--lt-admin-page-bg);
+  background-color: #1c1b1a;
   background-repeat: no-repeat;
 }
 
@@ -1765,7 +1765,7 @@ html.lt-admin-html[data-theme="dark"] {
 .lt-overlay {
   position: fixed;
   inset: 0;
-  background: #fff;
+  background: var(--lt-loader-overlay-bg, var(--lt-admin-page-bg, var(--lt-bg)));
   display: flex;
   align-items: center;
   justify-content: center;
