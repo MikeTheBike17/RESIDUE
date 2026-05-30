@@ -22,9 +22,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
-  --page-bg:
-    radial-gradient(circle at 88% 84%, rgba(214, 178, 107, 0.18), transparent 28%),
-    linear-gradient(180deg, #2c2a28 0%, #1c1b1a 100%);
+  --page-bg: #1c1b1a;
   --page-bg-solid: #1c1b1a;
   --lt-loader-overlay-bg: var(--page-bg);
   color-scheme: light;

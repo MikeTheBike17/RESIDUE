@@ -37,9 +37,7 @@ body {
 
 html.lt-admin-html[data-theme="light"] {
   --lt-page-solid: #1c1b1a;
-  --lt-admin-page-bg:
-    radial-gradient(46% 40% at 92% 88%, rgba(216,176,122,0.2), transparent 0 62%),
-    linear-gradient(180deg, #2c2a28 0%, #1c1b1a 100%);
+  --lt-admin-page-bg: #1c1b1a;
   --lt-loader-overlay-solid: #1c1b1a;
   --lt-loader-overlay-bg: var(--lt-admin-page-bg);
   background-color: #1c1b1a;
