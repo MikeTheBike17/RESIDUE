@@ -1283,6 +1283,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const resetSubmit = document.getElementById('lt-reset-submit');
     const resetStatus = document.getElementById('lt-reset-status');
     const hasRecoveryReturn = isRecoveryReturn();
+    const resetPassField = resetPass?.closest('.password-reveal-field') || resetPass;
+    const resetConfirmField = resetConfirm?.closest('.password-reveal-field') || resetConfirm;
 
     const setResetMode = mode => {
       const isRecovery = mode === 'recovery';
@@ -1293,8 +1295,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
         sendOtpBtn.textContent = 'Send reset email';
       }
       if (otpInput) otpInput.hidden = true;
-      if (resetPass) resetPass.hidden = !isRecovery;
-      if (resetConfirm) resetConfirm.hidden = !isRecovery;
+      if (resetPassField) resetPassField.hidden = !isRecovery;
+      if (resetConfirmField) resetConfirmField.hidden = !isRecovery;
       if (resetSubmit) resetSubmit.hidden = !isRecovery;
     };
 
