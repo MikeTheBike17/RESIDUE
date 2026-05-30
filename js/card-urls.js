@@ -26,7 +26,7 @@ const isCardUrlsPage = !!urlsBody;
 const isInvoicingPage = !!invoiceBody && !urlsBody;
 let profileRowsCache = [];
 let invoiceRowsCache = [];
-const INVOICE_TABLE_COLSPAN = 13;
+const INVOICE_TABLE_COLSPAN = 14;
 
 function normalizeEmail(value) {
   return (value || '').trim().toLowerCase();
@@ -233,10 +233,15 @@ function renderInvoiceRows(rows, emptyMessage = 'No invoices found.') {
     invoiceSentTd.appendChild(buildInvoiceFlagCheckbox(row, 'invoice_sent_to_client', 'invoice sent'));
     tr.appendChild(invoiceSentTd);
 
-    const orderSentTd = document.createElement('td');
-    orderSentTd.className = 'card-urls-check-col';
-    orderSentTd.appendChild(buildInvoiceFlagCheckbox(row, 'order_sent_to_client', 'order sent'));
-    tr.appendChild(orderSentTd);
+    const cardLaseredTd = document.createElement('td');
+    cardLaseredTd.className = 'card-urls-check-col';
+    cardLaseredTd.appendChild(buildInvoiceFlagCheckbox(row, 'card_lasered', 'card lasered'));
+    tr.appendChild(cardLaseredTd);
+
+    const orderShippedTd = document.createElement('td');
+    orderShippedTd.className = 'card-urls-check-col';
+    orderShippedTd.appendChild(buildInvoiceFlagCheckbox(row, 'order_sent_to_client', 'order shipped'));
+    tr.appendChild(orderShippedTd);
 
     invoiceBody.appendChild(tr);
   });
@@ -342,7 +347,7 @@ async function fetchProfileRows() {
 async function fetchInvoiceRows() {
   const { data, error } = await supabase
     .from(INVOICE_TABLE)
-    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_province, shipping_postal, payment_status, invoice_sent_to_client, order_sent_to_client, created_at')
+    .select('invoice_no, customer_name, customer_title, customer_email, customer_phone, quantity, card_configuration, custom_logo_requested, custom_logo_file_name, custom_logo_image, shipping_name, shipping_street, shipping_suburb, shipping_city, shipping_province, shipping_postal, payment_status, invoice_sent_to_client, card_lasered, order_sent_to_client, created_at')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message || 'Could not load invoices.');
@@ -362,6 +367,7 @@ async function fetchInvoiceRows() {
     shipping: formatShipping(row),
     payment_status: paymentLabel(row.payment_status),
     invoice_sent_to_client: !!row.invoice_sent_to_client,
+    card_lasered: !!row.card_lasered,
     order_sent_to_client: !!row.order_sent_to_client
   }));
 }
