@@ -141,8 +141,30 @@
       revealIfNearViewport('.reveal');
       window.setTimeout(() => revealAll('.reveal:not(.visible)'), 1200);
     }, { once: true });
+
+    const howJourneyHeading = document.querySelector('.how-steps-heading');
+    const howJourneyCards = document.querySelectorAll('.how-step-card');
+    if (howJourneyHeading || howJourneyCards.length) {
+      const howJourneyObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          howJourneyObserver.unobserve(entry.target);
+        });
+      }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+
+      if (howJourneyHeading) {
+        howJourneyObserver.observe(howJourneyHeading);
+      }
+
+      howJourneyCards.forEach(card => {
+        howJourneyObserver.observe(card);
+      });
+    }
   } else {
     revealAll('.reveal');
+    document.querySelector('.how-steps-heading')?.classList.add('is-visible');
+    document.querySelectorAll('.how-step-card').forEach(card => card.classList.add('is-visible'));
   }
 
   // Header scroll state
