@@ -246,7 +246,9 @@ body {
 
 .lt-input-name{
   width: 100%;
-  background: rgba(255, 255, 255, 0.7);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.38)),
+    var(--lt-card);
   border: 1px solid var(--lt-border);
   border-radius: 12px;
   padding: 13px 14px;
@@ -255,10 +257,22 @@ body {
   transition: border-color 140ms ease, background 140ms ease;
 }
 
+[data-theme="dark"] .lt-input-name {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)),
+    var(--lt-card);
+}
+
 .lt-input-name:focus {
   outline: none;
   border-color: var(--lt-accent);
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(216,176,122,0.06);
+}
+
+[data-theme="dark"] .lt-input-name:focus {
+  background:
+    linear-gradient(180deg, rgba(216,176,122,0.08), rgba(255,255,255,0.02)),
+    var(--lt-card);
 }
 
 .lt-textarea { min-height: 90px; resize: vertical; }
@@ -1428,7 +1442,15 @@ body {
 
 .lt-admin-remodel .lt-logo-upload-row {
   border-radius: 14px;
-  background: rgba(255,255,255,0.28);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.38)),
+    var(--lt-card);
+}
+
+[data-theme="dark"] .lt-admin-remodel .lt-logo-upload-row {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)),
+    var(--lt-card);
 }
 
 .lt-admin-remodel .lt-file-button {
