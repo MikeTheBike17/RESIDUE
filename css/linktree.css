@@ -40,6 +40,7 @@ html.lt-admin-html[data-theme="light"] {
   --lt-admin-page-bg:
     radial-gradient(46% 40% at 92% 88%, rgba(216,176,122,0.2), transparent 0 62%),
     linear-gradient(180deg, #2c2a28 0%, #1c1b1a 100%);
+  --lt-loader-overlay-solid: #1c1b1a;
   --lt-loader-overlay-bg: var(--lt-admin-page-bg);
   background-color: #1c1b1a;
   background-repeat: no-repeat;
@@ -1766,6 +1767,7 @@ html.lt-admin-html[data-theme="dark"] {
   position: fixed;
   inset: 0;
   background: var(--lt-loader-overlay-bg, var(--lt-admin-page-bg, var(--lt-bg)));
+  background-color: var(--lt-loader-overlay-solid, var(--lt-page-solid));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1800,7 +1802,7 @@ html.lt-admin-html[data-theme="dark"] {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #000;
+  color: #fff;
   font-weight: 700;
   letter-spacing: 0;
   text-align: center;

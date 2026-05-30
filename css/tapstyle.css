@@ -25,6 +25,7 @@ html[data-theme="light"] {
   --page-bg:
     radial-gradient(circle at 88% 84%, rgba(214, 178, 107, 0.18), transparent 28%),
     linear-gradient(180deg, #2c2a28 0%, #1c1b1a 100%);
+  --page-bg-solid: #1c1b1a;
   --lt-loader-overlay-bg: var(--page-bg);
   color-scheme: light;
 }
@@ -622,6 +623,7 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
   position: fixed;
   inset: 0;
   background: var(--lt-loader-overlay-bg, var(--page-bg, #1c1b1a));
+  background-color: var(--page-bg-solid, #1c1b1a);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -656,7 +658,7 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #000;
+  color: #fff;
   font-weight: 700;
   text-align: center;
   transform: translateY(-6vh);
