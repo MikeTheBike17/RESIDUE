@@ -403,11 +403,11 @@ window.addEventListener('DOMContentLoaded', () => {
   setText('lt-title', parseBool(meta.show_role, false) ? (profile?.title || '') : '');
   setText('lt-bio', parseBool(meta.show_bio, false) ? (profile?.bio || '') : '');
   applyTheme(
-    readStoredThemePreference({
+    profile?.theme || readStoredThemePreference({
       profileId: profile?.id,
       slug: profile?.slug || slug,
       email: profile?.auth_email
-    }) || profile?.theme
+    })
   );
   const avatar = document.getElementById('lt-avatar');
   if (avatar) avatar.src = profile?.avatar_url || 'https://placehold.co/220x220?text=Profile';

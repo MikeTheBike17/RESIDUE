@@ -149,9 +149,10 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function fillPublic(profile, meta = {}) {
     const publicTheme = resolveThemeChoice(
-      readStoredThemePreference(buildThemeContext(profile)),
-      profile?.theme
+      profile?.theme,
+      readStoredThemePreference(buildThemeContext(profile))
     );
+    writeStoredThemePreference(publicTheme, buildThemeContext(profile));
     setPublicSetupMode(false, profile?.slug || getRequestedSlug());
     updatePublicAdminLinks(profile?.slug || getRequestedSlug());
     setTheme(publicTheme);
@@ -1710,10 +1711,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
       ? String(snapshotFields['email-config'] ?? '')
       : normalizeEmail(profile?.auth_email || user?.email || '');
     const savedTheme = resolveThemeChoice(
-      readStoredThemePreference(themeContext),
       snapshotFields['lt-theme'],
-      profile?.theme
+      profile?.theme,
+      readStoredThemePreference(themeContext)
     );
+    writeStoredThemePreference(savedTheme, themeContext);
     setValue('lt-avatar-url', profile.avatar_url || '');
     updateLogoPreview(profile.avatar_url || '');
     setValue('full-name', displayName || '');

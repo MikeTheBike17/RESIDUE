@@ -22,9 +22,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
-  --page-bg: #1c1b1a;
-  --page-bg-solid: #1c1b1a;
-  --lt-loader-overlay-bg: var(--page-bg);
+  --page-bg: #ffffff;
   color-scheme: light;
 }
 
@@ -620,8 +618,7 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
 .lt-overlay {
   position: fixed;
   inset: 0;
-  background: var(--lt-loader-overlay-bg, var(--page-bg, #1c1b1a));
-  background-color: var(--page-bg-solid, #1c1b1a);
+  background: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -656,7 +653,7 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #fff;
+  color: #000;
   font-weight: 700;
   text-align: center;
   transform: translateY(-6vh);
