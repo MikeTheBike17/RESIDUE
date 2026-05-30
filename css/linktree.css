@@ -34,6 +34,26 @@
   font-family: 'Space Grotesk', 'Sora', system-ui, -apple-system, sans-serif;
 }
 
+.lt-page--admin[data-theme="light"] {
+  background:
+    radial-gradient(120% 140% at 18% 10%, rgba(181,134,77,0.18), transparent 28%),
+    radial-gradient(140% 120% at 82% 0%, rgba(96,116,168,0.18), transparent 32%),
+    linear-gradient(180deg, #c1cad8 0%, #aeb9ca 100%);
+}
+
+.lt-page--admin[data-theme="light"] .lt-auth-card .lt-input {
+  background: #e2e8f2;
+  border-color: rgba(31, 41, 55, 0.18);
+}
+
+.lt-page--admin[data-theme="light"] .lt-auth-card .lt-input::placeholder {
+  color: #64748b;
+}
+
+.lt-page--admin[data-theme="light"] .lt-auth-card .password-reveal-toggle {
+  background: #f1f5f9;
+}
+
 .auth-only .lt-header,
 .auth-only .lt-admin {
   display: none;
@@ -59,7 +79,7 @@
 .admin-card {
   width: 100%;
   max-width: 720px;
-  background: linear-gradient(180deg, var(--lt-card-strong), var(--lt-card));
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), rgba(255,255,255,0.4));
   border: 1px solid var(--lt-border);
   border-radius: 16px;
   padding: 32px;
@@ -264,7 +284,13 @@
 }
 
 .lt-inline-link:hover {
-  color: #f2d4a9;
+  color: #f3a539;
+}
+
+.lt-reset-note {
+  margin: 0;
+  text-align: left;
+  color: var(--lt-muted);
 }
 
 .reset-password-modal {
@@ -297,24 +323,24 @@
   padding: 28px 28px 24px;
   border: 1px solid rgba(31, 41, 55, 0.12);
   border-radius: 24px;
-  background: #ffffff;
+  background: #edf2f7;
   color: #172033;
   box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
 }
 
 .reset-password-modal__close {
   position: absolute;
-  top: 18px;
+  top: 16px;
   right: 18px;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border: 1px solid rgba(31, 41, 55, 0.12);
   border-radius: 50%;
   background: #f8fafc;
   color: #172033;
   cursor: pointer;
-  font-size: 1.1rem;
-  line-height: 1;
+  font-size: 1.8rem;
+  line-height: 0;
 }
 
 .reset-password-modal__close:hover,
@@ -337,7 +363,7 @@
   padding: 14px 16px;
   border: 1px solid rgba(31, 41, 55, 0.1);
   border-radius: 14px;
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.8);
   color: #172033;
   font-size: 1rem;
   line-height: 1.5;
@@ -345,7 +371,7 @@
 }
 
 .reset-password-modal .lt-input {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.8);
   border-color: rgba(31, 41, 55, 0.14);
   color: #172033;
 }
@@ -373,16 +399,27 @@
   height: 34px;
   border-radius: 10px;
   border-color: rgba(31, 41, 55, 0.14);
-  background: #f8fafc;
+  background: #ffffff;
   color: #475569;
   box-shadow: none;
 }
 
 .reset-password-modal .password-reveal-toggle:hover,
 .reset-password-modal .password-reveal-toggle:focus-visible {
-  background: #eef2f7;
+  background: #f8fafc;
   border-color: rgba(31, 41, 55, 0.22);
   color: #172033;
+}
+
+.reset-password-modal .lt-reset-note {
+  padding: 12px 14px;
+  border: 1px solid rgba(181, 134, 77, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 248, 236, 0.96);
+  color: #7a5b34;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 .lt-links-editor {

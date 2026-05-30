@@ -1364,7 +1364,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
         redirectTo: buildResetPasswordPageUrl()
       });
       if (error) return showStatusEl(resetStatus, error.message, 'error');
-      showStatusEl(resetStatus, `Reset email sent to ${email}.`, 'success');
+      showStatusEl(resetStatus, `Password reset sent to ${email}.`, 'success');
     });
 
     resetSubmit?.addEventListener('click', async () => {
