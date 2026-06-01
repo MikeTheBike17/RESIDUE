@@ -311,7 +311,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   justify-content: left;
   object-fit: cover;
   display: inline-flex;
-  margin: 0 0 34px 0;
+  margin: 0 0 30px 0;
   background: transparent;
   border: 1px solid var(--lt-avatar-border, rgba(255,255,255,0.18));
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
@@ -359,7 +359,7 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 
 .lt-profile > .lt-title:not(:empty) + .lt-bio:empty {
   display: block;
-  height: 1rem;
+  height: 2rem;
   margin: 0;
   padding: 0;
   border: 0;
