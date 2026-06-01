@@ -357,6 +357,10 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   display: none;
 }
 
+.lt-profile:has(> .lt-title:not(:empty) + .lt-bio:empty) + .lt-links {
+  margin-top: calc(18px + 1rem);
+}
+
 .lt-company-bio {
   margin: 0;
   width: 100%;
