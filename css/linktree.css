@@ -338,7 +338,7 @@ html.lt-admin-html[data-theme="dark"] {
   border-radius: 12px;
   border: 1px solid #ff9710;
   color: var(--lt-text);
-  background: linear-gradient(rgba(168, 116, 47, 0.9), rgba(252, 149, 15, 0.8)); ;
+  background: linear-gradient(300deg,rgba(168, 116, 47, 0.9), rgba(236, 182, 111, 0.8)); 
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -347,8 +347,8 @@ html.lt-admin-html[data-theme="dark"] {
 }
 
 .lt-btn-saveadmin::after {
-  background: rgba(255, 148, 9, 0.8);
-  border-color: rgba(255, 192, 109, 0.9);
+  background: rgba(255, 192, 109, 0.8);
+  border-color: rgba(255, 166, 49, 0.9);
   transform: translateY(-1px);
 }
 
