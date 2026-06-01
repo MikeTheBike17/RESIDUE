@@ -192,7 +192,7 @@
   body.classList.add('page-fade-in');
   document.querySelectorAll('a[href]').forEach(link => {
     const href = link.getAttribute('href');
-    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || link.hasAttribute('data-open-auth')) return;
     link.addEventListener('click', evt => {
       evt.preventDefault();
       const url = link.getAttribute('href');
@@ -291,64 +291,6 @@
   const observer = new MutationObserver(() => prepImages());
   observer.observe(document.body, { childList: true, subtree: true });
 
-  const ACCESS_GRANTED_KEY = 'residue-access';
-  const AUTH_INTENT_KEY = 'residue-auth-intent';
-  const PROFILE_ACCESS_CODES_TABLE = 'profile_access_codes';
-  const ACCESS_CODE_PATTERN = /^\d{5}$/;
-  const INVALID_ACCESS_CODE_MESSAGE = 'Invalid access code. Please check your code and try again.';
-  const publicEnv = window.env || {};
-  let signupUnlockedForAuth = false;
-
-  function normalizeAccessCode(value) {
-    return String(value ?? '').trim();
-  }
-
-  async function verifyAccessCode(code) {
-    const normalizedCode = normalizeAccessCode(code);
-    if (!normalizedCode) {
-      return { ok: false, error: 'Enter an access code.' };
-    }
-    if (!ACCESS_CODE_PATTERN.test(normalizedCode)) {
-      return { ok: false, error: INVALID_ACCESS_CODE_MESSAGE };
-    }
-
-    try {
-      const supabase = await getSupabaseClient();
-      if (!supabase) {
-        return {
-          ok: false,
-          error: 'Access verification is unavailable right now.'
-        };
-      }
-
-      const { data, error } = await supabase
-        .from(PROFILE_ACCESS_CODES_TABLE)
-        .select('slug')
-        .eq('access_code', normalizedCode)
-        .maybeSingle();
-      if (error) {
-        console.error('Access code lookup failed.', error);
-        return { ok: false, error: 'Could not verify the access code.' };
-      }
-
-      const slug = resolveSlug(data?.slug || '', '');
-      if (!slug) {
-        return { ok: false, error: INVALID_ACCESS_CODE_MESSAGE };
-      }
-
-      return {
-        ok: true,
-        slug
-      };
-    } catch (error) {
-      console.error('Access code lookup failed.', error);
-      return {
-        ok: false,
-        error: 'Could not verify the access code.'
-      };
-    }
-  }
-
   function normalizeAuthIntent(value) {
     const intent = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
     if (intent === 'login') return 'login';
@@ -371,23 +313,6 @@
     }
   }
 
-  function storePendingAuthMode(mode) {
-    if (!mode) return;
-    try {
-      sessionStorage.setItem(AUTH_INTENT_KEY, mode);
-    } catch {
-      window.__residuePendingAuthMode = mode;
-    }
-  }
-
-  function getPendingAuthMode(fallback = 'signin') {
-    try {
-      return sessionStorage.getItem(AUTH_INTENT_KEY) || fallback;
-    } catch {
-      return window.__residuePendingAuthMode || fallback;
-    }
-  }
-
   function clearAuthIntentFromUrl() {
     try {
       const url = new URL(window.location.href);
@@ -400,190 +325,8 @@
     }
   }
 
-  function clearPendingAuthMode() {
-    try {
-      sessionStorage.removeItem(AUTH_INTENT_KEY);
-    } catch {
-      window.__residuePendingAuthMode = '';
-    }
-    clearAuthIntentFromUrl();
-  }
-
   const requestedAuthIntent = readAuthIntentFromUrl();
   const requestedAuthMode = modalModeForAuthIntent(requestedAuthIntent);
-  const isAccessPage = /\/access(?:\.html)?$/i.test(window.location.pathname || '');
-  if (requestedAuthIntent === 'signup') storePendingAuthMode('create');
-  else if (requestedAuthIntent === 'login') clearPendingAuthMode();
-  else if (isAccessPage) clearPendingAuthMode();
-
-  // Access gate
-  const gateForm = document.querySelector('.gate-form');
-  if (gateForm) {
-    const codeInput = gateForm.querySelector('#access-code');
-    const codeDigits = Array.from(gateForm.querySelectorAll('[data-access-code-digit]'));
-    const statusEl = gateForm.querySelector('.gate-status');
-    const gateButton = gateForm.querySelector('button[type="submit"]');
-    const resetGateStatus = () => {
-      if (!statusEl) return;
-      statusEl.hidden = true;
-      statusEl.textContent = '';
-      statusEl.className = 'status gate-status';
-    };
-    const syncGateCodeValue = () => {
-      const code = codeDigits.map(input => String(input.value || '').replace(/\D/g, '').slice(0, 1)).join('');
-      if (codeInput) codeInput.value = code;
-      return code;
-    };
-    const focusGateDigit = index => {
-      const nextInput = codeDigits[index];
-      nextInput?.focus();
-      nextInput?.select?.();
-    };
-    const focusFirstGateDigit = () => focusGateDigit(0);
-    const focusNextEmptyGateDigit = () => {
-      const nextIndex = codeDigits.findIndex(input => !input.value);
-      focusGateDigit(nextIndex >= 0 ? nextIndex : 0);
-    };
-    const setGateDisabled = disabled => {
-      gateButton && (gateButton.disabled = disabled);
-      codeInput && (codeInput.disabled = disabled);
-      codeDigits.forEach(input => {
-        input.disabled = disabled;
-      });
-    };
-    codeDigits.forEach((input, index) => {
-      input.addEventListener('focus', () => input.select());
-      input.addEventListener('click', () => input.select());
-      input.addEventListener('input', () => {
-        resetGateStatus();
-        const digits = String(input.value || '').replace(/\D/g, '');
-        if (!digits) {
-          input.value = '';
-          syncGateCodeValue();
-          return;
-        }
-        const spreadDigits = digits.split('');
-        let cursor = index;
-        spreadDigits.forEach(digit => {
-          if (!codeDigits[cursor]) return;
-          codeDigits[cursor].value = digit;
-          cursor += 1;
-        });
-        syncGateCodeValue();
-        if (cursor < codeDigits.length) {
-          focusGateDigit(cursor);
-        }
-      });
-      input.addEventListener('keydown', evt => {
-        if (evt.key === 'Backspace' && !input.value && index > 0) {
-          evt.preventDefault();
-          codeDigits[index - 1].value = '';
-          syncGateCodeValue();
-          focusGateDigit(index - 1);
-          return;
-        }
-        if (evt.key === 'ArrowLeft' && index > 0) {
-          evt.preventDefault();
-          focusGateDigit(index - 1);
-          return;
-        }
-        if (evt.key === 'ArrowRight' && index < codeDigits.length - 1) {
-          evt.preventDefault();
-          focusGateDigit(index + 1);
-        }
-      });
-      input.addEventListener('paste', evt => {
-        evt.preventDefault();
-        resetGateStatus();
-        const pastedDigits = String(evt.clipboardData?.getData('text') || '').replace(/\D/g, '');
-        if (!pastedDigits) return;
-        let cursor = index;
-        pastedDigits.split('').forEach(digit => {
-          if (!codeDigits[cursor]) return;
-          codeDigits[cursor].value = digit;
-          cursor += 1;
-        });
-        syncGateCodeValue();
-        if (cursor < codeDigits.length) {
-          focusGateDigit(cursor);
-        } else {
-          codeDigits[codeDigits.length - 1]?.focus();
-        }
-      });
-    });
-    syncGateCodeValue();
-    gateForm.addEventListener('submit', async evt => {
-      evt.preventDefault();
-      const code = syncGateCodeValue().trim();
-      const codePrefix = code.slice(0, 8).toUpperCase();
-      if (!statusEl) return;
-      if (!code) {
-        statusEl.hidden = false;
-        statusEl.textContent = 'Enter an access code.';
-        statusEl.className = 'status error';
-        focusFirstGateDigit();
-        return;
-      }
-      if (codeDigits.length && code.length !== codeDigits.length) {
-        statusEl.hidden = false;
-        statusEl.textContent = 'Enter your 5-digit access code.';
-        statusEl.className = 'status error';
-        focusNextEmptyGateDigit();
-        return;
-      }
-      logAuth({
-        action: 'access_code_check',
-        outcome: 'attempt',
-        detail: 'Access code submitted.',
-        metadata: { code_prefix: codePrefix }
-      });
-      statusEl.hidden = false;
-      statusEl.textContent = 'Checking code...';
-      statusEl.className = 'status loading-dots';
-      setGateDisabled(true);
-
-      const startedAt = performance.now();
-      const result = await verifyAccessCode(code);
-      const remainingDelay = Math.max(0, 300 - (performance.now() - startedAt));
-      if (remainingDelay) {
-        await new Promise(resolve => window.setTimeout(resolve, remainingDelay));
-      }
-
-      if (result.ok) {
-        logAuth({
-          action: 'access_code_check',
-          outcome: 'success',
-          detail: 'Access code accepted.',
-          metadata: { code_prefix: codePrefix }
-        });
-        statusEl.textContent = 'Access granted.';
-        statusEl.className = 'status success';
-        localStorage.setItem(ACCESS_GRANTED_KEY, 'granted');
-        signupUnlockedForAuth = true;
-        if (typeof window.openAuthModal === 'function') {
-          window.openAuthModal(getPendingAuthMode('create'));
-          clearPendingAuthMode();
-        }
-        return;
-      }
-
-      logAuth({
-        action: 'access_code_check',
-        outcome: 'failure',
-        detail: result.error || 'Access code rejected.',
-        metadata: { code_prefix: codePrefix }
-      });
-      statusEl.textContent = result.error || 'Invalid access code.';
-      statusEl.className = 'status error';
-      setGateDisabled(false);
-      focusNextEmptyGateDigit();
-    });
-  }
-
-  // Auto-redirect if already unlocked
-  if (localStorage.getItem(ACCESS_GRANTED_KEY) === 'granted' && window.location.pathname.endsWith('residue-private.html')) {
-    // already in premium
-  }
 
   // ===== AUTH MODAL (Log in / Sign up) =====
     const $ = (sel, root = document) => root.querySelector(sel);
@@ -592,7 +335,6 @@
     const MANAGER_ACCESS_KEY = "residue_manager_access";
     const MANAGER_EMAIL = "check.email@residue.com";
     const INSIDE_PAGE = "residue-inside.html";
-    const INSIDE_PAGE_ENTRY = INSIDE_PAGE;
     const PRIVATE_PAGE = "residue-private.html";
     const CARD_URLS_PAGE = "card-urls.html";
     const DEFAULT_PROFILE_NAME = "Your name";
@@ -719,9 +461,7 @@
 
     async function enforceProtectedRouteSession() {
       const protectedPages = [
-        INSIDE_PAGE,
         PRIVATE_PAGE,
-        INSIDE_PAGE.replace(/\.html$/i, ""),
         PRIVATE_PAGE.replace(/\.html$/i, "")
       ];
       const currentPath = (window.location.pathname || "").toLowerCase();
@@ -744,7 +484,7 @@
         return;
       }
 
-      window.location.href = "access.html";
+      window.location.href = `${INSIDE_PAGE}?auth=login`;
     }
 
     function setStatus(el, msg, show = true) {
@@ -753,7 +493,6 @@
       el.hidden = !show;
     }
 
-    const signupAccessPrompt = $("#signupAccessPrompt");
     const modal = $("#authModal");
     const title = $("#authTitle");
     const subtitle = $("#authSubtitle");
@@ -767,36 +506,12 @@
     const signinStatus = $("#signinStatus");
     const createStatus = $("#createStatus");
 
-    function focusAccessCodeField(delay = prefersReducedMotion ? 0 : 60) {
-      window.setTimeout(() => {
-        document.querySelector('[data-access-code-digit]')?.focus();
-      }, delay);
-    }
-
-    function openSignupAccessPrompt() {
-      if (!signupAccessPrompt) return;
-      signupAccessPrompt.classList.add("is-open");
-      signupAccessPrompt.setAttribute("aria-hidden", "false");
-      document.body.style.overflow = "hidden";
-    }
-
-    function closeSignupAccessPrompt({ focusCode = true } = {}) {
-      if (!signupAccessPrompt) return;
-      signupAccessPrompt.classList.remove("is-open");
-      signupAccessPrompt.setAttribute("aria-hidden", "true");
-      if (!modal?.classList.contains("is-open")) {
-        document.body.style.overflow = "";
-      }
-      if (focusCode) focusAccessCodeField();
-    }
-
     function openAuthModal(defaultMode = "signin") {
       if (!modal) return;
-      const safeMode = defaultMode === "create" && !signupUnlockedForAuth ? "signin" : defaultMode;
       modal.classList.add("is-open");
       modal.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
-      setMode(safeMode);
+      setMode(defaultMode);
     }
 
     function closeAuthModal() {
@@ -806,34 +521,27 @@
       document.body.style.overflow = "";
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
+      window.residueTurnstile?.reset?.(createForm);
     }
 
-    function directSignupToAccessGate() {
-      storePendingAuthMode("create");
-      closeAuthModal();
-      const target = gateForm?.closest("section") || gateForm;
-      target?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
-      focusAccessCodeField(prefersReducedMotion ? 0 : 220);
-    }
-
-    // expose so your access gate can call it
+    // Expose for Shop calls to action.
     window.openAuthModal = openAuthModal;
+    document.querySelectorAll("[data-open-auth]").forEach(el => {
+      el.addEventListener("click", event => {
+        event.preventDefault();
+        openAuthModal(el.getAttribute("data-open-auth") === "create" ? "create" : "signin");
+        clearAuthIntentFromUrl();
+      });
+    });
 
     // close handlers
     modal?.querySelectorAll("[data-close]")?.forEach(el => el.addEventListener("click", closeAuthModal));
-    signupAccessPrompt?.querySelectorAll("[data-close-signup-access]")?.forEach(el => {
-      el.addEventListener("click", () => closeSignupAccessPrompt());
-    });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && signupAccessPrompt?.classList.contains("is-open")) {
-        closeSignupAccessPrompt();
-      }
       if (e.key === "Escape" && modal?.classList.contains("is-open")) closeAuthModal();
     });
 
     // force closed on load
     if (modal) closeAuthModal();
-    if (signupAccessPrompt) closeSignupAccessPrompt({ focusCode: false });
 
     function setMode(mode) {
       const isSignin = mode === "signin";
@@ -862,6 +570,9 @@
 
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
+      if (!isSignin) {
+        window.residueTurnstile?.renderAll?.(createForm).catch(() => {});
+      }
 
       // focus first field
       setTimeout(() => {
@@ -871,28 +582,15 @@
     }
 
     tabSignin?.addEventListener("click", () => setMode("signin"));
-    tabCreate?.addEventListener("click", () => {
-      if (!signupUnlockedForAuth) {
-        directSignupToAccessGate();
-        return;
-      }
-      setMode("create");
-    });
+    tabCreate?.addEventListener("click", () => setMode("create"));
 
     // Backfill legacy users missing app rows when an auth session already exists.
     syncProfileForCurrentSession();
     enforceProtectedRouteSession();
 
-    if (modal && requestedAuthIntent === 'login') {
+    if (modal && requestedAuthIntent) {
       setTimeout(() => {
         openAuthModal(requestedAuthMode || 'signin');
-        clearPendingAuthMode();
-      }, 80);
-    }
-
-    if (signupAccessPrompt && isAccessPage && requestedAuthIntent === 'signup') {
-      setTimeout(() => {
-        openSignupAccessPrompt();
         clearAuthIntentFromUrl();
       }, 80);
     }
@@ -950,7 +648,7 @@
       setTimeout(() => {
         closeAuthModal();
         signinForm.reset();
-        window.location.href = isManager ? CARD_URLS_PAGE : INSIDE_PAGE_ENTRY;
+        window.location.href = isManager ? CARD_URLS_PAGE : PRIVATE_PAGE;
       }, 500);
     });
 
@@ -976,24 +674,34 @@
         return setStatus(createStatus, "Passwords do not match.", true);
       }
 
+      let captchaToken = "";
+      try {
+        captchaToken = await window.residueTurnstile?.requireToken?.(createForm) || "";
+      } catch (error) {
+        logAuth({ action: 'signup', outcome: 'failure', email, detail: error.message || 'Security check incomplete.' });
+        return setStatus(createStatus, error.message || "Complete the security check.", true);
+      }
+
       const supabase = await getSupabaseClient();
       if (!supabase) {
         logAuth({ action: 'signup', outcome: 'failure', email, detail: 'Supabase not configured on public auth page.' });
         return setStatus(createStatus, "Auth is not configured yet. Contact support.", true);
       }
 
-      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const redirectTo = new URL(PRIVATE_PAGE, window.location.origin).href;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: redirectTo }
+        options: { emailRedirectTo: redirectTo, captchaToken }
       });
       if (error) {
+        window.residueTurnstile?.reset?.(createForm);
         logAuth({ action: 'signup', outcome: 'failure', email, detail: error.message || 'Supabase sign up failed.' });
         return setStatus(createStatus, error.message || "Could not create account.", true);
       }
 
       if (data?.user && !data?.session) {
+        window.residueTurnstile?.reset?.(createForm);
         logAuth({ action: 'signup', outcome: 'success', email, detail: 'Supabase signup created; awaiting email confirmation.' });
         return setStatus(createStatus, "Account created. Check your email to confirm and log in.", true);
       }
@@ -1007,7 +715,7 @@
       setTimeout(() => {
         closeAuthModal();
         createForm.reset();
-        window.location.href = INSIDE_PAGE_ENTRY;
+        window.location.href = PRIVATE_PAGE;
       }, 600);
     });
 

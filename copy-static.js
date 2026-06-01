@@ -5,7 +5,6 @@ const dest = path.join(process.cwd(), 'dist');
 const sources = [
   'index.html',
   'about.html',
-  'access.html',
   'card-urls.html',
   'configuration.html',
   'residue-inside.html',

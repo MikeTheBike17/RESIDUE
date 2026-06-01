@@ -5,18 +5,6 @@
   "trailingSlash": false,
   "headers": [
     {
-      "source": "/residue-inside",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
-      "source": "/residue-inside.html",
-      "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
-      ]
-    },
-    {
       "source": "/residue-private",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
@@ -31,7 +19,8 @@
   ],
   "redirects": [
     { "source": "/about.html", "destination": "/about", "permanent": true },
-    { "source": "/access.html", "destination": "/access", "permanent": true },
+    { "source": "/access", "destination": "/residue-inside", "permanent": true },
+    { "source": "/access.html", "destination": "/residue-inside", "permanent": true },
     { "source": "/how-it-works.html", "destination": "/how-it-works", "permanent": true },
     { "source": "/configuration.html", "destination": "/configuration", "permanent": true },
     { "source": "/drop.html", "destination": "/configuration", "permanent": true },

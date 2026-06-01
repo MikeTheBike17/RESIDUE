@@ -977,16 +977,20 @@ header.scrolled {
   body.access-page .nav,
   body.about-page .nav,
   body.contact-page .nav,
-  body.how-page .nav {
+  body.how-page .nav,
+  body.inside-page .nav {
     position: relative;
     justify-content: flex-start;
+    max-width: none;
+    margin: 0;
   }
 
   body.home-page .nav-links,
   body.access-page .nav-links,
   body.about-page .nav-links,
   body.contact-page .nav-links,
-  body.how-page .nav-links {
+  body.how-page .nav-links,
+  body.inside-page .nav-links {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -998,7 +1002,8 @@ header.scrolled {
   body.access-page .nav-actions,
   body.about-page .nav-actions,
   body.contact-page .nav-actions,
-  body.how-page .nav-actions {
+  body.how-page .nav-actions,
+  body.inside-page .nav-actions {
     margin-left: auto;
   }
 }

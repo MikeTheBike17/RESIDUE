@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow, noarchive">
-  <meta name="googlebot" content="noindex, nofollow, noarchive">
   <title>Residue | Welcome Inside</title>
   <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
   <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
@@ -18,12 +16,6 @@
     .inside-page.page-fade-in,
     .inside-page.page-fade-out {
       animation: none;
-    }
-
-    .inside-page .nav {
-      max-width: none;
-      margin: 0;
-      justify-content: flex-start;
     }
 
     .inside-page .full-bleed {
@@ -604,13 +596,40 @@
   <header>
     <nav class="nav" aria-label="Main navigation">
       <a class="brand" href="index.html">Residue</a>
+      <div class="nav-links" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="residue-inside.html">Shop</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
+          <span class="dot" aria-hidden="true"></span>
+          <span class="theme-label">Dark</span>
+        </button>
+        <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+          <span></span>
+        </button>
+      </div>
     </nav>
+    <div class="mobile-nav" aria-label="Mobile navigation">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="residue-inside.html">Shop</a>
+      <a href="contact.html">Contact</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme (mobile)">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="theme-label">Dark</span>
+      </button>
+    </div>
   </header>
 
   <main>
     <section class="hero premium-hero inside-hero full-bleed fade-edges" id="top">
       <div class="hero-overlay" aria-hidden="true"></div>
-      <h1 class="inside-hero-title">Welcome to Residue</h1>
+      <h1 class="inside-hero-title">premium business cards</h1>
       <div class="inside-hero-card-animation" aria-hidden="true">
         <div class="inside-hero-card-spin">
           <div class="inside-hero-card-tilt">
@@ -629,7 +648,7 @@
         <div class="inside-presence-eyebrow">Presence</div>
         <h2 class="inside-presence-title">Carry Your <span class="inside-presence-title-accent">Identity.</span></h2>
         <p class="inside-presence-copy">Precision-crafted stainless steel NFC cards designed to be remembered.</p>
-        <a class="inside-presence-cta" href="residue-private.html#purchase">
+        <a class="inside-presence-cta" href="residue-inside.html?auth=signup" data-open-auth="create">
           <span class="inside-presence-cta-icon" aria-hidden="true">&rarr;</span>
           <span class="inside-presence-cta-label">Purchase Your Card</span>
         </a>
@@ -637,7 +656,86 @@
     </section>
   </main>
 
+  <footer>
+    <div class="container footer-meta">
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="footer-divider" aria-hidden="true"></div>
+      <span class="footer-copy">RESIDUE. Leave your mark.</span>
+    </div>
+  </footer>
+
+  <!-- AUTH MODAL (Log in / Sign up) -->
+  <div class="modal" id="authModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal-backdrop" data-close></div>
+
+    <div class="modal-panel" role="document">
+      <button class="modal-close" type="button" aria-label="Close" data-close>&#10005;</button>
+
+      <div class="eyebrow">Access</div>
+
+      <!-- Toggle -->
+      <div class="auth-toggle" role="tablist" aria-label="Authentication mode" style="margin-left: 5rem;">
+        <button class="auth-tab is-active" type="button" id="tab-signin" role="tab" aria-selected="true" aria-controls="panel-signin">
+          Log in
+        </button>
+        <button class="auth-tab" type="button" id="tab-create" role="tab" aria-selected="false" aria-controls="panel-create">
+          Sign up
+        </button>
+      </div>
+
+      <h2 class="h2" id="authTitle" style="margin:10px 0 6px;">Log in</h2>
+      <p class="muted" id="authSubtitle" style="margin-bottom:18px;">Enter your credentials to continue.</p>
+
+      <!-- LOG IN -->
+      <form class="modal-form" id="signinForm" autocomplete="off" aria-labelledby="tab-signin" role="tabpanel" aria-hidden="false" tabindex="0">
+        <label class="muted" for="signin-email">Email</label>
+        <input id="signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+        <label class="muted" for="signin-password" style="margin-top:12px;">Password</label>
+        <input id="signin-password" name="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" minlength="6" required>
+
+        <div class="status modal-status" id="signinStatus" aria-live="polite" hidden></div>
+
+        <div class="modal-actions">
+          <button class="btn btn-outline" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit">Log in</button>
+        </div>
+      </form>
+
+      <!-- SIGN UP -->
+      <form class="modal-form" id="createForm" autocomplete="off" aria-labelledby="tab-create" role="tabpanel" aria-hidden="true" tabindex="-1" style="display:none;">
+        <label class="muted" for="create-email" style="margin-top:12px;">Email</label>
+        <input id="create-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+        <label class="muted" for="create-password" style="margin-top:12px;">Password</label>
+        <input id="create-password" name="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" minlength="6" required>
+
+        <label class="muted" for="create-confirm" style="margin-top:12px;">Confirm password</label>
+        <input id="create-confirm" name="confirm" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" minlength="6" required>
+
+        <div class="status modal-status" id="createStatus" aria-live="polite" hidden></div>
+
+        <input type="hidden" id="signup-turnstile-token" name="turnstile_token" value="">
+        <div class="turnstile-field" aria-label="Security check">
+          <div id="signup_turnstile" class="turnstile-slot" data-turnstile-widget data-sitekey="0x4AAAAAADAvI_1p6qpg5G_E" data-turnstile-target="#signup-turnstile-token" data-theme="dark" data-size="flexible" data-appearance="always"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-outline" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit">Sign up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module" src="js/supabase-telemetry.js"></script>
+  <script src="js/turnstile.js?v=20260514b"></script>
+  <script src="js/password-toggle.js"></script>
   <script src="js/script.js"></script>
   <script>
     (() => {
