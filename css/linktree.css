@@ -336,7 +336,7 @@ html.lt-admin-html[data-theme="dark"] {
   gap: 8px;
   padding: 13px 18px;
   border-radius: 12px;
-  border: 1px solid var(--lt-accent);
+  border: 1px solid #f19f32;
   color: var(--lt-text);
   background: var(--lt-accent);
   font-weight: 700;
@@ -347,8 +347,8 @@ html.lt-admin-html[data-theme="dark"] {
 }
 
 .lt-btn-saveadmin::after {
-  background: rgba(216, 176, 122, 0.9);
-  border-color: rgba(216, 176, 122, 0.9);
+  background: rgba(233, 147, 34, 0.8);
+  border-color: rgba(216, 176, 122, 0.7);
   transform: translateY(-1px);
 }
 
