@@ -1,6 +1,6 @@
 # access-code-verify
 
-Validates the single access code used by `access.html` without exposing the code in the public browser bundle.
+Legacy access-code verifier retained for compatibility. The public Shop flow no longer calls this function.
 
 ## Required secrets
 

@@ -25,7 +25,7 @@ Residue creates premium NFC-enabled business cards for professionals who want a 
 - About: https://www.residue.cc/about
 - How It Works: https://www.residue.cc/how-it-works
 - Configuration: https://www.residue.cc/configuration
-- Access: https://www.residue.cc/access
+- Shop: https://www.residue.cc/residue-inside
 - Contact: https://www.residue.cc/contact
 - Purchase: https://www.residue.cc/residue-private
 

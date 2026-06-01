@@ -310,7 +310,7 @@ async function guardManagerAccess() {
 
   if (!supabase) {
     clearManagerFlag();
-    window.location.href = 'access.html';
+    window.location.href = 'residue-inside.html?auth=login';
     return null;
   }
 
@@ -318,7 +318,7 @@ async function guardManagerAccess() {
   const sessionEmail = normalizeEmail(session?.user?.email);
   if (sessionEmail !== MANAGER_EMAIL) {
     clearManagerFlag();
-    window.location.href = 'access.html';
+    window.location.href = 'residue-inside.html?auth=login';
     return null;
   }
 

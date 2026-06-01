@@ -51,12 +51,12 @@
   const renderClosed = message => {
     stateEl.innerHTML = `
       <p class="muted">${message || 'Closed for now.'}</p>
-      <a class="btn" href="access.html#request-form">Request Access</a>
+      <a class="btn" href="residue-inside.html">Shop</a>
     `;
   };
 
   if (!dropConfig.isOpen) {
-    renderClosed('Closed for now. Request a code to enter.');
+    renderClosed('Closed for now.');
     return;
   }
 

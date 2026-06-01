@@ -7,8 +7,6 @@ Disallow: /card-urls
 Disallow: /card-urls.html
 Disallow: /invoicing
 Disallow: /invoicing.html
-Disallow: /residue-inside
-Disallow: /residue-inside.html
 Disallow: /residue-private
 Disallow: /residue-private.html
 Disallow: /reset-password

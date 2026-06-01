@@ -1,0 +1,144 @@
+Privacy Policy
+
+Effective Date: 
+
+1. Introduction
+
+This Privacy Policy explains how Residue ("Residue", "we", "us", or "our") collects, uses, stores, and protects personal information when you use our website, products, and services.
+
+Residue operates in South Africa. We sell physical NFC business cards and provide access to digital profile pages that can be shared through NFC technology and related links. Our website is https://www.residue.cc.
+
+We are committed to handling personal information responsibly and in accordance with applicable South African privacy laws, including the Protection of Personal Information Act, 2013 ("POPIA").
+
+2. Information We Collect
+
+We may collect personal information that you provide directly to us when you place an order, create or update a digital profile, contact us, or use our website and services.
+
+This information may include:
+
+- Name and surname
+- Email address
+- Phone number
+- Delivery and billing details
+- Company or business details
+- Job title or role
+- Logos, images, or branding materials
+- Social media links
+- Website links
+- Other profile information you choose to provide
+- Order details and communication records
+
+We may also collect limited technical information when you use our website, such as browser type, device information, IP address, pages visited, and general usage data.
+
+3. How We Use Your Information
+
+We use personal information for purposes related to providing and improving our products and services, including to:
+
+- Process and fulfil orders
+- Create, personalise, and manage digital profile pages
+- Produce and configure NFC business cards
+- Communicate with customers about orders, support requests, updates, or service issues
+- Arrange shipping and delivery
+- Process payments through third-party payment providers
+- Improve our website, products, and customer experience
+- Send transactional emails and important service communications
+- Comply with legal, tax, accounting, and regulatory obligations
+- Protect our services against misuse, fraud, or unauthorised access
+
+We will not use your personal information for purposes that are incompatible with the reasons for which it was collected, unless permitted or required by law.
+
+4. Profile and NFC Card Data
+
+Residue provides digital profile pages that may display information supplied by customers, such as names, job titles, company details, contact details, logos, social links, website links, and other profile content.
+
+You are responsible for ensuring that the information you provide for your profile is accurate and that you have the necessary rights or permissions to use any logos, images, links, or other content submitted to Residue.
+
+Depending on your selected settings and how your NFC card or profile link is shared, profile information may be visible to people who scan your NFC card, visit your profile link, or otherwise access your digital profile page.
+
+5. Payment Information
+
+Payments may be processed by third-party payment providers such as PayFast, Stitch, or similar providers. These providers process payment information in accordance with their own terms, privacy policies, and security practices.
+
+Residue does not store full card numbers, full bank account details, or complete payment authentication details. We may receive and store limited payment-related information, such as payment status, transaction references, order amounts, and confirmation records, where needed to manage orders and comply with legal obligations.
+
+6. Shipping and Delivery Information
+
+When you order a physical NFC business card, we may collect delivery information such as your name, phone number, address, delivery instructions, and related contact details.
+
+We use this information to produce, dispatch, track, and deliver your order. We may share necessary delivery information with courier, fulfilment, printing, or logistics providers involved in completing your order.
+
+7. Cookies and Analytics
+
+Our website may use cookies, analytics tools, and similar technologies to operate the website, remember preferences, understand website usage, improve performance, and identify technical issues.
+
+Cookies are small files stored on your browser or device. You may be able to disable or manage cookies through your browser settings, but some parts of the website may not function properly if cookies are disabled.
+
+Analytics information is generally used in an aggregated or limited form to help us understand how visitors use our website and services.
+
+8. How We Store and Protect Information
+
+Customer data may be stored using Supabase or similar secure service providers. We may also use other trusted service providers to host, process, back up, or manage information needed to operate Residue.
+
+We take reasonable technical and organisational measures to protect personal information against loss, unauthorised access, misuse, alteration, or disclosure. These measures may include access controls, secure service providers, authentication controls, backups, and internal procedures appropriate to the nature of the information.
+
+No electronic transmission or storage system is completely secure. We therefore cannot guarantee absolute security, but we work to protect personal information using reasonable and appropriate measures.
+
+9. Sharing of Information
+
+We do not sell personal information.
+
+We may share personal information where reasonably necessary for the operation of our business and services, including with:
+
+- Payment providers
+- Hosting, database, and infrastructure providers
+- Email service providers, such as Resend or similar providers
+- Printing, card production, courier, fulfilment, and delivery providers
+- Analytics and website service providers
+- Professional advisers, where required
+- Regulators, law enforcement, courts, or other authorities where required or permitted by law
+
+We require service providers to process personal information only for authorised purposes and to apply appropriate safeguards, where applicable.
+
+10. User Rights Under POPIA
+
+Under South Africa's Protection of Personal Information Act, 2013, you may have the right to:
+
+- Request access to personal information we hold about you
+- Request correction or updating of inaccurate, incomplete, or outdated personal information
+- Request deletion of personal information where permitted by law
+- Object to the processing of personal information in certain circumstances
+- Withdraw consent where processing is based on consent
+- Request information about third parties who have had access to your personal information
+- Lodge a complaint with the Information Regulator of South Africa
+
+To exercise your rights, please contact us using the details in the Contact Information section below. We may need to verify your identity before responding to a request.
+
+11. Data Retention
+
+We retain personal information only for as long as reasonably necessary for the purposes described in this Privacy Policy, unless a longer retention period is required or permitted by law.
+
+We may retain information for purposes such as completing orders, maintaining customer profiles, providing support, complying with tax or accounting obligations, resolving disputes, enforcing agreements, and maintaining business records.
+
+Where personal information is no longer required, we will delete, de-identify, or securely archive it where appropriate.
+
+12. Third-Party Services
+
+Residue may use third-party services to operate and support our website, payments, database, hosting, email delivery, analytics, card production, fulfilment, and delivery processes.
+
+These third-party services may include providers such as Supabase, PayFast, Stitch, Resend, courier services, and similar providers. Their processing of personal information may be governed by their own privacy policies and terms.
+
+Our website or digital profiles may also contain links to third-party websites, social media platforms, or external services. We are not responsible for the privacy practices, content, or security of third-party websites or services.
+
+13. Contact Information
+
+If you have questions about this Privacy Policy, or if you wish to exercise your rights under POPIA, please contact Residue at:
+
+Email: [INSERT CONTACT EMAIL]
+
+Website: https://www.residue.cc
+
+14. Changes to This Privacy Policy
+
+We may update this Privacy Policy from time to time to reflect changes in our services, legal requirements, business practices, or privacy procedures.
+
+The updated version will be made available on our website or through another appropriate channel. The effective date at the top of this policy will indicate when the latest version applies.
