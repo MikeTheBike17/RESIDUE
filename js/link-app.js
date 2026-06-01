@@ -84,7 +84,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const localFallback = loadLocalProfile(slug);
     if (isPreview && localFallback) {
       const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
-      fillPublic(localFallback.profile || {}, meta);
+      fillPublic(localFallback.profile || {}, meta, { allowLocalThemeFallback: true });
       renderPublicLinks(normalLinks || [], meta);
       setupContactDownload(localFallback.profile || {}, normalLinks || []);
       setupVirtualCard(localFallback.profile || {});
@@ -101,7 +101,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
           showFirstTimeCard(resolveSlug(localProfile?.slug || slug, ''));
         } else {
           const { meta, normalLinks } = extractMetaFromLinks(localLinks);
-          fillPublic(localProfile, meta);
+          fillPublic(localProfile, meta, { allowLocalThemeFallback: true });
           renderPublicLinks(normalLinks || [], meta);
           setupContactDownload(localProfile, normalLinks || []);
           setupVirtualCard(localProfile);
@@ -118,19 +118,16 @@ import { residueTelemetry } from './supabase-telemetry.js';
       return;
     }
     const { data, error } = await supabase.from('profiles').select('*').eq('slug', slug).maybeSingle();
-    let profile = data;
+    const profile = data;
     if (error || !data) {
-      profile = localFallback?.profile;
-      if (!profile) {
-        showFirstTimeCard(slug);
-        finishOverlay();
-        return;
-      }
+      showFirstTimeCard(slug);
+      finishOverlay();
+      return;
     }
     const { data: linksData } = profile?.id
       ? await supabase.from('links').select('*').eq('profile_id', profile.id).order('sort', { ascending: true })
       : { data: [] };
-    const links = (linksData && linksData.length ? linksData : (localFallback?.links || []));
+    const links = linksData || [];
     if (!hasConfiguredCardContent(profile || {}, links || [])) {
       showFirstTimeCard(resolveSlug(profile?.slug || slug, ''));
       finishOverlay();
@@ -147,12 +144,12 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
   }
 
-  function fillPublic(profile, meta = {}) {
-    const publicTheme = resolveThemeChoice(
-      profile?.theme,
-      readStoredThemePreference(buildThemeContext(profile))
-    );
-    writeStoredThemePreference(publicTheme, buildThemeContext(profile));
+  function fillPublic(profile, meta = {}, { allowLocalThemeFallback = false } = {}) {
+    const themeContext = buildThemeContext(profile);
+    const publicTheme = allowLocalThemeFallback
+      ? resolveThemeChoice(profile?.theme, readStoredThemePreference(themeContext))
+      : resolveThemeChoice(profile?.theme);
+    if (allowLocalThemeFallback) writeStoredThemePreference(publicTheme, themeContext);
     setPublicSetupMode(false, profile?.slug || getRequestedSlug());
     updatePublicAdminLinks(profile?.slug || getRequestedSlug());
     setTheme(publicTheme);
@@ -1710,12 +1707,15 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const savedEmail = Object.prototype.hasOwnProperty.call(snapshotFields, 'email-config')
       ? String(snapshotFields['email-config'] ?? '')
       : normalizeEmail(profile?.auth_email || user?.email || '');
-    const savedTheme = resolveThemeChoice(
-      snapshotFields['lt-theme'],
-      profile?.theme,
-      readStoredThemePreference(themeContext)
-    );
-    writeStoredThemePreference(savedTheme, themeContext);
+    const hasPublishedTheme = Boolean(supabase && user?.id && profile?.id);
+    const savedTheme = hasPublishedTheme
+      ? resolveThemeChoice(profile?.theme)
+      : resolveThemeChoice(
+        profile?.theme,
+        snapshotFields['lt-theme'],
+        readStoredThemePreference(themeContext)
+      );
+    if (!hasPublishedTheme) writeStoredThemePreference(savedTheme, themeContext);
     setValue('lt-avatar-url', profile.avatar_url || '');
     updateLogoPreview(profile.avatar_url || '');
     setValue('full-name', displayName || '');
@@ -1988,9 +1988,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
       localStorage.setItem(draftKey, JSON.stringify(localProfile));
       localStorage.setItem('residue_link_last_profile_key', draftKey);
     } catch {}
-    persistExplicitThemeChoice(localProfile.theme, localProfile, null, {
-      'email-config': localProfile.auth_email || ''
-    });
+    if (!supabase) {
+      persistExplicitThemeChoice(localProfile.theme, localProfile, null, {
+        'email-config': localProfile.auth_email || ''
+      });
+    }
     return localProfile;
   }
 
@@ -2368,13 +2370,15 @@ import { residueTelemetry } from './supabase-telemetry.js';
     themeInputs.forEach(input => {
       input.addEventListener('change', () => {
         if (!input.checked) return;
-        const nextTheme = persistExplicitThemeChoice(input.value, {
-          id: activeThemeContext.profileId || readStoredCurrentUser()?.id || null,
-          slug: activeThemeContext.slug || '',
-          auth_email: activeThemeContext.email || getValue('email-config') || ''
-        }, null, {
-          'email-config': getValue('email-config')
-        });
+        const nextTheme = supabase
+          ? resolveThemeChoice(input.value)
+          : persistExplicitThemeChoice(input.value, {
+            id: activeThemeContext.profileId || readStoredCurrentUser()?.id || null,
+            slug: activeThemeContext.slug || '',
+            auth_email: activeThemeContext.email || getValue('email-config') || ''
+          }, null, {
+            'email-config': getValue('email-config')
+          });
         setTheme(nextTheme);
         persistEditorImmediately(saveStatusEl);
       });
@@ -3007,4 +3011,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       await initSession(false);
     }
   };
+  if (document.body?.classList.contains('link-profile-page')) {
+    void renderPublicProfile();
+  }
 })();

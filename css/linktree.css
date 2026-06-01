@@ -321,7 +321,7 @@ html.lt-admin-html[data-theme="dark"] {
   border-radius: 12px;
   border: 1px solid var(--lt-accent);
   color: var(--lt-text);
-  background: transparent;
+  background: var(--lt-accent);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
