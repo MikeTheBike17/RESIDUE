@@ -7,12 +7,16 @@ create table if not exists public.order_card_emails (
   purchaser_profile_id uuid not null references public.profiles(id) on delete cascade,
   purchaser_email text not null default '',
   card_index integer not null check (card_index > 0),
+  card_name text not null default '',
   card_email text not null default '',
   is_purchaser boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint order_card_emails_invoice_card_key unique (invoice_no, card_index)
 );
+
+alter table public.order_card_emails
+  add column if not exists card_name text not null default '';
 
 create index if not exists order_card_emails_invoice_idx on public.order_card_emails (invoice_no, card_index);
 create index if not exists order_card_emails_purchaser_idx on public.order_card_emails (purchaser_profile_id);

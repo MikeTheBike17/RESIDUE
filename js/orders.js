@@ -115,7 +115,7 @@ async function fetchEmailAssignments(invoiceNumbers) {
 
   const { data, error } = await supabase
     .from(ORDER_EMAILS_TABLE)
-    .select('invoice_no, purchaser_profile_id, purchaser_email, card_index, card_email, is_purchaser, updated_at')
+    .select('invoice_no, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser, updated_at')
     .in('invoice_no', invoiceNumbers)
     .order('card_index', { ascending: true });
 
@@ -160,6 +160,7 @@ function makeOrderMeta(order) {
 function makeEmailTable(order) {
   const count = cardCount(order);
   const purchaserEmail = normalizeEmail(order.customer_email || activeSession?.user?.email || '');
+  const purchaserName = String(order.customer_name || '').trim();
   const wrap = document.createElement('div');
   wrap.className = 'orders-table-wrap';
 
@@ -168,7 +169,7 @@ function makeEmailTable(order) {
 
   const thead = document.createElement('thead');
   const headRow = document.createElement('tr');
-  ['Card', 'Cardholder email', 'Status'].forEach(label => {
+  ['Card', 'Name', 'Cardholder email', 'Status'].forEach(label => {
     const th = document.createElement('th');
     th.scope = 'col';
     th.textContent = label;
@@ -183,6 +184,25 @@ function makeEmailTable(order) {
 
     const cardTd = document.createElement('td');
     cardTd.textContent = `Card ${index}`;
+
+    const nameTd = document.createElement('td');
+    if (index === 1) {
+      const locked = document.createElement('span');
+      locked.className = 'orders-purchaser-name';
+      locked.textContent = purchaserName || 'Purchaser';
+      nameTd.appendChild(locked);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.autocomplete = 'name';
+      input.placeholder = `Cardholder ${index}`;
+      input.value = String(orderAssignment(order, index)?.card_name || '').trim();
+      input.dataset.orderNameInput = 'true';
+      input.dataset.invoiceNo = order.invoice_no || '';
+      input.dataset.cardIndex = String(index);
+      input.setAttribute('aria-label', `Name for card ${index} of order ${order.invoice_no}`);
+      nameTd.appendChild(input);
+    }
 
     const emailTd = document.createElement('td');
     if (index === 1) {
@@ -208,7 +228,7 @@ function makeEmailTable(order) {
     statusTd.className = 'orders-row-status';
     statusTd.textContent = index === 1 ? 'Purchaser' : (normalizeEmail(orderAssignment(order, index)?.card_email) ? 'Assigned' : 'Open');
 
-    row.append(cardTd, emailTd, statusTd);
+    row.append(cardTd, nameTd, emailTd, statusTd);
     tbody.appendChild(row);
   }
   table.appendChild(tbody);
@@ -282,6 +302,7 @@ function payloadForOrder(order, article) {
     purchaser_profile_id: activeSession.user.id,
     purchaser_email: purchaserEmail,
     card_index: 1,
+    card_name: String(order.customer_name || '').trim(),
     card_email: purchaserEmail,
     is_purchaser: true,
     updated_at: new Date().toISOString()
@@ -295,11 +316,15 @@ function payloadForOrder(order, article) {
       throw new Error('Enter a valid email address before saving.');
     }
 
+    const cardIndex = Math.trunc(Number(input.dataset.cardIndex) || 0);
+    const nameInput = article.querySelector(`[data-order-name-input][data-card-index="${cardIndex}"]`);
+
     payload.push({
       invoice_no: order.invoice_no,
       purchaser_profile_id: activeSession.user.id,
       purchaser_email: purchaserEmail,
-      card_index: Math.trunc(Number(input.dataset.cardIndex) || 0),
+      card_index: cardIndex,
+      card_name: String(nameInput?.value || '').trim(),
       card_email: email,
       is_purchaser: false,
       updated_at: new Date().toISOString()
@@ -318,7 +343,7 @@ async function saveOrderEmails(order, article, status, saveButton) {
     const { data, error } = await supabase
       .from(ORDER_EMAILS_TABLE)
       .upsert(payload, { onConflict: 'invoice_no,card_index' })
-      .select('invoice_no, purchaser_profile_id, purchaser_email, card_index, card_email, is_purchaser, updated_at');
+      .select('invoice_no, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser, updated_at');
 
     if (error) throw new Error(error.message || 'Could not save cardholder emails.');
 
@@ -377,8 +402,6 @@ async function loadOrders() {
     renderOrders();
     if (assignmentErrorMessage) {
       setStatus(assignmentErrorMessage, 'error');
-    } else if (activeOrders.length) {
-      setStatus(`Loaded ${activeOrders.length} successful purchase${activeOrders.length === 1 ? '' : 's'}.`, 'success');
     } else {
       setStatus('', '');
     }
