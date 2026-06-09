@@ -4725,6 +4725,10 @@ footer {
     display: none;
   }
 
+  .nav-actions > .nav-orders-button {
+    display: none;
+  }
+
   .menu-toggle {
     display: inline-flex;
   }
