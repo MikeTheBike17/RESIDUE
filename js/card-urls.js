@@ -5,6 +5,7 @@ const MANAGER_EMAIL = 'check.email@residue.com';
 const MANAGER_ACCESS_KEY = 'residue_manager_access';
 const INVOICING_ACCESS_KEY = 'residue_manager_invoicing_access';
 const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
+const ORDER_EMAILS_TABLE = cfg.SUPABASE_ORDER_EMAILS_TABLE || 'order_card_emails';
 
 const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
   ? null
@@ -26,6 +27,7 @@ const isCardUrlsPage = !!urlsBody;
 const isInvoicingPage = !!invoiceBody && !urlsBody;
 let profileRowsCache = [];
 let invoiceRowsCache = [];
+let orderEmailAssignmentsCache = [];
 const INVOICE_TABLE_COLSPAN = 14;
 
 function normalizeEmail(value) {
@@ -46,6 +48,23 @@ function setStatus(message, type = '') {
 
 function buildProfileUrl(slug) {
   return `${window.location.origin}/link-profile?u=${encodeURIComponent(slug || '')}`;
+}
+
+function buildCopyButton(value, label, successMessage) {
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'card-urls-copy-btn';
+  copyBtn.setAttribute('aria-label', label);
+  copyBtn.innerHTML = '<span class="card-urls-copy-icon" aria-hidden="true"></span>';
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setStatus(successMessage, 'success');
+    } catch {
+      setStatus('Could not copy.', 'error');
+    }
+  });
+  return copyBtn;
 }
 
 function ensureManagerFlag(email) {
@@ -79,7 +98,10 @@ function getActiveSearchTerm() {
 
 function filterProfileRows(rows, query) {
   if (!query) return rows;
-  return rows.filter(row => normalizeSearchTerm(row.auth_email).includes(query));
+  return rows.filter(row => (
+    normalizeSearchTerm(row.auth_email).includes(query) ||
+    (row.order_emails || []).some(item => normalizeSearchTerm(item.card_email).includes(query))
+  ));
 }
 
 function filterInvoiceRows(rows, query) {
@@ -94,7 +116,7 @@ function filterInvoiceRows(rows, query) {
 function renderUrlRows(rows, emptyMessage = 'No users found.') {
   if (!urlsBody) return;
   if (!rows.length) {
-    urlsBody.innerHTML = `<tr><td colspan="3" class="card-urls-empty">${emptyMessage}</td></tr>`;
+    urlsBody.innerHTML = `<tr><td colspan="4" class="card-urls-empty">${emptyMessage}</td></tr>`;
     return;
   }
 
@@ -111,26 +133,63 @@ function renderUrlRows(rows, emptyMessage = 'No users found.') {
     urlText.textContent = row.url;
     urlTd.appendChild(urlText);
 
+    const assignedTd = document.createElement('td');
+    assignedTd.appendChild(buildAssignedEmailDropdown(row));
+
     const copyTd = document.createElement('td');
     copyTd.className = 'card-urls-copy-col';
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'card-urls-copy-btn';
-    copyBtn.setAttribute('aria-label', `Copy URL for ${row.auth_email}`);
-    copyBtn.innerHTML = '<span class="card-urls-copy-icon" aria-hidden="true"></span>';
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(row.url);
-        setStatus(`Copied URL for ${row.auth_email}.`, 'success');
-      } catch {
-        setStatus('Could not copy URL.', 'error');
-      }
-    });
-    copyTd.appendChild(copyBtn);
+    copyTd.appendChild(buildCopyButton(
+      row.url,
+      `Copy URL for ${row.auth_email}`,
+      `Copied URL for ${row.auth_email}.`
+    ));
 
-    tr.append(emailTd, urlTd, copyTd);
+    tr.append(emailTd, urlTd, assignedTd, copyTd);
     urlsBody.appendChild(tr);
   });
+}
+
+function buildAssignedEmailDropdown(row) {
+  const assignments = row.order_emails || [];
+  if (!assignments.length) {
+    const empty = document.createElement('span');
+    empty.textContent = '—';
+    return empty;
+  }
+
+  const details = document.createElement('details');
+  details.className = 'card-urls-assigned';
+
+  const summary = document.createElement('summary');
+  summary.textContent = `${assignments.length} email${assignments.length === 1 ? '' : 's'}`;
+  details.appendChild(summary);
+
+  const list = document.createElement('div');
+  list.className = 'card-urls-assigned-list';
+  assignments.forEach(item => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'card-urls-assigned-item';
+
+    const copy = document.createElement('div');
+    const email = document.createElement('span');
+    email.className = 'card-urls-assigned-email';
+    email.textContent = item.card_email;
+
+    const note = document.createElement('span');
+    note.className = 'card-urls-assigned-note';
+    note.textContent = `${item.invoice_no || 'Order'} - Card ${item.card_index || ''}`.trim();
+
+    copy.append(email, note);
+    rowEl.appendChild(copy);
+    rowEl.appendChild(buildCopyButton(
+      item.card_email,
+      `Copy assigned email ${item.card_email}`,
+      `Copied ${item.card_email}.`
+    ));
+    list.appendChild(rowEl);
+  });
+  details.appendChild(list);
+  return details;
 }
 
 function paymentLabel(status) {
@@ -340,8 +399,84 @@ async function fetchProfileRows() {
     .filter(row => row.auth_email && row.slug)
     .map(row => ({
       auth_email: row.auth_email,
-      url: buildProfileUrl(row.slug)
+      url: buildProfileUrl(row.slug),
+      order_emails: []
     }));
+}
+
+function attachOrderEmailsToProfiles(profileRows, assignments) {
+  const grouped = new Map();
+  assignments.forEach(item => {
+    const purchaserEmail = normalizeEmail(item.purchaser_email || item.customer_email);
+    const cardEmail = normalizeEmail(item.card_email);
+    if (!purchaserEmail || !cardEmail) return;
+    if (!grouped.has(purchaserEmail)) grouped.set(purchaserEmail, []);
+    grouped.get(purchaserEmail).push({
+      invoice_no: item.invoice_no || '',
+      card_index: item.card_index || '',
+      card_email: cardEmail
+    });
+  });
+
+  return profileRows.map(row => ({
+    ...row,
+    order_emails: (grouped.get(normalizeEmail(row.auth_email)) || [])
+      .sort((a, b) => String(a.invoice_no).localeCompare(String(b.invoice_no)) || Number(a.card_index) - Number(b.card_index))
+  }));
+}
+
+async function fetchOrderEmailAssignments() {
+  const { data: invoices, error: invoiceError } = await supabase
+    .from(INVOICE_TABLE)
+    .select('invoice_no, customer_email, payment_status, created_at')
+    .eq('payment_status', 'COMPLETE')
+    .order('created_at', { ascending: false });
+
+  if (invoiceError) throw new Error(invoiceError.message || 'Could not load successful purchaser emails.');
+
+  const invoiceRows = (invoices || []).filter(row => row.invoice_no);
+  if (!invoiceRows.length) return [];
+
+  const customerEmailByInvoice = new Map(invoiceRows.map(row => [
+    row.invoice_no,
+    normalizeEmail(row.customer_email)
+  ]));
+
+  const { data, error } = await supabase
+    .from(ORDER_EMAILS_TABLE)
+    .select('invoice_no, purchaser_email, card_index, card_email, is_purchaser')
+    .in('invoice_no', invoiceRows.map(row => row.invoice_no))
+    .order('invoice_no', { ascending: true })
+    .order('card_index', { ascending: true });
+
+  if (error) throw new Error(error.message || 'Could not load assigned order emails.');
+
+  const merged = new Map();
+  invoiceRows.forEach(row => {
+    const customerEmail = customerEmailByInvoice.get(row.invoice_no) || '';
+    if (!customerEmail) return;
+    merged.set(`${row.invoice_no}:1`, {
+      invoice_no: row.invoice_no,
+      customer_email: customerEmail,
+      purchaser_email: customerEmail,
+      card_index: 1,
+      card_email: customerEmail,
+      is_purchaser: true
+    });
+  });
+
+  (data || []).forEach(row => {
+    const cardEmail = normalizeEmail(row.card_email);
+    if (!row.invoice_no || !cardEmail) return;
+    merged.set(`${row.invoice_no}:${row.card_index}`, {
+      ...row,
+      card_email: cardEmail,
+      customer_email: customerEmailByInvoice.get(row.invoice_no) || '',
+      purchaser_email: normalizeEmail(row.purchaser_email || customerEmailByInvoice.get(row.invoice_no))
+    });
+  });
+
+  return Array.from(merged.values());
 }
 
 async function fetchInvoiceRows() {
@@ -384,9 +519,20 @@ async function fetchAllRows() {
 
   try {
     if (isCardUrlsPage) {
-      profileRowsCache = await fetchProfileRows();
+      const profileRows = await fetchProfileRows();
+      let assignmentErrorMessage = '';
+      try {
+        orderEmailAssignmentsCache = await fetchOrderEmailAssignments();
+      } catch (assignmentError) {
+        orderEmailAssignmentsCache = [];
+        assignmentErrorMessage = assignmentError.message || 'Could not load assigned order emails.';
+      }
+      profileRowsCache = attachOrderEmailsToProfiles(profileRows, orderEmailAssignmentsCache);
       applySearchFilter();
-      setStatus(`Loaded ${profileRowsCache.length} URLs.`, 'success');
+      setStatus(
+        assignmentErrorMessage || `Loaded ${profileRowsCache.length} URLs.`,
+        assignmentErrorMessage ? 'error' : 'success'
+      );
     } else if (isInvoicingPage) {
       invoiceRowsCache = await fetchInvoiceRows();
       applySearchFilter();
@@ -397,6 +543,7 @@ async function fetchAllRows() {
   } catch (error) {
     profileRowsCache = [];
     invoiceRowsCache = [];
+    orderEmailAssignmentsCache = [];
     if (isCardUrlsPage) renderUrlRows([]);
     if (isInvoicingPage) renderInvoiceRows([]);
     setStatus(error.message || 'Could not load manager data.', 'error');

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="googlebot" content="noindex, nofollow, noarchive">
+  <title>Residue | Orders</title>
+  <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/env.js"></script>
+</head>
+<body class="orders-page">
+  <header>
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="index.html">Residue</a>
+      <div class="nav-links" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="residue-inside.html">Shop</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <a class="nav-auth-button nav-auth-button-login nav-orders-button is-active" href="orders.html" aria-current="page">Orders</a>
+        <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
+          <span class="dot" aria-hidden="true"></span>
+          <span class="theme-label">Dark</span>
+        </button>
+        <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+          <span></span>
+        </button>
+      </div>
+    </nav>
+    <div class="mobile-nav" aria-label="Mobile navigation">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="residue-inside.html">Shop</a>
+      <a href="contact.html">Contact</a>
+      <a class="nav-auth-button nav-auth-button-login nav-orders-button is-active" href="orders.html" aria-current="page">Orders</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme (mobile)">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="theme-label">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="orders-main">
+    <section class="container orders-shell">
+      <div class="orders-heading">
+        <div>
+          <div class="eyebrow premium">Orders</div>
+          <h1 class="h2">Cardholder emails</h1>
+        </div>
+        <p class="muted">Manage the email addresses for each card in your successful Residue card purchases.</p>
+      </div>
+
+      <div class="status orders-status" id="orders-status" aria-live="polite" hidden></div>
+      <div class="orders-list" id="orders-list" aria-live="polite">
+        <div class="orders-empty">Loading your orders...</div>
+      </div>
+    </section>
+
+    <div id="orders-intro-modal" class="pay-modal orders-intro-modal hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="orders-intro-title">
+      <div class="modal-content modal-content--center orders-intro-content">
+        <div class="stack" style="gap:18px;">
+          <div class="eyebrow premium">Orders</div>
+          <h2 id="orders-intro-title" class="h3" style="margin:0;">Manage cardholder emails</h2>
+          <p class="muted" style="margin:0;">You can add the email addresses for the other cards in your order here. You can return to this page at any time by clicking the Orders button in the website header.</p>
+          <button id="orders-intro-continue" class="btn" type="button">Continue</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container footer-meta">
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="how-it-works.html">How it works</a>
+        <a href="residue-inside.html">Shop</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="footer-divider" aria-hidden="true"></div>
+      <span class="footer-copy">RESIDUE. Leave your mark.</span>
+    </div>
+  </footer>
+
+  <script type="module" src="js/orders.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
