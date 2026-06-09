@@ -480,6 +480,21 @@ import { residueTelemetry } from './supabase-telemetry.js';
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
   }
 
+  function getSavedContactName(profile = {}) {
+    const name = String(profile?.name || '').trim();
+    return name && name !== DEFAULT_PROFILE_NAME ? name : '';
+  }
+
+  function buildVCardNameValue(fullName) {
+    const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '';
+    if (parts.length === 1) return `${escapeVCardValue(parts[0])};;;;`;
+    const familyName = parts.pop();
+    const givenName = parts.shift() || '';
+    const additionalNames = parts.join(' ');
+    return [familyName, givenName, additionalNames, '', ''].map(escapeVCardValue).join(';');
+  }
+
   function hasDownloadableContactDetails() {
     return Boolean(
       contactDownloadState.phone
@@ -509,6 +524,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
 
   function downloadContactVcf() {
     const name = contactDownloadState.name || contactDownloadState.companyName || 'Residue Contact';
+    const structuredName = buildVCardNameValue(contactDownloadState.name);
     const phone = contactDownloadState.phone || '';
     const email = contactDownloadState.email || '';
     const profileUrl = contactDownloadState.profileUrl || '';
@@ -521,6 +537,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${escapeVCardValue(name)}`,
+      structuredName ? `N:${structuredName}` : '',
       companyName ? `ORG:${escapeVCardValue(companyName)}` : '',
       phone ? `TEL;TYPE=CELL:${escapeVCardValue(phone)}` : '',
       email ? `EMAIL;TYPE=INTERNET:${escapeVCardValue(email)}` : '',
@@ -569,7 +586,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     bindContactDownloadOnce();
     const saveBtn = document.getElementById('lt-save-contact-btn');
     const consentMsg = document.getElementById('lt-contact-message');
-    const name = (profile?.name || '').trim();
+    const name = getSavedContactName(profile);
     const phone = extractVisiblePhone(links);
     const email = extractVisibleEmail(links);
     const profileSlug = resolveSlug(profile?.slug || '', '');
