@@ -86,7 +86,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       const { meta, normalLinks } = extractMetaFromLinks(localFallback.links || []);
       fillPublic(localFallback.profile || {}, meta, { allowLocalThemeFallback: true });
       renderPublicLinks(normalLinks || [], meta);
-      setupContactDownload(localFallback.profile || {}, normalLinks || []);
+      setupContactDownload(localFallback.profile || {}, normalLinks || [], meta);
       setupVirtualCard(localFallback.profile || {});
       finishOverlay();
       if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
@@ -103,7 +103,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
           const { meta, normalLinks } = extractMetaFromLinks(localLinks);
           fillPublic(localProfile, meta, { allowLocalThemeFallback: true });
           renderPublicLinks(normalLinks || [], meta);
-          setupContactDownload(localProfile, normalLinks || []);
+          setupContactDownload(localProfile, normalLinks || [], meta);
           setupVirtualCard(localProfile);
         }
       } else {
@@ -138,7 +138,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const hydratedLinks = (normalLinks || []).map(l => ({ ...l, hidden: parseBool(meta[`hidden_${l.sort}`], false) }));
     fillPublic(profile || {}, meta);
     renderPublicLinks(hydratedLinks || [], meta);
-    setupContactDownload(profile || {}, hydratedLinks || []);
+    setupContactDownload(profile || {}, hydratedLinks || [], meta);
     setupVirtualCard(profile || {});
     finishOverlay();
     if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
@@ -243,7 +243,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const WHATSAPP_MESSAGE_MAX_CHARS = 180;
   const AUTOSAVE_DELAY_MS = 900;
   let authStateSubscription = null;
-  const contactDownloadState = { name: '', phone: '' };
+  const contactDownloadState = { name: '', phone: '', email: '', profileUrl: '', companyName: '' };
   const walletCardState = { name: '', slug: '' };
   let contactDownloadBound = false;
   let walletCardBound = false;
@@ -468,6 +468,27 @@ import { residueTelemetry } from './supabase-telemetry.js';
     return callLink ? String(callLink.url || '').replace(/^tel:/i, '').trim() : '';
   }
 
+  function extractVisibleEmail(links = []) {
+    const emailLink = (links || []).find(link => {
+      const url = String(link?.url || '');
+      const label = String(link?.label || '').toLowerCase();
+      return !link?.hidden && (label === 'email' || /^mailto:/i.test(url));
+    });
+    if (!emailLink) return '';
+    const value = String(emailLink.url || '').replace(/^mailto:/i, '').split('?')[0];
+    const email = normalizeEmail(value);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+  }
+
+  function hasDownloadableContactDetails() {
+    return Boolean(
+      contactDownloadState.phone
+      || contactDownloadState.email
+      || contactDownloadState.profileUrl
+      || contactDownloadState.companyName
+    );
+  }
+
   function escapeVCardValue(value) {
     return String(value || '')
       .replace(/\\/g, '\\\\')
@@ -487,19 +508,25 @@ import { residueTelemetry } from './supabase-telemetry.js';
   }
 
   function downloadContactVcf() {
-    const name = contactDownloadState.name || 'Residue Contact';
+    const name = contactDownloadState.name || contactDownloadState.companyName || 'Residue Contact';
     const phone = contactDownloadState.phone || '';
-    if (!phone) {
-      showStatus('lt-status', 'Phone number is not available for download.');
+    const email = contactDownloadState.email || '';
+    const profileUrl = contactDownloadState.profileUrl || '';
+    const companyName = contactDownloadState.companyName || '';
+    if (!hasDownloadableContactDetails()) {
+      showStatus('lt-status', 'Contact details are not available for download.');
       return;
     }
     const vcard = [
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${escapeVCardValue(name)}`,
-      `TEL;TYPE=CELL:${escapeVCardValue(phone)}`,
+      companyName ? `ORG:${escapeVCardValue(companyName)}` : '',
+      phone ? `TEL;TYPE=CELL:${escapeVCardValue(phone)}` : '',
+      email ? `EMAIL;TYPE=INTERNET:${escapeVCardValue(email)}` : '',
+      profileUrl ? `URL:${escapeVCardValue(profileUrl)}` : '',
       'END:VCARD'
-    ].join('\r\n');
+    ].filter(Boolean).join('\r\n');
     const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -520,8 +547,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const backdrop = document.getElementById('lt-contact-backdrop');
 
     saveBtn?.addEventListener('click', () => {
-      if (!contactDownloadState.phone) {
-        showStatus('lt-status', 'Phone number is not available for download.');
+      if (!hasDownloadableContactDetails()) {
+        showStatus('lt-status', 'Contact details are not available for download.');
         return;
       }
       openContactModal();
@@ -538,17 +565,25 @@ import { residueTelemetry } from './supabase-telemetry.js';
     contactDownloadBound = true;
   }
 
-  function setupContactDownload(profile = {}, links = []) {
+  function setupContactDownload(profile = {}, links = [], meta = {}) {
     bindContactDownloadOnce();
     const saveBtn = document.getElementById('lt-save-contact-btn');
     const consentMsg = document.getElementById('lt-contact-message');
     const name = (profile?.name || '').trim();
     const phone = extractVisiblePhone(links);
+    const email = extractVisibleEmail(links);
+    const profileSlug = resolveSlug(profile?.slug || '', '');
+    const profileUrl = profileSlug ? buildPublicProfileUrl(profileSlug) : '';
+    const companyName = String(meta?.company_name || '').trim();
     contactDownloadState.name = name;
     contactDownloadState.phone = phone;
+    contactDownloadState.email = email;
+    contactDownloadState.profileUrl = profileUrl;
+    contactDownloadState.companyName = companyName;
+    const hasDetails = hasDownloadableContactDetails();
     if (saveBtn) {
-      saveBtn.hidden = !phone;
-      saveBtn.disabled = !name || !phone;
+      saveBtn.hidden = !hasDetails;
+      saveBtn.disabled = !hasDetails;
     }
     if (consentMsg) {
       consentMsg.textContent = 'You are requesting to save contact details to your device. Do you agree to continue?';
