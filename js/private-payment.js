@@ -8,6 +8,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   const SHIPPING_FEE = Number(cfg.SHIPPING_FEE || 120);
   const PAYFAST_PROCESS_URL = cfg.PAYFAST_PROCESS_URL || "https://www.payfast.co.za/eng/process";
   const PENDING_ORDER_KEY = "residue_pending_order";
+  const ORDERS_PAGE = "orders.html";
   const THANK_YOU_REDIRECT_MS = 7000;
 
   const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
@@ -121,6 +122,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
   let termsAccepted = false;
   let summaryShippingUnlocked = false;
   let selectedPaymentProvider = "payfast";
+  let postPaymentRedirectTarget = "index.html";
 
   function setStatus(el, message, type = "") {
     if (!el) return;
@@ -172,14 +174,22 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
   }
 
-  function scheduleThankYouRedirect() {
+  function buildOrdersPageUrl(invoiceNo = "") {
+    const invoice = String(invoiceNo || "").trim();
+    return invoice ? `${ORDERS_PAGE}?invoice=${encodeURIComponent(invoice)}` : ORDERS_PAGE;
+  }
+
+  function scheduleThankYouRedirect(destination = "index.html") {
+    const target = destination || "index.html";
     clearThankYouRedirect();
     if (els.thankYouRedirectNote) {
       els.thankYouRedirectNote.hidden = false;
-      els.thankYouRedirectNote.textContent = "Redirecting you back to the homepage...";
+      els.thankYouRedirectNote.textContent = target.startsWith(ORDERS_PAGE)
+        ? "Redirecting you to Orders..."
+        : "Redirecting you back to the homepage...";
     }
     thankYouRedirectTimer = window.setTimeout(() => {
-      window.location.href = "index.html";
+      window.location.href = target;
     }, THANK_YOU_REDIRECT_MS);
   }
 
@@ -535,8 +545,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     if (status === "COMPLETE") {
       return {
         heading: "Payment received",
-        message: `Your payment was successfully completed through ${providerName}. We are now processing your Residue NFC card order and will continue with fulfilment.`,
-        shouldRedirect: true
+        message: `Your payment was successfully completed through ${providerName}. We are now processing your Residue NFC card order. You can add cardholder emails on the Orders page.`,
+        shouldRedirect: true,
+        redirectToOrders: true
       };
     }
     if (status === "FAILED") {
@@ -1267,6 +1278,9 @@ import { residueTelemetry } from "./supabase-telemetry.js";
 
   function renderPostPaymentSummary({ provider, status, invoice, pendingOrder }) {
     const summary = buildPostPaymentMessage(status, provider);
+    postPaymentRedirectTarget = summary.redirectToOrders
+      ? buildOrdersPageUrl(invoice || pendingOrder?.invoice_no || "")
+      : "index.html";
 
     if (els.thankYouHeading) {
       els.thankYouHeading.textContent = summary.heading;
@@ -1286,12 +1300,16 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     }
 
     if (summary.shouldRedirect) {
-      scheduleThankYouRedirect();
+      scheduleThankYouRedirect(postPaymentRedirectTarget);
     } else {
       clearThankYouRedirect();
       if (els.thankYouRedirectNote) {
         els.thankYouRedirectNote.hidden = true;
       }
+    }
+
+    if (els.redirectBtn) {
+      els.redirectBtn.textContent = summary.redirectToOrders ? "Open Orders" : "Return Home";
     }
 
     openModal(els.thankYouModal);
@@ -1595,7 +1613,7 @@ import { residueTelemetry } from "./supabase-telemetry.js";
     els.shippingNextBtn?.addEventListener("click", onShippingNextClick);
     els.redirectBtn?.addEventListener("click", () => {
       clearThankYouRedirect();
-      window.location.href = "index.html";
+      window.location.href = postPaymentRedirectTarget || "index.html";
     });
   }
 

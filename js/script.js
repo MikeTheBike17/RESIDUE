@@ -294,12 +294,13 @@
   function normalizeAuthIntent(value) {
     const intent = String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
     if (intent === 'login') return 'login';
+    if (intent === 'order' || intent === 'orders') return 'orders';
     if (intent === 'signin' || intent === 'signup' || intent === 'create' || intent === 'createaccount') return 'signup';
     return '';
   }
 
   function modalModeForAuthIntent(intent) {
-    if (intent === 'login') return 'signin';
+    if (intent === 'login' || intent === 'orders') return 'signin';
     if (intent === 'signup') return 'create';
     return '';
   }
@@ -336,6 +337,7 @@
     const MANAGER_EMAIL = "check.email@residue.com";
     const INSIDE_PAGE = "residue-inside.html";
     const PRIVATE_PAGE = "residue-private.html";
+    const ORDERS_PAGE = "orders.html";
     const CARD_URLS_PAGE = "card-urls.html";
     const DEFAULT_PROFILE_NAME = "Your name";
     const cfg = window.env || {};
@@ -499,19 +501,24 @@
 
     const tabSignin = $("#tab-signin");
     const tabCreate = $("#tab-create");
+    const authToggle = $(".auth-toggle");
 
     const signinForm = $("#signinForm");
     const createForm = $("#createForm");
 
     const signinStatus = $("#signinStatus");
     const createStatus = $("#createStatus");
+    let activeAuthFlow = "default";
 
-    function openAuthModal(defaultMode = "signin") {
+    function openAuthModal(defaultMode = "signin", options = {}) {
       if (!modal) return;
+      const requestedFlow = typeof options === "object" ? String(options.flow || "") : "";
+      activeAuthFlow = requestedFlow === "orders" || defaultMode === "orders" ? "orders" : "default";
+      const safeMode = activeAuthFlow === "orders" ? "signin" : defaultMode;
       modal.classList.add("is-open");
       modal.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
-      setMode(defaultMode);
+      setMode(safeMode);
     }
 
     function closeAuthModal() {
@@ -522,6 +529,7 @@
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
       window.residueTurnstile?.reset?.(createForm);
+      activeAuthFlow = "default";
     }
 
     // Expose for Shop calls to action.
@@ -529,7 +537,12 @@
     document.querySelectorAll("[data-open-auth]").forEach(el => {
       el.addEventListener("click", event => {
         event.preventDefault();
-        openAuthModal(el.getAttribute("data-open-auth") === "create" ? "create" : "signin");
+        const authIntent = normalizeAuthIntent(el.getAttribute("data-open-auth"));
+        if (authIntent === "orders") {
+          openAuthModal("signin", { flow: "orders" });
+        } else {
+          openAuthModal(el.getAttribute("data-open-auth") === "create" ? "create" : "signin");
+        }
         clearAuthIntentFromUrl();
       });
     });
@@ -544,13 +557,19 @@
     if (modal) closeAuthModal();
 
     function setMode(mode) {
-      const isSignin = mode === "signin";
+      const isOrdersFlow = activeAuthFlow === "orders";
+      const isSignin = isOrdersFlow || mode === "signin";
 
       tabSignin?.classList.toggle("is-active", isSignin);
       tabCreate?.classList.toggle("is-active", !isSignin);
 
       tabSignin?.setAttribute("aria-selected", String(isSignin));
       tabCreate?.setAttribute("aria-selected", String(!isSignin));
+      if (tabCreate) {
+        tabCreate.hidden = isOrdersFlow;
+        tabCreate.disabled = isOrdersFlow;
+      }
+      if (authToggle) authToggle.hidden = isOrdersFlow;
 
       if (signinForm) {
         signinForm.style.display = isSignin ? "grid" : "none";
@@ -563,10 +582,10 @@
         createForm.tabIndex = isSignin ? -1 : 0;
       }
 
-      if (title) title.textContent = isSignin ? "Log in" : "Sign up";
-      if (subtitle) subtitle.textContent = isSignin
-        ? "Enter your credentials to continue."
-        : "Create your account to continue.";
+      if (title) title.textContent = isOrdersFlow ? "Orders" : (isSignin ? "Log in" : "Sign up");
+      if (subtitle) subtitle.textContent = isOrdersFlow
+        ? "Log in to manage the cardholder emails linked to your orders."
+        : (isSignin ? "Enter your credentials to continue." : "Create your account to continue.");
 
       setStatus(signinStatus, "", false);
       setStatus(createStatus, "", false);
@@ -582,7 +601,10 @@
     }
 
     tabSignin?.addEventListener("click", () => setMode("signin"));
-    tabCreate?.addEventListener("click", () => setMode("create"));
+    tabCreate?.addEventListener("click", () => {
+      if (activeAuthFlow === "orders") return;
+      setMode("create");
+    });
 
     // Backfill legacy users missing app rows when an auth session already exists.
     syncProfileForCurrentSession();
@@ -590,7 +612,9 @@
 
     if (modal && requestedAuthIntent) {
       setTimeout(() => {
-        openAuthModal(requestedAuthMode || 'signin');
+        openAuthModal(requestedAuthMode || 'signin', {
+          flow: requestedAuthIntent === 'orders' ? 'orders' : 'default'
+        });
         clearAuthIntentFromUrl();
       }, 80);
     }
@@ -644,11 +668,14 @@
         detail: isManager ? 'Logged in via Supabase auth as manager.' : 'Logged in via Supabase auth.'
       });
       setStatus(signinStatus, "Logged in.", true);
+      const redirectTarget = activeAuthFlow === "orders"
+        ? ORDERS_PAGE
+        : (isManager ? CARD_URLS_PAGE : PRIVATE_PAGE);
 
       setTimeout(() => {
         closeAuthModal();
         signinForm.reset();
-        window.location.href = isManager ? CARD_URLS_PAGE : PRIVATE_PAGE;
+        window.location.href = redirectTarget;
       }, 500);
     });
 

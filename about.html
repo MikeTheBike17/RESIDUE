@@ -7,6 +7,7 @@
   <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
   <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/env.js"></script>
 </head>
 <body class="about-page">
   <header>
@@ -20,6 +21,7 @@
         <a href="contact.html">Contact</a>
       </div>
       <div class="nav-actions">
+        <button class="nav-auth-button nav-auth-button-login nav-orders-button" type="button" data-open-auth="orders">Orders</button>
         <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme">
           <span class="dot" aria-hidden="true"></span>
           <span class="theme-label">Dark</span>
@@ -35,6 +37,7 @@
       <a href="how-it-works.html">How it works</a>
       <a href="residue-inside.html">Shop</a>
       <a href="contact.html">Contact</a>
+      <button class="nav-auth-button nav-auth-button-login nav-orders-button" type="button" data-open-auth="orders">Orders</button>
       <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle theme (mobile)">
         <span class="dot" aria-hidden="true"></span>
         <span class="theme-label">Dark</span>
@@ -140,6 +143,33 @@
       <span class="footer-copy">RESIDUE. Leave your mark.</span>
     </div>
   </footer>
+
+  <!-- AUTH MODAL (Orders login) -->
+  <div class="modal" id="authModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal-backdrop" data-close></div>
+
+    <div class="modal-panel" role="document">
+      <button class="modal-close" type="button" aria-label="Close" data-close>&#10005;</button>
+      <div class="eyebrow">Orders</div>
+      <h2 class="h2" id="authTitle" style="margin:10px 0 6px;">Orders</h2>
+      <p class="muted" id="authSubtitle" style="margin-bottom:18px;">Log in to manage the cardholder emails linked to your orders.</p>
+
+      <form class="modal-form" id="signinForm" autocomplete="off" aria-labelledby="authTitle" role="tabpanel" aria-hidden="false" tabindex="0">
+        <label class="muted" for="signin-email">Email</label>
+        <input id="signin-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required>
+
+        <label class="muted" for="signin-password" style="margin-top:12px;">Password</label>
+        <input id="signin-password" name="password" type="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" minlength="6" required>
+
+        <div class="status modal-status" id="signinStatus" aria-live="polite" hidden></div>
+
+        <div class="modal-actions">
+          <button class="btn btn-outline" type="button" data-close>Cancel</button>
+          <button class="btn" type="submit">Log in</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="js/script.js"></script>
 </body>
