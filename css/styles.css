@@ -4965,6 +4965,32 @@ body.private-page button.btn:focus-visible {
   box-shadow: 0 14px 30px rgba(0,0,0,0.22);
 }
 
+body.private-page .btn.private-premium-btn,
+body.private-page button.btn.private-premium-btn {
+  border-color: var(--accent-premium);
+  color: var(--accent-premium);
+  transform: translate3d(0, 0, 0);
+  will-change: transform, background-color, border-color, color, box-shadow;
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+body.private-page .btn.private-premium-btn:hover,
+body.private-page .btn.private-premium-btn:focus-visible,
+body.private-page button.btn.private-premium-btn:hover,
+body.private-page button.btn.private-premium-btn:focus-visible {
+  transform: translate3d(0, -1px, 0) scale(1.015);
+  font-size: inherit;
+  border-color: rgba(255, 244, 224, 0.82);
+  color: #ffffff;
+  background: rgba(223, 163, 78, 0.05);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.16);
+}
+
 body.private-page .checkout-inline-cta,
 body.private-page .checkout-primary-cta {
   transform: translate3d(0, 0, 0);
@@ -7538,10 +7564,27 @@ body::after { opacity: 0.04; }
   letter-spacing: 0.02em;
 }
 
+.checkout-inline-cta-dark {
+  min-height: 54px;
+  padding-inline: 22px;
+  border-radius: 14px;
+  border-color: rgba(216,176,122,0.92);
+  background: transparent;
+  color: rgba(255,255,255,0.92);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+
 .checkout-inline-cta:hover {
   background: #e6bf8a;
   border-color: #e6bf8a;
   color: #111015;
+}
+
+.checkout-inline-cta-dark:hover {
+  border-color: #e6bf8a;
+  color: rgba(255,255,255,0.92);
 }
 
 .card-config-panel {
