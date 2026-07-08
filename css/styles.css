@@ -1208,6 +1208,7 @@ body.how-page .hero {
 .hero-overlay {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   background: linear-gradient(118deg, rgba(4, 5, 7, 0.76) 0%, rgba(6, 7, 10, 0.64) 46%, rgba(8, 10, 14, 0.32) 100%);
   backdrop-filter: saturate(65%);
   opacity: 0.84;
@@ -2039,7 +2040,12 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   }
 
   body.home-page .home-hero-panel--animation {
-    display: contents;
+    display: grid;
+    grid-column: 1;
+    justify-self: center;
+    justify-items: center;
+    width: 100%;
+    gap: 0;
   }
 
   body.home-page .home-hero-loader {
@@ -2048,7 +2054,7 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   }
 
   body.home-page .home-hero-shop-btn {
-    grid-row: 3;
+    grid-row: auto;
     width: auto;
     max-width: none;
     min-width: 210px;
@@ -2058,6 +2064,10 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
     font-size: 0.92rem;
     justify-content: center;
     justify-self: center;
+    position: relative;
+    z-index: 3;
+    pointer-events: auto;
+    touch-action: manipulation;
   }
 }
 
@@ -2278,6 +2288,10 @@ section[aria-label="How to get a card"] .get-code {
 
 .index-how-cta-section {
   padding: 0 92px;
+}
+
+.index-how-cta-btn {
+  padding: 12px 22px;
 }
 
 .card-cta-animation {
@@ -2890,22 +2904,24 @@ section[aria-label="How to get a card"] .get-code {
 
   .how-card-cta-row {
     display: flex;
-    gap: 14px;
-    width: min(100%, 100%);
+    justify-content: center;
+    gap: 0;
+    width: 100%;
   }
 
   .how-card-cta-arrow {
-    position: static;
-    top: auto;
-    right: auto;
-    flex: 0 0 40px;
-    width: 40px;
-    transform: none;
+    display: none;
   }
 
-  .how-card-cta-row .btn {
-    width: min(100%, 320px);
-    letter-spacing: 0.16em;
+  .index-how-cta-btn {
+    width: auto;
+    max-width: min(100%, 272px);
+    margin-inline: auto;
+    padding: 13px 20px;
+    font-size: 0.88rem;
+    line-height: 1.25;
+    letter-spacing: 0.14em;
+    text-align: center;
   }
 
   .about-paragraph {
