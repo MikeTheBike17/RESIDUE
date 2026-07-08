@@ -8133,6 +8133,22 @@ body::after { opacity: 0.04; }
     width: 100%;
   }
 
+  body.private-page .checkout-inline-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+
+  body.private-page .checkout-inline-actions .checkout-inline-cta {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+  }
+
+  body.private-page .checkout-inline-actions .checkout-inline-cta-dark {
+    flex: 0 0 auto;
+  }
+
   .payment-provider-card-payfast .payment-provider-media,
   .payment-provider-card-stitch .payment-provider-media {
     min-height: 126px;
