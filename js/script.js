@@ -192,7 +192,14 @@
   body.classList.add('page-fade-in');
   document.querySelectorAll('a[href]').forEach(link => {
     const href = link.getAttribute('href');
-    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || link.hasAttribute('data-open-auth')) return;
+    if (
+      !href ||
+      href.startsWith('#') ||
+      href.startsWith('mailto:') ||
+      href.startsWith('tel:') ||
+      link.hasAttribute('data-open-auth') ||
+      link.hasAttribute('data-native-nav')
+    ) return;
     link.addEventListener('click', evt => {
       evt.preventDefault();
       const url = link.getAttribute('href');
