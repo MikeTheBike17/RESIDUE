@@ -111,11 +111,11 @@
 
                   <section class="card-configurator" aria-labelledby="card-config-title">
                     <div class="card-config-choice-row" role="group" aria-label="Card type">
-                      <button type="button" class="btn btn-outline premium-btn private-card-config-choice-btn" data-card-type="standard" aria-pressed="false" aria-controls="standard-card-panel">
+                      <button type="button" class="btn btn-outline private-premium-btn private-card-config-choice-btn" data-card-type="standard" aria-pressed="false" aria-controls="standard-card-panel">
                         <span>Standard cards</span>
                         <small>Choose one of the Residue layouts</small>
                       </button>
-                      <button type="button" class="btn btn-outline premium-btn private-card-config-choice-btn" data-card-type="custom" aria-pressed="false" aria-controls="custom-logo-panel">
+                      <button type="button" class="btn btn-outline private-premium-btn private-card-config-choice-btn" data-card-type="custom" aria-pressed="false" aria-controls="custom-logo-panel">
                         <span>Custom company logo</span>
                         <small>Add your own mark for R100 per card</small>
                       </button>
@@ -224,8 +224,8 @@
                 </div>
                 <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
                 <div class="purchase-modal-actions checkout-inline-actions">
-                  <button id="shipping-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
-                  <button id="shipping-next-btn" class="btn btn-outline premium-btn" type="button">Continue to T&C's</button>
+                  <button id="shipping-back-btn" class="btn-smooth checkout-inline-cta" type="button">Back</button>
+                  <button id="shipping-next-btn" class="btn-smooth checkout-inline-cta" type="button">Continue to T&C's</button>
                 </div>
               </section>
 
@@ -253,8 +253,8 @@
                   </div>
                 </details>
                 <div class="terms-actions checkout-inline-actions">
-                  <button id="terms-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
-                  <button id="terms-agree-btn" class="btn btn-outline premium-btn" type="button">Agree &amp; Continue</button>
+                  <button id="terms-back-btn" class="btn-smooth checkout-inline-cta" type="button">Back</button>
+                  <button id="terms-agree-btn" class="btn-smooth checkout-inline-cta" type="button">Agree &amp; Continue</button>
                 </div>
               </section>
 
@@ -269,7 +269,7 @@
                 <p class="payment-provider-intro">PayFast is the secure payment provider for this order.</p>
                 <div class="status configure-status" id="payfast-confirm-status" aria-live="polite" hidden></div>
                 <div class="purchase-modal-actions checkout-inline-actions">
-                  <button id="payfast-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+                  <button id="payfast-back-btn" class="btn-smooth checkout-inline-cta" type="button">Back</button>
                 </div>
               </section>
             </div>
@@ -344,7 +344,7 @@
           <div id="missing-fields-list" class="validation-list">
             <!-- Fields will be populated by JS -->
           </div>
-          <button id="validation-close-btn" class="btn btn-outline premium-btn" type="button">Understood</button>
+          <button id="validation-close-btn" class="btn-smooth checkout-inline-cta" type="button">Understood</button>
         </div>
       </div>
     </div>
@@ -394,7 +394,7 @@
             <div class="status configure-status" id="payfast-status" aria-live="polite" hidden></div>
             
             <div class="purchase-modal-actions">
-              <button id="shipping-next-btn" class="btn btn-outline premium-btn" type="button">Next</button>
+              <button id="shipping-next-btn" class="btn-smooth checkout-inline-cta" type="button">Next</button>
             </div>
           </div>
         </section>
@@ -427,9 +427,9 @@
             <p>Proceeding to payment means you agree to these terms and consent to Residue storing the relevant purchase, shipping, and card configuration data needed to fulfill your order.</p>
           </div>
           <div class="terms-actions">
-            <button id="terms-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
-            <button id="terms-disagree-btn" class="btn btn-outline premium-btn" type="button">Disagree</button>
-            <button id="terms-agree-btn" class="btn btn-outline premium-btn" type="button">Agree</button>
+            <button id="terms-back-btn" class="btn-smooth checkout-inline-cta" type="button">Back</button>
+            <button id="terms-disagree-btn" class="btn-smooth checkout-inline-cta" type="button">Disagree</button>
+            <button id="terms-agree-btn" class="btn-smooth checkout-inline-cta" type="button">Agree</button>
           </div>
         </div>
       </div>
@@ -470,7 +470,7 @@
             After payment you will be redirected back to Residue with a confirmation message.
           </p>
           <div class="purchase-modal-actions">
-            <button id="payfast-back-btn" class="btn btn-outline premium-btn" type="button">Back</button>
+            <button id="payfast-back-btn" class="btn-smooth checkout-inline-cta" type="button">Back</button>
           </div>
         </div>
       </div>
@@ -511,7 +511,7 @@
           <p class="muted small" hidden>Invoice: <strong id="thank-you-invoice">Pending</strong></p>
           <p class="muted small" id="thank-you-payment-status" hidden>Waiting for payment confirmation.</p>
           <p class="muted small" id="thank-you-redirect-note" hidden>Redirecting you shortly.</p>
-          <button id="redirect-btn" class="btn btn-outline premium-btn" type="button">Return Home</button>
+          <button id="redirect-btn" class="btn-smooth checkout-inline-cta" type="button">Return Home</button>
         </div>
       </div>
     </div>
