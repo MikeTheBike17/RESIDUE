@@ -2061,6 +2061,38 @@ p, .muted, .subhead, .h2, h1, h2, h3 {
   }
 }
 
+@media (max-width: 560px) {
+  body.home-page .home-hero-content {
+    padding: 0 4px;
+  }
+
+  body.home-page .home-hero-brand-copy {
+    width: 100%;
+  }
+
+  body.home-page .home-hero-subtitle {
+    max-width: min(100%, 30ch);
+    margin-left: auto;
+    margin-right: auto;
+    font-size: clamp(0.72rem, 3.2vw, 0.82rem);
+    letter-spacing: 0.16em;
+    line-height: 1.4;
+  }
+
+  body.home-page .home-hero-features {
+    width: min(100%, 340px);
+    flex-wrap: wrap;
+  }
+
+  body.home-page .home-hero-feature {
+    flex: 0 1 auto;
+  }
+
+  body.home-page .home-hero-shop-btn {
+    width: min(100%, 320px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.home-page .home-hero-loader__spin {
     animation-duration: 1ms;
