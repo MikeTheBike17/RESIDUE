@@ -1,4 +1,6 @@
 // Thin wrapper: prefer the full render from link-app.js; fall back to local preview data.
+// This helper is for offline/draft preview only. Published profiles must read theme from
+// Supabase via link-app.js so stale localStorage keys cannot override a real saved theme.
 window.addEventListener('DOMContentLoaded', () => {
   if (window.linktree?.renderPublicProfile) {
     window.linktree.renderPublicProfile();

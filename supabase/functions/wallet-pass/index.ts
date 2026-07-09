@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
   if (!profile) return json({ error: "Profile not found." }, 404);
 
   const displayName = normalizeName(profile.name || requestedName || "Residue User");
-  const profileUrl = `${PUBLIC_SITE_URL}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
+  const profileUrl = `${PUBLIC_SITE_URL}/link-profile?u=${encodeURIComponent(profile.slug)}`;
   const appleToken = await createAppleToken(profile.slug);
   const applePassUrl = `${SUPABASE_URL}/functions/v1/wallet-apple-pass?slug=${encodeURIComponent(profile.slug)}${
     appleToken ? `&token=${encodeURIComponent(appleToken)}` : ""
