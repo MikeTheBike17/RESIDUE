@@ -3389,7 +3389,6 @@ input:focus, textarea:focus, select:focus {
   z-index: 2;
   pointer-events: none;
   opacity: 1;
-  filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.12));
   contain: paint;
 }
 
