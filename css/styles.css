@@ -3487,8 +3487,9 @@ input:focus, textarea:focus, select:focus {
   body.home-page .index-lifestyle .index-lifestyle-phone-overlay {
     left: clamp(-8px, -1vw, 0px);
     bottom: calc(clamp(10px, 1.4vw, 18px) + 8rem);
-    width: clamp(150px, 44vw, 250px);
+    width: clamp(160px, 48vw, 265px);
     max-width: 42%;
+    scale: 1.09;
   }
 }
 
