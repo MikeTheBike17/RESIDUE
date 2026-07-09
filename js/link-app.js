@@ -79,12 +79,24 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const slug = getRequestedSlug();
     const isPreview = qs.get('preview') === '1';
     const overlay = document.getElementById('lt-overlay');
-    const finishOverlay = () => overlay?.classList.remove('active');
+    const finishOverlay = () => {
+      document.body?.classList.remove('lt-loading-profile');
+      if (!overlay) return;
+      overlay.setAttribute('aria-busy', 'false');
+      overlay.classList.remove('active');
+      window.setTimeout(() => {
+        overlay.style.display = 'none';
+        overlay.classList.add('hide');
+      }, 240);
+    };
     updatePublicAdminLinks(slug);
     setPublicSetupMode(false, slug);
+    document.body?.classList.add('lt-loading-profile');
     if (overlay) {
       overlay.style.display = 'flex';
+      overlay.classList.remove('hide');
       overlay.classList.add('active');
+      overlay.setAttribute('aria-busy', 'true');
     }
     const localFallback = loadLocalProfile(slug);
     if (isPreview && localFallback) {
@@ -94,7 +106,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
       setupContactDownload(localFallback.profile || {}, normalLinks || [], meta);
       setupVirtualCard(localFallback.profile || {});
       finishOverlay();
-      if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
       return;
     }
 
@@ -136,7 +147,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
     if (!hasConfiguredCardContent(profile || {}, links || [])) {
       showFirstTimeCard(resolveSlug(profile?.slug || slug, ''));
       finishOverlay();
-      if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
       return;
     }
     const { meta, normalLinks } = extractMetaFromLinks(links || []);
@@ -146,7 +156,6 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setupContactDownload(profile || {}, hydratedLinks || [], meta);
     setupVirtualCard(profile || {});
     finishOverlay();
-    if (overlay) setTimeout(() => { overlay.style.display = 'none'; }, 220);
   }
 
   function fillPublic(profile, meta = {}, { allowLocalThemeFallback = false } = {}) {
