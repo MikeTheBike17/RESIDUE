@@ -45,10 +45,13 @@
     { "source": "/about.html", "destination": "/about", "permanent": true },
     { "source": "/access", "destination": "/residue-inside", "permanent": true },
     { "source": "/access.html", "destination": "/residue-inside", "permanent": true },
+    { "source": "/dist/link-profile", "destination": "/link-profile", "permanent": true },
+    { "source": "/dist/link-profile.html", "destination": "/link-profile", "permanent": true },
     { "source": "/how-it-works.html", "destination": "/how-it-works", "permanent": true },
     { "source": "/configuration.html", "destination": "/configuration", "permanent": true },
     { "source": "/drop.html", "destination": "/configuration", "permanent": true },
     { "source": "/index.html", "destination": "/", "permanent": true },
+    { "source": "/link-profile.html", "destination": "/link-profile", "permanent": true },
     { "source": "/residue-inside.html", "destination": "/residue-inside", "permanent": true },
     { "source": "/residue-private.html", "destination": "/residue-private", "permanent": true }
   ]

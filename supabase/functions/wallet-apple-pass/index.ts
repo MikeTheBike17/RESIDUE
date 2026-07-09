@@ -112,12 +112,12 @@ Deno.serve(async (req) => {
       error: "Apple Wallet not configured",
       detail: "Configure APPLE_WALLET_CERT_PEM, APPLE_WALLET_KEY_PEM, APPLE_WALLET_WWDR_PEM, APPLE_WALLET_PASS_TYPE_IDENTIFIER, and APPLE_WALLET_TEAM_IDENTIFIER.",
       slug: profile.slug,
-      cardUrl: `${PUBLIC_SITE_URL}/link-profile.html?u=${encodeURIComponent(profile.slug)}`,
+      cardUrl: `${PUBLIC_SITE_URL}/link-profile?u=${encodeURIComponent(profile.slug)}`,
     }, 501);
   }
 
   const serialNumber = `residue-${profile.slug}`;
-  const cardUrl = `${PUBLIC_SITE_URL}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
+  const cardUrl = `${PUBLIC_SITE_URL}/link-profile?u=${encodeURIComponent(profile.slug)}`;
   const applePassScaffold = {
     description: "Residue Virtual Card",
     formatVersion: 1,

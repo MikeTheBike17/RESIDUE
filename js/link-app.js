@@ -57,6 +57,11 @@ import { residueTelemetry } from './supabase-telemetry.js';
     } catch {}
     return nextTheme;
   };
+  const clearStoredThemePreference = (context = {}) => {
+    try {
+      buildThemeStorageKeys(context).forEach(key => localStorage.removeItem(key));
+    } catch {}
+  };
   const resolveThemeChoice = (...candidates) => {
     for (const candidate of candidates) {
       const normalized = normalizeTheme(candidate);
@@ -150,6 +155,9 @@ import { residueTelemetry } from './supabase-telemetry.js';
       ? resolveThemeChoice(profile?.theme, readStoredThemePreference(themeContext))
       : resolveThemeChoice(profile?.theme);
     if (allowLocalThemeFallback) writeStoredThemePreference(publicTheme, themeContext);
+    // Published profiles must trust Supabase theme data only. Stored theme keys are
+    // reserved for admin preview, offline/file mode, and unsaved draft recovery.
+    else clearStoredThemePreference(themeContext);
     setPublicSetupMode(false, profile?.slug || getRequestedSlug());
     updatePublicAdminLinks(profile?.slug || getRequestedSlug());
     setTheme(publicTheme);
@@ -1102,8 +1110,8 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const normalizedSlug = resolveSlug(slug || '', '');
     const suffix = normalizedSlug || 'full-name';
     const profilePath = window.location.pathname
-      .replace(/link-admin(?:\.html)?$/i, 'link-profile.html')
-      .replace(/link-profile(?:\.html)?$/i, 'link-profile.html');
+      .replace(/link-admin(?:\.html)?$/i, 'link-profile')
+      .replace(/link-profile(?:\.html)?$/i, 'link-profile');
     return `${window.location.origin}${profilePath}?u=${suffix}`;
   }
 
@@ -2352,7 +2360,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
       showStatusEl(statusEl, redirect ? 'Saved. Redirecting...' : 'Saved.', 'success');
     }
     if (redirect) {
-      const target = `${window.location.origin}/link-profile.html?u=${encodeURIComponent(profile.slug)}`;
+      const target = buildPublicProfileUrl(profile.slug);
       setTimeout(() => { window.location.href = target; }, 500);
     }
     return true;
