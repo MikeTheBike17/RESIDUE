@@ -33,3 +33,14 @@ supabase secrets set PUBLIC_SITE_URL="https://www.residue.cc"
 supabase secrets set RESIDUE_MANAGER_EMAIL="check.email@residue.com"
 supabase secrets set CARDHOLDER_PROFILE_SYNC_ALLOWED_ORIGINS="https://www.residue.cc"
 ```
+
+## Troubleshooting
+
+If the browser shows `Internal Server Error`, open the Supabase Dashboard at **Edge Functions > sync-cardholder-profiles > Logs**. The function logs one line per failed cardholder email as `Cardholder profile sync failed`.
+
+Common causes:
+
+- `supabase/cardholder-profile-sync.sql` has not been run in SQL Editor.
+- `SUPABASE_SERVICE_ROLE_KEY` is missing from Edge Function secrets.
+- The function was deployed without `--no-verify-jwt`.
+- Supabase Auth rejected creating the linked cardholder user.

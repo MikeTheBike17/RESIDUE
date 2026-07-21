@@ -52,6 +52,15 @@ type SyncResult = {
   created_auth_user: boolean;
 };
 
+type SyncSkipped = {
+  source?: "purchase" | "manual";
+  source_id?: string;
+  card_email: string;
+  card_index: number;
+  reason: string;
+  detail?: string;
+};
+
 const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false }
@@ -77,6 +86,29 @@ function buildCorsHeaders(origin: string | null) {
 
 function json(body: unknown, status: number, headers: Record<string, string>) {
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message;
+  const value = error as { message?: unknown; error?: unknown; details?: unknown; hint?: unknown };
+  return String(value?.message || value?.error || value?.details || value?.hint || "Unexpected server error.");
+}
+
+function classifySyncError(error: unknown) {
+  const message = errorMessage(error);
+  if (/ensure_profile_for_auth_email|schema cache|could not find the function/i.test(message)) {
+    return "missing_sql_helper";
+  }
+  if (/permission denied|not authorized|row-level security|rls/i.test(message)) {
+    return "permission_error";
+  }
+  if (/service.*role|server misconfiguration|SUPABASE_SERVICE_ROLE_KEY/i.test(message)) {
+    return "server_misconfiguration";
+  }
+  if (/auth user creation failed|create user|internal server error/i.test(message)) {
+    return "auth_user_create_error";
+  }
+  return "sync_error";
 }
 
 function normalizeEmail(value: unknown) {
@@ -428,7 +460,9 @@ async function callEnsureProfileRpc(email: string, displayName: string, preferre
       p_preferred_slug: preferredSlug
     });
 
-  if (error) throw error;
+  if (error) {
+    throw new Error(`Profile helper failed for ${email}: ${error.message || "Unknown RPC error"}`);
+  }
   const row = Array.isArray(data) ? data[0] : data;
   if (!row?.slug) throw new Error(`Could not create a profile for ${email}.`);
 
@@ -456,13 +490,13 @@ async function createAuthUser(email: string, displayName: string) {
   });
 
   if (error && !/(already|registered|exists)/i.test(error.message || "")) {
-    throw error;
+    throw new Error(`Auth user creation failed for ${email}: ${error.message || "Unknown auth error"}`);
   }
 }
 
 async function syncEntries(entries: CardholderEntry[]) {
   const results: SyncResult[] = [];
-  const skipped: Array<{ card_email: string; card_index: number; reason: string }> = [];
+  const skipped: SyncSkipped[] = [];
   const profilesByEmail = new Map<string, { profile: ProfileRow; createdAuthUser: boolean }>();
 
   for (const entry of entries) {
@@ -477,8 +511,28 @@ async function syncEntries(entries: CardholderEntry[]) {
     }
 
     if (!profilesByEmail.has(email)) {
-      const synced = await ensureProfileForEmail({ ...entry, card_email: email });
-      profilesByEmail.set(email, synced);
+      try {
+        const synced = await ensureProfileForEmail({ ...entry, card_email: email });
+        profilesByEmail.set(email, synced);
+      } catch (error) {
+        const detail = errorMessage(error);
+        console.error("Cardholder profile sync failed", {
+          source: entry.source,
+          source_id: entry.source_id,
+          card_index: entry.card_index,
+          card_email: email,
+          error: detail
+        });
+        skipped.push({
+          source: entry.source,
+          source_id: entry.source_id,
+          card_email: email,
+          card_index: entry.card_index,
+          reason: classifySyncError(error),
+          detail
+        });
+        continue;
+      }
     }
 
     const synced = profilesByEmail.get(email);
@@ -555,7 +609,7 @@ Deno.serve(async req => {
   } catch (error) {
     const status = Number((error as { status?: number })?.status || 500);
     return json({
-      error: error instanceof Error ? error.message : "Could not sync cardholder profiles."
+      error: errorMessage(error)
     }, status, corsHeaders);
   }
 });

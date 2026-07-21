@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import {
   countSyncedProfileUrls,
+  profileSyncIssueSummary,
   syncCardholderProfiles
 } from './cardholder-profile-sync.js';
 
@@ -457,6 +458,11 @@ async function saveOrderEmails(order, article, status, saveButton) {
     try {
       const syncData = await syncProfilesForOrder(order);
       const syncedCount = countSyncedProfileUrls(syncData);
+      const syncIssue = profileSyncIssueSummary(syncData);
+      if (syncIssue) {
+        setCardStatus(status, `Emails saved, but ${syncIssue}`, 'error');
+        return;
+      }
       setCardStatus(
         status,
         syncedCount

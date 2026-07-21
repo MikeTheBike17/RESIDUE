@@ -58,3 +58,23 @@ export function countSyncedProfileUrls(data) {
   const rows = Array.isArray(data?.results) ? data.results : [];
   return rows.filter(row => String(row?.url || '').trim()).length;
 }
+
+export function profileSyncIssueSummary(data) {
+  const rows = Array.isArray(data?.skipped) ? data.skipped : [];
+  const issues = rows.filter(row => row?.reason && row.reason !== 'invalid_email');
+  if (!issues.length) return '';
+
+  const firstDetails = issues
+    .slice(0, 2)
+    .map(row => {
+      const email = String(row?.card_email || '').trim();
+      const detail = String(row?.detail || row?.reason || '').trim();
+      return [email, detail].filter(Boolean).join(': ');
+    })
+    .filter(Boolean);
+  const suffix = issues.length > firstDetails.length
+    ? ` ${issues.length - firstDetails.length} more failed.`
+    : '';
+
+  return `${issues.length} profile URL${issues.length === 1 ? '' : 's'} could not be created.${firstDetails.length ? ` ${firstDetails.join(' ')}` : ''}${suffix}`;
+}
