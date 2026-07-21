@@ -6898,6 +6898,89 @@ body::after { opacity: 0.04; }
   font-size: 0.78rem;
 }
 
+.manage-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.6fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.manage-results {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.manage-search {
+  max-width: 100%;
+}
+
+.manage-table-wrap .manage-users-table {
+  min-width: 780px;
+}
+
+.manage-users-table tbody tr.is-selected td {
+  background: rgba(214,176,122,0.07);
+  color: var(--text);
+}
+
+.manage-select-btn {
+  min-width: 86px;
+}
+
+.manage-editor,
+.manage-empty-selection {
+  display: grid;
+  gap: 16px;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.manage-editor[hidden],
+.manage-empty-selection[hidden] {
+  display: none;
+}
+
+.manage-editor-head {
+  display: grid;
+  gap: 8px;
+}
+
+.manage-editor-head .h3 {
+  margin: 0;
+}
+
+.manage-editor-head .muted {
+  margin: 0;
+  word-break: break-word;
+}
+
+.manage-field {
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.manage-field span {
+  font-size: 0.86rem;
+}
+
+.manage-field input,
+.manage-field textarea {
+  width: 100%;
+}
+
+.manage-field textarea {
+  min-height: 128px;
+  resize: vertical;
+}
+
+.manage-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .orders-page {
   background:
     radial-gradient(circle at 18% 0%, rgba(214,176,122,0.08), transparent 30%),
@@ -8197,6 +8280,14 @@ body::after { opacity: 0.04; }
 
   .card-urls-search {
     max-width: none;
+  }
+
+  .manage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .manage-editor-actions .btn {
+    width: 100%;
   }
 
   .payment-provider-grid {

@@ -5,6 +5,8 @@ const key = process.env.SUPABASE_ANON_KEY || '';
 const shippingFee = process.env.SHIPPING_FEE || '';
 const ordersTable = process.env.SUPABASE_ORDERS_TABLE || '';
 const invoicesTable = process.env.SUPABASE_INVOICES_TABLE || '';
+const manualAllocationsTable = process.env.SUPABASE_MANUAL_ALLOCATIONS_TABLE || '';
+const manualCardEmailsTable = process.env.SUPABASE_MANUAL_CARD_EMAILS_TABLE || '';
 const payfastProcessUrl = process.env.PAYFAST_PROCESS_URL || '';
 const accessRequestFunctionUrl = process.env.ACCESS_REQUEST_FUNCTION_URL || '';
 const accessCodeVerifyEndpoint = process.env.ACCESS_CODE_VERIFY_ENDPOINT || '';
@@ -18,6 +20,8 @@ const output = `window.env = {
   SHIPPING_FEE: '${shippingFee}',
   SUPABASE_ORDERS_TABLE: '${ordersTable}',
   SUPABASE_INVOICES_TABLE: '${invoicesTable}',
+  SUPABASE_MANUAL_ALLOCATIONS_TABLE: '${manualAllocationsTable}',
+  SUPABASE_MANUAL_CARD_EMAILS_TABLE: '${manualCardEmailsTable}',
   PAYFAST_PROCESS_URL: '${payfastProcessUrl}',
   ACCESS_REQUEST_FUNCTION_URL: '${accessRequestFunctionUrl}',
   ACCESS_CODE_VERIFY_ENDPOINT: '${accessCodeVerifyEndpoint}',

@@ -1,21 +1,15 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import {
+  cfg,
+  guardManagerAccess,
+  normalizeEmail,
+  normalizeSearchTerm,
+  supabase
+} from './admin-access.js';
 
-const cfg = window.env || {};
-const MANAGER_EMAIL = 'check.email@residue.com';
-const MANAGER_ACCESS_KEY = 'residue_manager_access';
-const INVOICING_ACCESS_KEY = 'residue_manager_invoicing_access';
 const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
 const ORDER_EMAILS_TABLE = cfg.SUPABASE_ORDER_EMAILS_TABLE || 'order_card_emails';
-
-const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
-  ? null
-  : createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    });
+const MANUAL_ALLOCATIONS_TABLE = cfg.SUPABASE_MANUAL_ALLOCATIONS_TABLE || 'manual_card_allocations';
+const MANUAL_CARD_EMAILS_TABLE = cfg.SUPABASE_MANUAL_CARD_EMAILS_TABLE || 'manual_card_emails';
 
 const statusEl = document.getElementById('card-urls-status');
 const urlsBody = document.getElementById('card-urls-body');
@@ -29,14 +23,6 @@ let profileRowsCache = [];
 let invoiceRowsCache = [];
 let orderEmailAssignmentsCache = [];
 const INVOICE_TABLE_COLSPAN = 15;
-
-function normalizeEmail(value) {
-  return (value || '').trim().toLowerCase();
-}
-
-function normalizeSearchTerm(value) {
-  return String(value || '').trim().toLowerCase();
-}
 
 function setStatus(message, type = '') {
   if (!statusEl) return;
@@ -66,31 +52,6 @@ function buildCopyButton(value, label, successMessage) {
     }
   });
   return copyBtn;
-}
-
-function ensureManagerFlag(email) {
-  localStorage.setItem(MANAGER_ACCESS_KEY, JSON.stringify({
-    email: normalizeEmail(email),
-    granted_at: new Date().toISOString()
-  }));
-}
-
-function clearManagerFlag() {
-  localStorage.removeItem(MANAGER_ACCESS_KEY);
-}
-
-function grantInvoicingAccess() {
-  try {
-    sessionStorage.setItem(INVOICING_ACCESS_KEY, String(Date.now()));
-  } catch {}
-}
-
-function hasInvoicingAccess() {
-  try {
-    return !!sessionStorage.getItem(INVOICING_ACCESS_KEY);
-  } catch {
-    return false;
-  }
 }
 
 function getActiveSearchTerm() {
@@ -222,7 +183,10 @@ function buildAssignedEmailDropdown(row) {
 
     const note = document.createElement('span');
     note.className = 'card-urls-assigned-note';
-    note.textContent = `${item.invoice_no || 'Order'} - Card ${item.card_index || ''}`.trim();
+    const sourceNote = item.source === 'manual'
+      ? (item.quote_reference ? `Manual ${item.quote_reference}` : 'Manual allocation')
+      : (item.invoice_no || 'Order');
+    note.textContent = `${sourceNote} - Card ${item.card_index || ''}`.trim();
 
     rowEl.append(name, emailRow, urlRow, note);
     list.appendChild(rowEl);
@@ -402,7 +366,7 @@ function applySearchFilter() {
 
   if (isCardUrlsPage) {
     const filteredRows = filterProfileRows(profileRowsCache, query);
-    renderUrlRows(filteredRows, query ? 'No users match this email search.' : 'No users found.');
+    renderUrlRows(filteredRows, query ? 'No users match this search.' : 'No users found.');
     return;
   }
 
@@ -410,31 +374,6 @@ function applySearchFilter() {
     const filteredRows = filterInvoiceRows(invoiceRowsCache, query);
     renderInvoiceRows(filteredRows, query ? 'No users match this search.' : 'No invoices found.');
   }
-}
-
-async function guardManagerAccess() {
-  if (isInvoicingPage && !hasInvoicingAccess()) {
-    window.location.href = 'card-urls.html';
-    return null;
-  }
-
-  if (!supabase) {
-    clearManagerFlag();
-    window.location.href = 'residue-inside.html?auth=login';
-    return null;
-  }
-
-  const { data: { session } } = await supabase.auth.getSession();
-  const sessionEmail = normalizeEmail(session?.user?.email);
-  if (sessionEmail !== MANAGER_EMAIL) {
-    clearManagerFlag();
-    window.location.href = 'residue-inside.html?auth=login';
-    return null;
-  }
-
-  ensureManagerFlag(sessionEmail);
-  if (isCardUrlsPage) grantInvoicingAccess();
-  return session;
 }
 
 async function fetchProfileRows() {
@@ -470,7 +409,10 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
     const profile = profilesByEmail.get(cardEmail);
     if (!grouped.has(purchaserEmail)) grouped.set(purchaserEmail, []);
     grouped.get(purchaserEmail).push({
+      source: item.source || 'purchase',
       invoice_no: item.invoice_no || '',
+      allocation_id: item.allocation_id || '',
+      quote_reference: item.quote_reference || '',
       card_index: item.card_index || '',
       card_name: String(item.card_name || profile?.name || '').trim(),
       profile_name: profile?.name || '',
@@ -483,7 +425,11 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
   return profileRows.map(row => ({
     ...row,
     order_emails: (grouped.get(normalizeEmail(row.auth_email)) || [])
-      .sort((a, b) => String(a.invoice_no).localeCompare(String(b.invoice_no)) || Number(a.card_index) - Number(b.card_index))
+      .sort((a, b) => {
+        const aGroup = a.source === 'manual' ? `manual:${a.quote_reference || a.allocation_id}` : `purchase:${a.invoice_no}`;
+        const bGroup = b.source === 'manual' ? `manual:${b.quote_reference || b.allocation_id}` : `purchase:${b.invoice_no}`;
+        return aGroup.localeCompare(bGroup) || Number(a.card_index) - Number(b.card_index);
+      })
   }));
 }
 
@@ -519,6 +465,7 @@ async function fetchOrderEmailAssignments() {
     const customerEmail = customerEmailByInvoice.get(row.invoice_no) || '';
     if (!customerEmail) return;
     merged.set(`${row.invoice_no}:1`, {
+      source: 'purchase',
       invoice_no: row.invoice_no,
       customer_email: customerEmail,
       purchaser_email: customerEmail,
@@ -533,11 +480,73 @@ async function fetchOrderEmailAssignments() {
     const cardEmail = normalizeEmail(row.card_email);
     if (!row.invoice_no || !cardEmail) return;
     merged.set(`${row.invoice_no}:${row.card_index}`, {
+      source: 'purchase',
       ...row,
       card_email: cardEmail,
       card_name: row.card_name || '',
       customer_email: customerEmailByInvoice.get(row.invoice_no) || '',
       purchaser_email: normalizeEmail(row.purchaser_email || customerEmailByInvoice.get(row.invoice_no))
+    });
+  });
+
+  return Array.from(merged.values());
+}
+
+async function fetchManualEmailAssignments() {
+  const { data: allocations, error: allocationError } = await supabase
+    .from(MANUAL_ALLOCATIONS_TABLE)
+    .select('id, profile_id, quantity, quote_reference, account_email, account_name')
+    .gt('quantity', 0)
+    .order('updated_at', { ascending: false });
+
+  if (allocationError) throw new Error(allocationError.message || 'Could not load manual allocations.');
+
+  const allocationRows = (allocations || []).filter(row => row.id && row.profile_id);
+  if (!allocationRows.length) return [];
+
+  const allocationsById = new Map(allocationRows.map(row => [row.id, row]));
+  const merged = new Map();
+
+  allocationRows.forEach(row => {
+    const purchaserEmail = normalizeEmail(row.account_email);
+    if (!purchaserEmail) return;
+    merged.set(`${row.id}:1`, {
+      source: 'manual',
+      allocation_id: row.id,
+      quote_reference: row.quote_reference || '',
+      purchaser_profile_id: row.profile_id,
+      purchaser_email: purchaserEmail,
+      card_index: 1,
+      card_name: row.account_name || '',
+      card_email: purchaserEmail,
+      is_purchaser: true
+    });
+  });
+
+  const { data, error } = await supabase
+    .from(MANUAL_CARD_EMAILS_TABLE)
+    .select('allocation_id, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser')
+    .in('allocation_id', allocationRows.map(row => row.id))
+    .order('allocation_id', { ascending: true })
+    .order('card_index', { ascending: true });
+
+  if (error) throw new Error(error.message || 'Could not load manual cardholder emails.');
+
+  (data || []).forEach(row => {
+    const allocation = allocationsById.get(row.allocation_id);
+    const cardIndex = Number(row.card_index);
+    const cardEmail = normalizeEmail(row.card_email);
+    if (!allocation || !cardEmail || !Number.isFinite(cardIndex) || cardIndex < 1 || cardIndex > Number(allocation.quantity || 0)) return;
+    merged.set(`${row.allocation_id}:${row.card_index}`, {
+      source: 'manual',
+      allocation_id: row.allocation_id,
+      quote_reference: allocation.quote_reference || '',
+      purchaser_profile_id: row.purchaser_profile_id || allocation.profile_id,
+      purchaser_email: normalizeEmail(row.purchaser_email || allocation.account_email),
+      card_index: row.card_index,
+      card_name: row.card_name || '',
+      card_email: cardEmail,
+      is_purchaser: !!row.is_purchaser
     });
   });
 
@@ -586,18 +595,28 @@ async function fetchAllRows() {
   try {
     if (isCardUrlsPage) {
       const profileRows = await fetchProfileRows();
-      let assignmentErrorMessage = '';
+      const assignmentErrors = [];
+      let purchaseAssignments = [];
+      let manualAssignments = [];
+
       try {
-        orderEmailAssignmentsCache = await fetchOrderEmailAssignments();
+        purchaseAssignments = await fetchOrderEmailAssignments();
       } catch (assignmentError) {
-        orderEmailAssignmentsCache = [];
-        assignmentErrorMessage = assignmentError.message || 'Could not load assigned order emails.';
+        assignmentErrors.push(assignmentError.message || 'Could not load assigned order emails.');
       }
+
+      try {
+        manualAssignments = await fetchManualEmailAssignments();
+      } catch (assignmentError) {
+        assignmentErrors.push(assignmentError.message || 'Could not load manual cardholder emails.');
+      }
+
+      orderEmailAssignmentsCache = [...purchaseAssignments, ...manualAssignments];
       profileRowsCache = attachOrderEmailsToProfiles(profileRows, orderEmailAssignmentsCache);
       applySearchFilter();
       setStatus(
-        assignmentErrorMessage || `Loaded ${profileRowsCache.length} URLs.`,
-        assignmentErrorMessage ? 'error' : 'success'
+        assignmentErrors.length ? assignmentErrors.join(' ') : `Loaded ${profileRowsCache.length} URLs.`,
+        assignmentErrors.length ? 'error' : 'success'
       );
     } else if (isInvoicingPage) {
       invoiceRowsCache = await fetchInvoiceRows();
