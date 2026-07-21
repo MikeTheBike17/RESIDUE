@@ -1,6 +1,8 @@
 # sync-cardholder-profiles
 
-Creates or reuses Supabase auth/profile rows for linked cardholder emails saved from `orders.html`, then returns their `link-profile` URLs.
+Creates or reuses normal `link-profile` URLs for linked cardholder emails saved from `orders.html`.
+
+If the email already has a real `profiles` row, the existing profile slug is reused. If the email does not have a profile yet, the function reserves a URL slug from the first half of the email address, such as `test1@gmail.com` -> `test1`, without creating a hidden Supabase Auth user.
 
 Accepted sync sources:
 
@@ -50,4 +52,4 @@ Common causes:
 - `supabase/cardholder-profile-sync.sql` has not been run in SQL Editor.
 - `SUPABASE_SERVICE_ROLE_KEY` is missing from Edge Function secrets.
 - The function was deployed without `--no-verify-jwt`.
-- Supabase Auth rejected creating the linked cardholder user.
+- The `cardholder_profile_urls` table has not been created from the SQL helper.
