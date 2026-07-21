@@ -7,6 +7,7 @@ import {
 } from './admin-access.js';
 import {
   countSyncedProfileUrls,
+  profileSyncIssueSummary,
   syncCardholderProfiles
 } from './cardholder-profile-sync.js';
 
@@ -450,12 +451,11 @@ async function backfillMissingProfileUrls() {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user?.id) activeSession = session;
 
-  const syncData = await syncCardholderProfiles({
+  return syncCardholderProfiles({
     cfg,
     session: activeSession,
     payload: { source: 'all-missing' }
   });
-  return countSyncedProfileUrls(syncData);
 }
 
 async function fetchOrderEmailAssignments() {
@@ -641,10 +641,15 @@ async function fetchAllRows() {
       if (assignmentsMissingProfiles(profileRows, orderEmailAssignmentsCache)) {
         try {
           setStatus('Creating missing profile URLs...', 'loading');
-          const syncedCount = await backfillMissingProfileUrls();
+          const syncData = await backfillMissingProfileUrls();
+          const syncedCount = countSyncedProfileUrls(syncData);
+          const syncIssue = profileSyncIssueSummary(syncData);
           profileRows = await fetchProfileRows();
           if (syncedCount) {
             syncMessage = `Created or confirmed ${syncedCount} linked profile URL${syncedCount === 1 ? '' : 's'}.`;
+          }
+          if (syncIssue) {
+            assignmentErrors.push(syncIssue);
           }
         } catch (syncError) {
           assignmentErrors.push(syncError.message || 'Could not create missing profile URLs.');
