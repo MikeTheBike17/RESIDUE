@@ -10,6 +10,7 @@ const INVOICE_TABLE = Deno.env.get("SUPABASE_INVOICES_TABLE") ?? "purchase_invoi
 const ORDER_EMAILS_TABLE = Deno.env.get("SUPABASE_ORDER_EMAILS_TABLE") ?? "order_card_emails";
 const MANUAL_ALLOCATIONS_TABLE = Deno.env.get("SUPABASE_MANUAL_ALLOCATIONS_TABLE") ?? "manual_card_allocations";
 const MANUAL_CARD_EMAILS_TABLE = Deno.env.get("SUPABASE_MANUAL_CARD_EMAILS_TABLE") ?? "manual_card_emails";
+const CARDHOLDER_PROFILE_URLS_TABLE = Deno.env.get("SUPABASE_CARDHOLDER_PROFILE_URLS_TABLE") ?? "cardholder_profile_urls";
 
 type SyncSource = "purchase" | "manual" | "all-missing" | "assignments";
 
@@ -55,6 +56,13 @@ type ProfileRow = {
   slug: string;
 };
 
+type ReservedProfileUrlRow = {
+  id?: number;
+  card_email: string;
+  profile_slug: string;
+  display_name?: string;
+};
+
 type SyncResult = {
   source: "purchase" | "manual";
   source_id: string;
@@ -64,6 +72,7 @@ type SyncResult = {
   slug: string;
   url: string;
   created_auth_user: boolean;
+  reserved_profile_url: boolean;
 };
 
 type SyncSkipped = {
@@ -113,6 +122,9 @@ function classifySyncError(error: unknown) {
   if (/ensure_profile_for_auth_email|schema cache|could not find the function/i.test(message)) {
     return "missing_sql_helper";
   }
+  if (/cardholder_profile_urls|profile_slug|relation .* does not exist/i.test(message)) {
+    return "missing_url_reservation_table";
+  }
   if (/permission denied|not authorized|row-level security|rls/i.test(message)) {
     return "permission_error";
   }
@@ -148,6 +160,10 @@ function normalizeSlug(value: unknown) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+function emailSlugBase(email: string) {
+  return normalizeSlug(email.split("@")[0]) || "cardholder";
 }
 
 function isValidEmail(value: string) {
@@ -511,32 +527,130 @@ async function findProfileByEmail(email: string) {
   return data as ProfileRow | null;
 }
 
-async function ensureProfileForEmail(entry: CardholderEntry) {
+async function findReservedProfileUrlByEmail(email: string) {
+  if (!supabase) throw new Error("Server misconfiguration.");
+
+  const { data, error } = await supabase
+    .from(CARDHOLDER_PROFILE_URLS_TABLE)
+    .select("id, card_email, profile_slug, display_name")
+    .eq("card_email", email)
+    .maybeSingle();
+
+  if (error) throw new Error(`Profile URL reservation lookup failed for ${email}: ${error.message || "Unknown reservation error"}`);
+  return data as ReservedProfileUrlRow | null;
+}
+
+async function slugExists(slug: string) {
+  if (!supabase) throw new Error("Server misconfiguration.");
+
+  const [{ data: profileRows, error: profileError }, { data: reservationRows, error: reservationError }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id")
+      .eq("slug", slug)
+      .limit(1),
+    supabase
+      .from(CARDHOLDER_PROFILE_URLS_TABLE)
+      .select("id")
+      .eq("profile_slug", slug)
+      .limit(1)
+  ]);
+
+  if (profileError) throw new Error(`Profile slug lookup failed for ${slug}: ${profileError.message || "Unknown profile lookup error"}`);
+  if (reservationError) throw new Error(`Reserved slug lookup failed for ${slug}: ${reservationError.message || "Unknown reservation lookup error"}`);
+
+  return Boolean(profileRows?.length || reservationRows?.length);
+}
+
+async function reserveProfileUrl(email: string, displayName: string, preferredSlug: string) {
+  if (!supabase) throw new Error("Server misconfiguration.");
+
+  const existingReservation = await findReservedProfileUrlByEmail(email);
+  if (existingReservation?.profile_slug) {
+    return {
+      id: `reserved:${existingReservation.card_email}`,
+      auth_email: existingReservation.card_email,
+      name: existingReservation.display_name || displayName,
+      slug: existingReservation.profile_slug
+    } as ProfileRow;
+  }
+
+  const baseSlug = normalizeSlug(preferredSlug) || emailSlugBase(email);
+  let suffix = 2;
+  let candidate = baseSlug;
+
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    while (await slugExists(candidate)) {
+      candidate = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+
+    const { data, error } = await supabase
+      .from(CARDHOLDER_PROFILE_URLS_TABLE)
+      .insert({
+        card_email: email,
+        profile_slug: candidate,
+        display_name: displayName
+      })
+      .select("id, card_email, profile_slug, display_name")
+      .single();
+
+    if (!error && data?.profile_slug) {
+      return {
+        id: `reserved:${data.card_email}`,
+        auth_email: data.card_email,
+        name: data.display_name || displayName,
+        slug: data.profile_slug
+      } as ProfileRow;
+    }
+
+    const message = error?.message || "";
+    if (/cardholder_profile_urls_email_key|duplicate key.*card_email/i.test(message)) {
+      const row = await findReservedProfileUrlByEmail(email);
+      if (row?.profile_slug) {
+        return {
+          id: `reserved:${row.card_email}`,
+          auth_email: row.card_email,
+          name: row.display_name || displayName,
+          slug: row.profile_slug
+        } as ProfileRow;
+      }
+    }
+
+    if (/cardholder_profile_urls_slug_key|duplicate key.*profile_slug/i.test(message)) {
+      candidate = `${baseSlug}-${suffix}`;
+      suffix += 1;
+      continue;
+    }
+
+    throw new Error(`Profile URL reservation failed for ${email}: ${message || "Unknown reservation error"}`);
+  }
+
+  throw new Error(`Could not reserve a unique profile URL for ${email}.`);
+}
+
+async function ensureProfileUrlForEmail(entry: CardholderEntry) {
   if (!supabase) throw new Error("Server misconfiguration.");
 
   const email = normalizeEmail(entry.card_email);
   const displayName = normalizeName(entry.card_name) || email.split("@")[0] || "Residue User";
-  const preferredSlug = normalizeSlug(displayName) || normalizeSlug(email.split("@")[0]);
+  const preferredSlug = emailSlugBase(email);
   const existingProfile = await findProfileByEmail(email);
 
   if (existingProfile?.slug) {
-    return { profile: existingProfile, createdAuthUser: false };
+    return { profile: existingProfile, createdAuthUser: false, reservedProfileUrl: false };
   }
 
-  let createdAuthUser = false;
-  let profile = await callEnsureProfileRpc(email, displayName, preferredSlug).catch(async error => {
+  const profile = await callEnsureProfileRpc(email, displayName, preferredSlug).catch(async error => {
     if (!/No auth user exists/i.test(error.message || "")) throw error;
-
-    await createAuthUser(email, displayName);
-    createdAuthUser = true;
-    return callEnsureProfileRpc(email, displayName, preferredSlug);
+    return reserveProfileUrl(email, displayName, preferredSlug);
   });
 
-  if (!profile?.slug) {
-    profile = await callEnsureProfileRpc(email, displayName, preferredSlug);
+  if (String(profile.id || "").startsWith("reserved:")) {
+    return { profile, createdAuthUser: false, reservedProfileUrl: true };
   }
 
-  return { profile, createdAuthUser };
+  return { profile, createdAuthUser: false, reservedProfileUrl: false };
 }
 
 async function callEnsureProfileRpc(email: string, displayName: string, preferredSlug: string) {
@@ -563,30 +677,10 @@ async function callEnsureProfileRpc(email: string, displayName: string, preferre
   } as ProfileRow;
 }
 
-async function createAuthUser(email: string, displayName: string) {
-  if (!supabase) throw new Error("Server misconfiguration.");
-
-  const password = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
-  const { error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: {
-      full_name: displayName,
-      name: displayName,
-      residue_cardholder: true
-    }
-  });
-
-  if (error && !/(already|registered|exists)/i.test(error.message || "")) {
-    throw new Error(`Auth user creation failed for ${email}: ${error.message || "Unknown auth error"}`);
-  }
-}
-
 async function syncEntries(entries: CardholderEntry[]) {
   const results: SyncResult[] = [];
   const skipped: SyncSkipped[] = [];
-  const profilesByEmail = new Map<string, { profile: ProfileRow; createdAuthUser: boolean }>();
+  const profilesByEmail = new Map<string, { profile: ProfileRow; createdAuthUser: boolean; reservedProfileUrl?: boolean }>();
 
   for (const entry of entries) {
     const email = normalizeEmail(entry.card_email);
@@ -601,7 +695,7 @@ async function syncEntries(entries: CardholderEntry[]) {
 
     if (!profilesByEmail.has(email)) {
       try {
-        const synced = await ensureProfileForEmail({ ...entry, card_email: email });
+        const synced = await ensureProfileUrlForEmail({ ...entry, card_email: email });
         profilesByEmail.set(email, synced);
       } catch (error) {
         const detail = errorMessage(error);
@@ -642,7 +736,8 @@ async function syncEntries(entries: CardholderEntry[]) {
       card_name: entry.card_name,
       slug: synced.profile.slug,
       url: profileUrl(synced.profile.slug),
-      created_auth_user: synced.createdAuthUser
+      created_auth_user: synced.createdAuthUser,
+      reserved_profile_url: !!synced.reservedProfileUrl
     });
   }
 

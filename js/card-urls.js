@@ -15,6 +15,7 @@ const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
 const ORDER_EMAILS_TABLE = cfg.SUPABASE_ORDER_EMAILS_TABLE || 'order_card_emails';
 const MANUAL_ALLOCATIONS_TABLE = cfg.SUPABASE_MANUAL_ALLOCATIONS_TABLE || 'manual_card_allocations';
 const MANUAL_CARD_EMAILS_TABLE = cfg.SUPABASE_MANUAL_CARD_EMAILS_TABLE || 'manual_card_emails';
+const CARDHOLDER_PROFILE_URLS_TABLE = cfg.SUPABASE_CARDHOLDER_PROFILE_URLS_TABLE || 'cardholder_profile_urls';
 
 const statusEl = document.getElementById('card-urls-status');
 const urlsBody = document.getElementById('card-urls-body');
@@ -402,7 +403,7 @@ async function fetchProfileRows() {
     }));
 }
 
-function attachOrderEmailsToProfiles(profileRows, assignments) {
+function attachOrderEmailsToProfiles(profileRows, assignments, reservedUrlsByEmail = new Map()) {
   const profilesByEmail = new Map(profileRows.map(row => [
     normalizeEmail(row.auth_email),
     row
@@ -413,6 +414,8 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
     const cardEmail = normalizeEmail(item.card_email);
     if (!purchaserEmail || !cardEmail) return;
     const profile = profilesByEmail.get(cardEmail);
+    const reserved = reservedUrlsByEmail.get(cardEmail);
+    const slug = profile?.slug || reserved?.profile_slug || '';
     if (!grouped.has(purchaserEmail)) grouped.set(purchaserEmail, []);
     grouped.get(purchaserEmail).push({
       source: item.source || 'purchase',
@@ -423,8 +426,8 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
       card_name: String(item.card_name || profile?.name || '').trim(),
       profile_name: profile?.name || '',
       card_email: cardEmail,
-      slug: profile?.slug || '',
-      url: profile?.url || ''
+      slug,
+      url: slug ? buildProfileUrl(slug) : ''
     });
   });
 
@@ -439,12 +442,32 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
   }));
 }
 
-function missingProfileAssignments(profileRows, assignments) {
+function missingProfileAssignments(profileRows, assignments, reservedUrlsByEmail = new Map()) {
   const profileEmails = new Set(profileRows.map(row => normalizeEmail(row.auth_email)).filter(Boolean));
   return (assignments || []).filter(item => {
     const cardEmail = normalizeEmail(item.card_email);
-    return cardEmail && !profileEmails.has(cardEmail);
+    return cardEmail && !profileEmails.has(cardEmail) && !reservedUrlsByEmail.has(cardEmail);
   });
+}
+
+async function fetchReservedProfileUrls(assignments) {
+  const emails = Array.from(new Set(
+    (assignments || [])
+      .map(item => normalizeEmail(item.card_email))
+      .filter(Boolean)
+  ));
+  if (!emails.length) return new Map();
+
+  const { data, error } = await supabase
+    .from(CARDHOLDER_PROFILE_URLS_TABLE)
+    .select('card_email, profile_slug, display_name')
+    .in('card_email', emails);
+
+  if (error) throw new Error(error.message || 'Could not load reserved cardholder URLs.');
+
+  return new Map((data || [])
+    .filter(row => row.card_email && row.profile_slug)
+    .map(row => [normalizeEmail(row.card_email), row]));
 }
 
 function syncPayloadForAssignments(assignments) {
@@ -638,6 +661,7 @@ async function fetchAllRows() {
       const assignmentErrors = [];
       let purchaseAssignments = [];
       let manualAssignments = [];
+      let reservedUrlsByEmail = new Map();
       let syncMessage = '';
 
       try {
@@ -653,7 +677,13 @@ async function fetchAllRows() {
       }
 
       orderEmailAssignmentsCache = [...purchaseAssignments, ...manualAssignments];
-      const missingAssignments = missingProfileAssignments(profileRows, orderEmailAssignmentsCache);
+      try {
+        reservedUrlsByEmail = await fetchReservedProfileUrls(orderEmailAssignmentsCache);
+      } catch (reservationError) {
+        assignmentErrors.push(reservationError.message || 'Could not load reserved cardholder URLs.');
+      }
+
+      const missingAssignments = missingProfileAssignments(profileRows, orderEmailAssignmentsCache, reservedUrlsByEmail);
       if (missingAssignments.length) {
         try {
           setStatus('Creating missing profile URLs...', 'loading');
@@ -661,6 +691,7 @@ async function fetchAllRows() {
           const syncedCount = countSyncedProfileUrls(syncData);
           const syncIssue = profileSyncIssueSummary(syncData);
           profileRows = await fetchProfileRows();
+          reservedUrlsByEmail = await fetchReservedProfileUrls(orderEmailAssignmentsCache);
           if (syncedCount) {
             syncMessage = `Created or confirmed ${syncedCount} linked profile URL${syncedCount === 1 ? '' : 's'}.`;
           }
@@ -672,7 +703,7 @@ async function fetchAllRows() {
         }
       }
 
-      profileRowsCache = attachOrderEmailsToProfiles(profileRows, orderEmailAssignmentsCache);
+      profileRowsCache = attachOrderEmailsToProfiles(profileRows, orderEmailAssignmentsCache, reservedUrlsByEmail);
       applySearchFilter();
       setStatus(
         assignmentErrors.length ? assignmentErrors.join(' ') : (syncMessage || `Loaded ${profileRowsCache.length} URLs.`),
