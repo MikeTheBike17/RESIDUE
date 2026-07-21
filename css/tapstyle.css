@@ -255,7 +255,10 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   display: grid;
   gap: 18px;
   align-items: start;
+  justify-items: center;
+  width: 100%;
   padding: 12px 0 6px;
+  text-align: center;
 }
 
 .lt-first-setup[hidden] {
@@ -270,25 +273,47 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
   font-size: clamp(1.55rem, 5.8vw, 2.5rem);
   font-weight: 700;
   line-height: 1.02;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
 .lt-first-setup__button {
-  width: 100%;
-  max-width: 320px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: min(100%, 320px);
   text-align: center;
   text-decoration: none;
 }
 
-.lt-card.is-first-setup .lt-profile,
 .lt-card.is-first-setup .lt-links {
   display: none !important;
 }
 
 .lt-card.is-first-setup .lt-first-setup {
-  min-height: 260px;
+  min-height: 0;
   justify-content: center;
+  padding: 44px 0 24px;
+}
+
+.lt-card.is-first-setup .lt-profile {
+  display: block;
+  margin-top: 4px;
+  margin-bottom: 22px !important;
+}
+
+.lt-card.is-first-setup .lt-avatar {
+  display: block;
+  margin: 0 auto;
+  background: var(--lt-avatar-bg, rgba(255, 255, 255, 0.32));
+}
+
+.lt-card.is-first-setup .lt-name,
+.lt-card.is-first-setup .lt-title,
+.lt-card.is-first-setup .lt-bio,
+.lt-card.is-first-setup .lt-company-section {
+  display: none !important;
 }
 
 .lt-card.is-first-setup .lt-footer {
@@ -328,10 +353,9 @@ body.lt-page[data-theme="dark"] .lt-company-logo {
 .lt-avatar {
   width: 150px;
   height: 150px;
-  justify-content: left;
   object-fit: cover;
-  display: inline-flex;
-  margin: 0 0 30px 0;
+  display: block;
+  margin: 0 auto 30px;
   background: transparent;
   border: 1px solid var(--lt-avatar-border, rgba(255,255,255,0.18));
   box-shadow: 0 10px 30px rgba(0,0,0,0.35);
@@ -789,7 +813,8 @@ body.lt-page[data-theme="dark"] .lt-links a:hover {
   }
 
   .lt-card.is-first-setup .lt-first-setup {
-    min-height: 220px;
+    min-height: 0;
+    padding-top: 34px;
   }
 
   .lt-hero-card {

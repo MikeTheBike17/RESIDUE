@@ -6,6 +6,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
   const cfg = window.env || {};
   const isFileProtocol = window.location.protocol === 'file:';
   const qs = new URLSearchParams(window.location.search);
+  const DEFAULT_AVATAR_PLACEHOLDER = 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%20200%22%3E%3Crect%20width%3D%22200%22%20height%3D%22200%22%20fill%3D%22%23f2eee8%22%2F%3E%3Ccircle%20cx%3D%22100%22%20cy%3D%2274%22%20r%3D%2232%22%20fill%3D%22%23cfc4b3%22%2F%3E%3Cpath%20d%3D%22M42%20176c8-36%2032-56%2058-56s50%2020%2058%2056%22%20fill%3D%22%23cfc4b3%22%2F%3E%3C%2Fsvg%3E';
 
   const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
     ? null
@@ -182,7 +183,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setText('lt-title', includeRole ? (profile.title || '') : '');
     setText('lt-bio', includeBio ? (profile.bio || '') : '');
     const avatar = document.getElementById('lt-avatar');
-    if (avatar) avatar.src = profile.avatar_url || 'https://placehold.co/200x200?text=Add+photo';
+    if (avatar) avatar.src = profile.avatar_url || DEFAULT_AVATAR_PLACEHOLDER;
   }
 
   function setPublicSetupMode(showFirstSetup, slug = '') {
@@ -195,7 +196,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     const status = document.getElementById('lt-status');
     if (card) card.classList.toggle('is-first-setup', !!showFirstSetup);
     if (firstSetup) firstSetup.hidden = !showFirstSetup;
-    if (profile) profile.hidden = !!showFirstSetup;
+    if (profile) profile.hidden = false;
     if (links) links.hidden = !!showFirstSetup;
     if (saveBtn && showFirstSetup) {
       saveBtn.hidden = true;
@@ -221,7 +222,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setText('lt-title', '');
     setText('lt-bio', '');
     const avatar = document.getElementById('lt-avatar');
-    if (avatar) avatar.removeAttribute('src');
+    if (avatar) avatar.src = DEFAULT_AVATAR_PLACEHOLDER;
     renderLinks('lt-links', [], { showEmptyState: false });
     setupContactDownload({}, []);
     setupVirtualCard({});
@@ -239,7 +240,7 @@ import { residueTelemetry } from './supabase-telemetry.js';
     setText('lt-title', 'Your title');
     setText('lt-bio', 'Add a short description.');
     const avatar = document.getElementById('lt-avatar');
-    if (avatar) avatar.src = 'https://placehold.co/200x200?text=Add+photo';
+    if (avatar) avatar.src = DEFAULT_AVATAR_PLACEHOLDER;
     renderLinks('lt-links', []);
     setupContactDownload({}, []);
     setupVirtualCard({});
