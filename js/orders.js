@@ -3,6 +3,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 const cfg = window.env || {};
 const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
 const ORDER_EMAILS_TABLE = cfg.SUPABASE_ORDER_EMAILS_TABLE || 'order_card_emails';
+const MANUAL_ALLOCATIONS_TABLE = cfg.SUPABASE_MANUAL_ALLOCATIONS_TABLE || 'manual_card_allocations';
+const MANUAL_CARD_EMAILS_TABLE = cfg.SUPABASE_MANUAL_CARD_EMAILS_TABLE || 'manual_card_emails';
 
 const supabase = (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY)
   ? null
@@ -21,7 +23,7 @@ const introContinue = document.getElementById('orders-intro-continue');
 
 let activeSession = null;
 let activeOrders = [];
-let assignmentsByInvoice = new Map();
+let assignmentsByOrderKey = new Map();
 
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase();
@@ -52,6 +54,7 @@ function formatDate(value) {
 }
 
 function formatCardType(order) {
+  if (isManualOrder(order)) return 'Admin-created card access';
   if (order.custom_logo_requested) return 'Custom company logo card';
   const config = Number(order.card_configuration);
   return Number.isInteger(config) && config > 0 ? `Residue Card Type ${config}` : 'Residue NFC card';
@@ -60,6 +63,22 @@ function formatCardType(order) {
 function cardCount(order) {
   const quantity = Math.trunc(Number(order.quantity) || 0);
   return Math.max(1, quantity);
+}
+
+function orderGroupKey(order) {
+  if (order?.source === 'manual') {
+    return order.allocation_id ? `manual:${order.allocation_id}` : '';
+  }
+  return order?.invoice_no ? `purchase:${order.invoice_no}` : '';
+}
+
+function assignmentGroupKey(row) {
+  if (row?.allocation_id) return `manual:${row.allocation_id}`;
+  return row?.invoice_no ? `purchase:${row.invoice_no}` : '';
+}
+
+function isManualOrder(order) {
+  return order?.source === 'manual';
 }
 
 function showIntroModal() {
@@ -107,10 +126,36 @@ async function fetchPaidOrders(userId) {
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message || 'Could not load your successful orders.');
-  return data || [];
+  return (data || []).map(row => ({ ...row, source: 'purchase' }));
 }
 
-async function fetchEmailAssignments(invoiceNumbers) {
+async function fetchManualAllocations(userId) {
+  const { data, error } = await supabase
+    .from(MANUAL_ALLOCATIONS_TABLE)
+    .select('id, profile_id, quantity, quote_reference, account_email, account_name, created_at, updated_at')
+    .eq('profile_id', userId)
+    .gt('quantity', 0)
+    .order('updated_at', { ascending: false });
+
+  if (error) throw new Error(error.message || 'Could not load your manual card access.');
+
+  return (data || []).map(row => ({
+    source: 'manual',
+    allocation_id: row.id,
+    profile_id: row.profile_id,
+    quantity: row.quantity,
+    quote_reference: row.quote_reference || '',
+    customer_email: normalizeEmail(row.account_email || activeSession?.user?.email || ''),
+    customer_name: String(row.account_name || '').trim(),
+    card_configuration: null,
+    custom_logo_requested: false,
+    total_amount: null,
+    payment_status: 'MANUAL',
+    created_at: row.updated_at || row.created_at
+  }));
+}
+
+async function fetchPurchaseEmailAssignments(invoiceNumbers) {
   if (!invoiceNumbers.length) return [];
 
   const { data, error } = await supabase
@@ -120,23 +165,36 @@ async function fetchEmailAssignments(invoiceNumbers) {
     .order('card_index', { ascending: true });
 
   if (error) throw new Error(error.message || 'Could not load saved cardholder emails.');
-  return data || [];
+  return (data || []).map(row => ({ ...row, source: 'purchase' }));
+}
+
+async function fetchManualEmailAssignments(allocationIds) {
+  if (!allocationIds.length) return [];
+
+  const { data, error } = await supabase
+    .from(MANUAL_CARD_EMAILS_TABLE)
+    .select('allocation_id, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser, updated_at')
+    .in('allocation_id', allocationIds)
+    .order('card_index', { ascending: true });
+
+  if (error) throw new Error(error.message || 'Could not load saved manual cardholder emails.');
+  return (data || []).map(row => ({ ...row, source: 'manual' }));
 }
 
 function buildAssignmentsMap(rows) {
   const next = new Map();
   rows.forEach(row => {
-    const invoiceNo = String(row.invoice_no || '').trim();
+    const groupKey = assignmentGroupKey(row);
     const cardIndex = Math.trunc(Number(row.card_index) || 0);
-    if (!invoiceNo || cardIndex < 1) return;
-    if (!next.has(invoiceNo)) next.set(invoiceNo, new Map());
-    next.get(invoiceNo).set(cardIndex, row);
+    if (!groupKey || cardIndex < 1) return;
+    if (!next.has(groupKey)) next.set(groupKey, new Map());
+    next.get(groupKey).set(cardIndex, row);
   });
   return next;
 }
 
 function orderAssignment(order, cardIndex) {
-  return assignmentsByInvoice.get(order.invoice_no)?.get(cardIndex) || null;
+  return assignmentsByOrderKey.get(orderGroupKey(order))?.get(cardIndex) || null;
 }
 
 function makeOrderMeta(order) {
@@ -144,7 +202,9 @@ function makeOrderMeta(order) {
   meta.className = 'orders-card-meta';
 
   [
-    `Invoice ${order.invoice_no || ''}`,
+    isManualOrder(order)
+      ? (order.quote_reference ? `Reference ${order.quote_reference}` : 'Manual allocation')
+      : (order.invoice_no ? `Invoice ${order.invoice_no}` : ''),
     `${cardCount(order)} card${cardCount(order) === 1 ? '' : 's'}`,
     formatCardType(order),
     formatDate(order.created_at)
@@ -161,6 +221,9 @@ function makeEmailTable(order) {
   const count = cardCount(order);
   const purchaserEmail = normalizeEmail(order.customer_email || activeSession?.user?.email || '');
   const purchaserName = String(order.customer_name || '').trim();
+  const orderLabel = isManualOrder(order)
+    ? 'manual allocation'
+    : `order ${order.invoice_no || ''}`.trim();
   const wrap = document.createElement('div');
   wrap.className = 'orders-table-wrap';
 
@@ -199,8 +262,9 @@ function makeEmailTable(order) {
       input.value = String(orderAssignment(order, index)?.card_name || '').trim();
       input.dataset.orderNameInput = 'true';
       input.dataset.invoiceNo = order.invoice_no || '';
+      input.dataset.orderKey = orderGroupKey(order);
       input.dataset.cardIndex = String(index);
-      input.setAttribute('aria-label', `Name for card ${index} of order ${order.invoice_no}`);
+      input.setAttribute('aria-label', `Name for card ${index} of ${orderLabel}`);
       nameTd.appendChild(input);
     }
 
@@ -219,8 +283,9 @@ function makeEmailTable(order) {
       input.value = normalizeEmail(orderAssignment(order, index)?.card_email || '');
       input.dataset.orderEmailInput = 'true';
       input.dataset.invoiceNo = order.invoice_no || '';
+      input.dataset.orderKey = orderGroupKey(order);
       input.dataset.cardIndex = String(index);
-      input.setAttribute('aria-label', `Email for card ${index} of order ${order.invoice_no}`);
+      input.setAttribute('aria-label', `Email for card ${index} of ${orderLabel}`);
       emailTd.appendChild(input);
     }
 
@@ -240,7 +305,7 @@ function renderOrders() {
   if (!ordersList) return;
 
   if (!activeOrders.length) {
-    ordersList.innerHTML = '<div class="orders-empty">No successful card purchases were found for this account.</div>';
+    ordersList.innerHTML = '<div class="orders-empty">No card purchases or manual card allocations were found for this account.</div>';
     return;
   }
 
@@ -248,6 +313,7 @@ function renderOrders() {
   activeOrders.forEach(order => {
     const article = document.createElement('article');
     article.className = 'orders-card';
+    article.dataset.orderKey = orderGroupKey(order);
     article.dataset.invoiceNo = order.invoice_no || '';
 
     const header = document.createElement('div');
@@ -256,10 +322,12 @@ function renderOrders() {
     const copy = document.createElement('div');
     const label = document.createElement('p');
     label.className = 'orders-card-label';
-    label.textContent = 'Successful purchase';
+    label.textContent = isManualOrder(order) ? 'Manual allocation' : 'Successful purchase';
     const title = document.createElement('h2');
     title.className = 'h3';
-    title.textContent = order.customer_name ? `${order.customer_name}'s order` : 'Residue card order';
+    title.textContent = isManualOrder(order)
+      ? (order.customer_name ? `${order.customer_name}'s access` : 'Residue card access')
+      : (order.customer_name ? `${order.customer_name}'s order` : 'Residue card order');
     copy.append(label, title, makeOrderMeta(order));
 
     header.appendChild(copy);
@@ -297,10 +365,16 @@ function setCardStatus(el, message, type = '') {
 
 function payloadForOrder(order, article) {
   const purchaserEmail = normalizeEmail(order.customer_email || activeSession?.user?.email || '');
-  const payload = [{
-    invoice_no: order.invoice_no,
+  const sharedPurchaserFields = {
     purchaser_profile_id: activeSession.user.id,
     purchaser_email: purchaserEmail,
+  };
+  const sourceField = isManualOrder(order)
+    ? { allocation_id: order.allocation_id }
+    : { invoice_no: order.invoice_no };
+  const payload = [{
+    ...sourceField,
+    ...sharedPurchaserFields,
     card_index: 1,
     card_name: String(order.customer_name || '').trim(),
     card_email: purchaserEmail,
@@ -320,9 +394,8 @@ function payloadForOrder(order, article) {
     const nameInput = article.querySelector(`[data-order-name-input][data-card-index="${cardIndex}"]`);
 
     payload.push({
-      invoice_no: order.invoice_no,
-      purchaser_profile_id: activeSession.user.id,
-      purchaser_email: purchaserEmail,
+      ...sourceField,
+      ...sharedPurchaserFields,
       card_index: cardIndex,
       card_name: String(nameInput?.value || '').trim(),
       card_email: email,
@@ -331,7 +404,10 @@ function payloadForOrder(order, article) {
     });
   }
 
-  return payload.filter(row => row.invoice_no && row.card_index > 0);
+  return payload.filter(row => (
+    (isManualOrder(order) ? row.allocation_id : row.invoice_no) &&
+    row.card_index > 0
+  ));
 }
 
 async function saveOrderEmails(order, article, status, saveButton) {
@@ -341,16 +417,18 @@ async function saveOrderEmails(order, article, status, saveButton) {
     setCardStatus(status, 'Saving emails...', 'loading');
 
     const { data, error } = await supabase
-      .from(ORDER_EMAILS_TABLE)
-      .upsert(payload, { onConflict: 'invoice_no,card_index' })
-      .select('invoice_no, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser, updated_at');
+      .from(isManualOrder(order) ? MANUAL_CARD_EMAILS_TABLE : ORDER_EMAILS_TABLE)
+      .upsert(payload, { onConflict: isManualOrder(order) ? 'allocation_id,card_index' : 'invoice_no,card_index' })
+      .select(isManualOrder(order)
+        ? 'allocation_id, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser, updated_at'
+        : 'invoice_no, purchaser_profile_id, purchaser_email, card_index, card_name, card_email, is_purchaser, updated_at');
 
     if (error) throw new Error(error.message || 'Could not save cardholder emails.');
 
     const savedRows = (data && data.length ? data : payload);
-    const existing = assignmentsByInvoice.get(order.invoice_no) || new Map();
+    const existing = assignmentsByOrderKey.get(orderGroupKey(order)) || new Map();
     savedRows.forEach(row => existing.set(Number(row.card_index), row));
-    assignmentsByInvoice.set(order.invoice_no, existing);
+    assignmentsByOrderKey.set(orderGroupKey(order), existing);
 
     article.querySelectorAll('[data-order-email-input]').forEach(input => {
       const row = input.closest('tr');
@@ -386,28 +464,61 @@ async function loadOrders() {
   activeSession = await guardSession();
   if (!activeSession) return;
 
-  setStatus('Loading your successful purchases...', 'loading');
+  setStatus('Loading your card access...', 'loading');
   try {
-    activeOrders = await fetchPaidOrders(activeSession.user.id);
-    let assignments = [];
-    let assignmentErrorMessage = '';
+    const loadErrors = [];
+    const assignmentErrors = [];
+    let paidOrders = [];
+    let manualOrders = [];
+    let purchaseAssignments = [];
+    let manualAssignments = [];
 
     try {
-      assignments = await fetchEmailAssignments(activeOrders.map(order => order.invoice_no).filter(Boolean));
+      paidOrders = await fetchPaidOrders(activeSession.user.id);
     } catch (error) {
-      assignmentErrorMessage = error.message || 'Could not load saved cardholder emails.';
+      loadErrors.push(error.message || 'Could not load your successful orders.');
     }
 
-    assignmentsByInvoice = buildAssignmentsMap(assignments);
+    try {
+      manualOrders = await fetchManualAllocations(activeSession.user.id);
+    } catch (error) {
+      loadErrors.push(error.message || 'Could not load your manual card access.');
+    }
+
+    activeOrders = [...paidOrders, ...manualOrders]
+      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+
+    if (!activeOrders.length && loadErrors.length) {
+      throw new Error(loadErrors.join(' '));
+    }
+
+    try {
+      purchaseAssignments = await fetchPurchaseEmailAssignments(
+        paidOrders.map(order => order.invoice_no).filter(Boolean)
+      );
+    } catch (error) {
+      assignmentErrors.push(error.message || 'Could not load saved cardholder emails.');
+    }
+
+    try {
+      manualAssignments = await fetchManualEmailAssignments(
+        manualOrders.map(order => order.allocation_id).filter(Boolean)
+      );
+    } catch (error) {
+      assignmentErrors.push(error.message || 'Could not load saved manual cardholder emails.');
+    }
+
+    assignmentsByOrderKey = buildAssignmentsMap([...purchaseAssignments, ...manualAssignments]);
     renderOrders();
-    if (assignmentErrorMessage) {
-      setStatus(assignmentErrorMessage, 'error');
+    const statusMessages = [...loadErrors, ...assignmentErrors];
+    if (statusMessages.length) {
+      setStatus(statusMessages.join(' '), 'error');
     } else {
       setStatus('', '');
     }
   } catch (error) {
     activeOrders = [];
-    assignmentsByInvoice = new Map();
+    assignmentsByOrderKey = new Map();
     if (ordersList) {
       ordersList.innerHTML = '<div class="orders-empty">Could not load your orders.</div>';
     }

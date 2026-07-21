@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="googlebot" content="noindex, nofollow, noarchive">
+  <title>Residue | Manage Access</title>
+  <link rel="icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="shortcut icon" type="image/png" href="/images/residue-web-icon-rounded.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/env.js"></script>
+</head>
+<body class="page-fade-in">
+  <header>
+    <nav class="nav admin-nav" aria-label="Admin navigation">
+      <a class="brand" href="index.html">Residue</a>
+      <div class="nav-links admin-nav-links">
+        <a class="admin-nav-link" href="card-urls.html">Card URLs</a>
+        <a class="admin-nav-link" href="invoicing.html">Invoicing</a>
+        <a class="admin-nav-link is-active" href="manage.html" aria-current="page">Manage</a>
+        <a class="admin-nav-link admin-nav-exit" href="index.html">Exit</a>
+      </div>
+      <div class="nav-actions">
+        <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+          <span></span>
+        </button>
+      </div>
+    </nav>
+    <div class="mobile-nav" aria-label="Mobile admin navigation">
+      <a href="card-urls.html">Card URLs</a>
+      <a href="invoicing.html">Invoicing</a>
+      <a href="manage.html" aria-current="page">Manage</a>
+      <a href="index.html">Exit</a>
+    </div>
+  </header>
+
+  <main class="card-urls-page">
+    <section class="container" style="padding-top: 120px;">
+      <section class="panel reveal card-urls-panel manage-panel">
+        <div class="stack" style="gap:14px;">
+          <div class="eyebrow">Manager Access</div>
+          <h1 class="h2" style="margin:0;">Manage account access</h1>
+          <p class="muted" style="margin:0;">Search customer accounts and set manual cardholder access for quoted orders.</p>
+        </div>
+
+        <div class="card-urls-toolbar">
+          <button class="btn" id="manage-refresh" type="button">Refresh</button>
+          <div class="status" id="manage-status" aria-live="polite"></div>
+        </div>
+
+        <div class="manage-layout">
+          <section class="manage-results" aria-label="Accounts">
+            <div class="card-urls-search manage-search">
+              <input
+                id="manager-search"
+                type="search"
+                inputmode="search"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="Search accounts by name or email"
+                aria-label="Search accounts by name or email"
+              >
+            </div>
+
+            <div class="card-urls-table-wrap manage-table-wrap">
+              <table class="card-urls-table manage-users-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Manual Qty</th>
+                    <th scope="col">Reference</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="manage-users-body">
+                  <tr>
+                    <td colspan="5" class="card-urls-empty">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <form class="manage-editor" id="manage-form" hidden>
+            <div class="manage-editor-head">
+              <div>
+                <div class="eyebrow">Selected Account</div>
+                <h2 class="h3" id="manage-selected-name">Select an account</h2>
+              </div>
+              <p class="muted" id="manage-selected-email"></p>
+            </div>
+
+            <label class="manage-field" for="manual-quantity">
+              <span>Manual card quantity</span>
+              <input id="manual-quantity" name="quantity" type="number" min="0" max="999" step="1" inputmode="numeric">
+            </label>
+
+            <label class="manage-field" for="quote-reference">
+              <span>Quote reference</span>
+              <input id="quote-reference" name="quote_reference" type="text" autocomplete="off" placeholder="Quote number or client reference">
+            </label>
+
+            <label class="manage-field" for="admin-note">
+              <span>Admin note</span>
+              <textarea id="admin-note" name="admin_note" rows="5" placeholder="Internal note for this manual allocation"></textarea>
+            </label>
+
+            <div class="manage-editor-actions">
+              <button class="btn" id="manage-save" type="submit">Save Allocation</button>
+            </div>
+          </form>
+
+          <div class="manage-empty-selection" id="manage-empty-selection">
+            <div class="eyebrow">No Account Selected</div>
+            <p class="muted">Choose a user from the search results to manage their manual access.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="js/manage.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
