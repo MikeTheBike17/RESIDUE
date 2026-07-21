@@ -26,15 +26,25 @@ export async function syncCardholderProfiles({
   if (!anonKey) throw new Error('Supabase anon key is not configured.');
   if (!accessToken) throw new Error('You must be signed in to sync cardholder profile URLs.');
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      apikey: anonKey,
-      authorization: `Bearer ${accessToken}`
-    },
-    body: JSON.stringify(payload || {})
-  });
+  let response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        apikey: anonKey,
+        authorization: `Bearer ${accessToken}`
+      },
+      body: JSON.stringify(payload || {})
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(
+        'Could not reach the cardholder profile sync function. Check that the Edge Function is deployed with preflight/CORS access enabled.'
+      );
+    }
+    throw error;
+  }
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
