@@ -1,0 +1,2 @@
+[functions.sync-cardholder-profiles]
+verify_jwt = false
