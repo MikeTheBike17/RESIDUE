@@ -10,6 +10,7 @@ const manualCardEmailsTable = process.env.SUPABASE_MANUAL_CARD_EMAILS_TABLE || '
 const payfastProcessUrl = process.env.PAYFAST_PROCESS_URL || '';
 const accessRequestFunctionUrl = process.env.ACCESS_REQUEST_FUNCTION_URL || '';
 const accessCodeVerifyEndpoint = process.env.ACCESS_CODE_VERIFY_ENDPOINT || '';
+const cardholderProfileSyncEndpoint = process.env.CARDHOLDER_PROFILE_SYNC_ENDPOINT || '';
 const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || '0x4AAAAAADAvI_1p6qpg5G_E';
 
 // Only publish values that are safe to ship to every browser.
@@ -25,6 +26,7 @@ const output = `window.env = {
   PAYFAST_PROCESS_URL: '${payfastProcessUrl}',
   ACCESS_REQUEST_FUNCTION_URL: '${accessRequestFunctionUrl}',
   ACCESS_CODE_VERIFY_ENDPOINT: '${accessCodeVerifyEndpoint}',
+  CARDHOLDER_PROFILE_SYNC_ENDPOINT: '${cardholderProfileSyncEndpoint}',
   TURNSTILE_SITE_KEY: '${turnstileSiteKey}'
 };`;
 writeFileSync('js/env.js', output);
