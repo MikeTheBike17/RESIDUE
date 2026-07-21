@@ -439,22 +439,37 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
   }));
 }
 
-function assignmentsMissingProfiles(profileRows, assignments) {
+function missingProfileAssignments(profileRows, assignments) {
   const profileEmails = new Set(profileRows.map(row => normalizeEmail(row.auth_email)).filter(Boolean));
-  return (assignments || []).some(item => {
+  return (assignments || []).filter(item => {
     const cardEmail = normalizeEmail(item.card_email);
     return cardEmail && !profileEmails.has(cardEmail);
   });
 }
 
-async function backfillMissingProfileUrls() {
+function syncPayloadForAssignments(assignments) {
+  return (assignments || []).map(item => ({
+    source: item.source || 'purchase',
+    invoice_no: item.invoice_no || '',
+    allocation_id: item.allocation_id || '',
+    purchaser_profile_id: item.purchaser_profile_id || '',
+    purchaser_email: item.purchaser_email || item.customer_email || '',
+    card_index: item.card_index || '',
+    card_name: item.card_name || '',
+    card_email: item.card_email || ''
+  }));
+}
+
+async function backfillMissingProfileUrls(missingAssignments = []) {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user?.id) activeSession = session;
 
   return syncCardholderProfiles({
     cfg,
     session: activeSession,
-    payload: { source: 'all-missing' }
+    payload: missingAssignments.length
+      ? { source: 'assignments', assignments: syncPayloadForAssignments(missingAssignments) }
+      : { source: 'all-missing' }
   });
 }
 
@@ -638,10 +653,11 @@ async function fetchAllRows() {
       }
 
       orderEmailAssignmentsCache = [...purchaseAssignments, ...manualAssignments];
-      if (assignmentsMissingProfiles(profileRows, orderEmailAssignmentsCache)) {
+      const missingAssignments = missingProfileAssignments(profileRows, orderEmailAssignmentsCache);
+      if (missingAssignments.length) {
         try {
           setStatus('Creating missing profile URLs...', 'loading');
-          const syncData = await backfillMissingProfileUrls();
+          const syncData = await backfillMissingProfileUrls(missingAssignments);
           const syncedCount = countSyncedProfileUrls(syncData);
           const syncIssue = profileSyncIssueSummary(syncData);
           profileRows = await fetchProfileRows();

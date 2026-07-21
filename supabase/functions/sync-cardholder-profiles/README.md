@@ -2,6 +2,13 @@
 
 Creates or reuses Supabase auth/profile rows for linked cardholder emails saved from `orders.html`, then returns their `link-profile` URLs.
 
+Accepted sync sources:
+
+- `manual` with `allocation_id`
+- `purchase` with `invoice_no`
+- `all-missing` for manager backfills
+- `assignments` for manager-only explicit rows from `card-urls.html`
+
 ## Deploy
 
 Run `supabase/cardholder-profile-sync.sql` first so the service-role helper exists.
