@@ -11,12 +11,26 @@ const ORDER_EMAILS_TABLE = Deno.env.get("SUPABASE_ORDER_EMAILS_TABLE") ?? "order
 const MANUAL_ALLOCATIONS_TABLE = Deno.env.get("SUPABASE_MANUAL_ALLOCATIONS_TABLE") ?? "manual_card_allocations";
 const MANUAL_CARD_EMAILS_TABLE = Deno.env.get("SUPABASE_MANUAL_CARD_EMAILS_TABLE") ?? "manual_card_emails";
 
-type SyncSource = "purchase" | "manual" | "all-missing";
+type SyncSource = "purchase" | "manual" | "all-missing" | "assignments";
+
+type ExplicitAssignmentRow = {
+  source?: unknown;
+  invoice_no?: unknown;
+  allocation_id?: unknown;
+  card_index?: unknown;
+  card_name?: unknown;
+  card_email?: unknown;
+  purchaser_profile_id?: unknown;
+  purchaser_email?: unknown;
+  customer_email?: unknown;
+};
 
 type SyncPayload = {
   source?: SyncSource;
   invoice_no?: string;
   allocation_id?: string;
+  cardholders?: ExplicitAssignmentRow[];
+  assignments?: ExplicitAssignmentRow[];
 };
 
 type RequestUser = {
@@ -163,6 +177,41 @@ function addEntry(entries: Map<string, CardholderEntry>, entry: CardholderEntry,
   });
 }
 
+function addPayloadRows(
+  entries: Map<string, CardholderEntry>,
+  rows: ExplicitAssignmentRow[] | undefined,
+  options: {
+    source?: "purchase" | "manual";
+    sourceId?: string;
+    purchaserProfileId?: string;
+    purchaserEmail?: string;
+    quantity?: number;
+    fallbackProfileId: string;
+  }
+) {
+  if (!Array.isArray(rows) || !rows.length) return;
+
+  rows.slice(0, 250).forEach(row => {
+    const source = options.source
+      || (String(row.source || "").trim() === "manual" || row.allocation_id ? "manual" : "purchase");
+    const sourceId = options.sourceId
+      || String(source === "manual" ? row.allocation_id : row.invoice_no).trim();
+    if (!sourceId) return;
+    if (options.source && source !== options.source) return;
+    if (options.sourceId && sourceId !== options.sourceId) return;
+
+    addEntry(entries, {
+      source,
+      source_id: sourceId,
+      card_index: row.card_index as number,
+      card_name: normalizeName(row.card_name),
+      card_email: normalizeEmail(row.card_email),
+      purchaser_profile_id: String(row.purchaser_profile_id || options.purchaserProfileId || options.fallbackProfileId),
+      purchaser_email: normalizeEmail(row.purchaser_email || row.customer_email || options.purchaserEmail)
+    }, Math.max(1, Math.trunc(Number(options.quantity) || 10000)));
+  });
+}
+
 async function getRequestUser(req: Request): Promise<RequestUser> {
   const authHeader = req.headers.get("authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -180,7 +229,12 @@ async function getRequestUser(req: Request): Promise<RequestUser> {
   };
 }
 
-async function collectPurchaseEntries(invoiceNo: string, user: RequestUser, isAdmin: boolean) {
+async function collectPurchaseEntries(
+  invoiceNo: string,
+  user: RequestUser,
+  isAdmin: boolean,
+  payloadRows?: ExplicitAssignmentRow[]
+) {
   if (!supabase) throw new Error("Server misconfiguration.");
   if (!invoiceNo) throw Object.assign(new Error("Invoice number is required."), { status: 400 });
 
@@ -232,10 +286,24 @@ async function collectPurchaseEntries(invoiceNo: string, user: RequestUser, isAd
     purchaser_email: row.purchaser_email || purchaserEmail
   }, quantity));
 
+  addPayloadRows(entries, payloadRows, {
+    source: "purchase",
+    sourceId,
+    purchaserProfileId: invoice.profile_id,
+    purchaserEmail,
+    quantity,
+    fallbackProfileId: user.id
+  });
+
   return Array.from(entries.values());
 }
 
-async function collectManualEntries(allocationId: string, user: RequestUser, isAdmin: boolean) {
+async function collectManualEntries(
+  allocationId: string,
+  user: RequestUser,
+  isAdmin: boolean,
+  payloadRows?: ExplicitAssignmentRow[]
+) {
   if (!supabase) throw new Error("Server misconfiguration.");
   if (!allocationId) throw Object.assign(new Error("Allocation id is required."), { status: 400 });
 
@@ -284,6 +352,27 @@ async function collectManualEntries(allocationId: string, user: RequestUser, isA
     purchaser_email: row.purchaser_email || purchaserEmail
   }, quantity));
 
+  addPayloadRows(entries, payloadRows, {
+    source: "manual",
+    sourceId,
+    purchaserProfileId: allocation.profile_id,
+    purchaserEmail,
+    quantity,
+    fallbackProfileId: user.id
+  });
+
+  return Array.from(entries.values());
+}
+
+async function collectExplicitAssignmentEntries(payload: SyncPayload, user: RequestUser, isAdmin: boolean) {
+  if (!isAdmin) {
+    throw Object.assign(new Error("Only the manager can sync explicit cardholder assignments."), { status: 403 });
+  }
+
+  const entries = new Map<string, CardholderEntry>();
+  addPayloadRows(entries, payload.assignments, {
+    fallbackProfileId: user.id
+  });
   return Array.from(entries.values());
 }
 
@@ -583,16 +672,18 @@ Deno.serve(async req => {
     const payload = (await req.json().catch(() => null)) as SyncPayload | null;
     const source = payload?.source;
 
-    if (source !== "purchase" && source !== "manual" && source !== "all-missing") {
-      return json({ error: "source must be purchase, manual, or all-missing." }, 400, corsHeaders);
+    if (source !== "purchase" && source !== "manual" && source !== "all-missing" && source !== "assignments") {
+      return json({ error: "source must be purchase, manual, all-missing, or assignments." }, 400, corsHeaders);
     }
 
     const safePayload = payload || {};
     let entries: CardholderEntry[] = [];
     if (source === "purchase") {
-      entries = await collectPurchaseEntries(sourceIdForPayload(safePayload), user, isAdmin);
+      entries = await collectPurchaseEntries(sourceIdForPayload(safePayload), user, isAdmin, safePayload.cardholders);
     } else if (source === "manual") {
-      entries = await collectManualEntries(sourceIdForPayload(safePayload), user, isAdmin);
+      entries = await collectManualEntries(sourceIdForPayload(safePayload), user, isAdmin, safePayload.cardholders);
+    } else if (source === "assignments") {
+      entries = await collectExplicitAssignmentEntries(safePayload, user, isAdmin);
     } else {
       entries = await collectAllMissingEntries(user, isAdmin);
     }

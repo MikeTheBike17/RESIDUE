@@ -415,10 +415,31 @@ function payloadForOrder(order, article) {
   ));
 }
 
-async function syncProfilesForOrder(order) {
+function syncPayloadForSavedRows(rows) {
+  return (rows || []).map(row => ({
+    source: row.allocation_id ? 'manual' : 'purchase',
+    invoice_no: row.invoice_no || '',
+    allocation_id: row.allocation_id || '',
+    purchaser_profile_id: row.purchaser_profile_id || '',
+    purchaser_email: row.purchaser_email || '',
+    card_index: row.card_index || '',
+    card_name: row.card_name || '',
+    card_email: row.card_email || ''
+  }));
+}
+
+async function syncProfilesForOrder(order, savedRows = []) {
   const payload = isManualOrder(order)
-    ? { source: 'manual', allocation_id: order.allocation_id }
-    : { source: 'purchase', invoice_no: order.invoice_no };
+    ? {
+        source: 'manual',
+        allocation_id: order.allocation_id,
+        cardholders: syncPayloadForSavedRows(savedRows)
+      }
+    : {
+        source: 'purchase',
+        invoice_no: order.invoice_no,
+        cardholders: syncPayloadForSavedRows(savedRows)
+      };
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user?.id) activeSession = session;
 
@@ -456,7 +477,7 @@ async function saveOrderEmails(order, article, status, saveButton) {
     });
 
     try {
-      const syncData = await syncProfilesForOrder(order);
+      const syncData = await syncProfilesForOrder(order, savedRows);
       const syncedCount = countSyncedProfileUrls(syncData);
       const syncIssue = profileSyncIssueSummary(syncData);
       if (syncIssue) {
