@@ -1,0 +1,122 @@
+-- Run this in Supabase SQL Editor after link-card-schema.sql.
+-- Service-side helper used by sync-cardholder-profiles Edge Function.
+
+create extension if not exists pgcrypto;
+
+create or replace function public.ensure_profile_for_auth_email(
+  p_email text,
+  p_display_name text default null,
+  p_preferred_slug text default null
+)
+returns table (
+  profile_id uuid,
+  auth_email text,
+  name text,
+  slug text
+)
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_email text;
+  v_user_id uuid;
+  v_display_name text;
+  v_base_slug text;
+  v_current_slug text;
+  v_has_links boolean;
+  v_slug text;
+  v_suffix integer := 2;
+begin
+  v_email := lower(trim(coalesce(p_email, '')));
+  if v_email = '' or v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' then
+    raise exception 'Invalid email';
+  end if;
+
+  select u.id
+  into v_user_id
+  from auth.users u
+  where lower(u.email) = v_email
+  order by u.created_at asc
+  limit 1;
+
+  if v_user_id is null then
+    raise exception 'No auth user exists for %', v_email;
+  end if;
+
+  v_display_name := nullif(trim(coalesce(p_display_name, '')), '');
+
+  v_base_slug := regexp_replace(
+    lower(coalesce(nullif(trim(p_preferred_slug), ''), v_display_name, split_part(v_email, '@', 1))),
+    '[^a-z0-9]+',
+    '-',
+    'g'
+  );
+  v_base_slug := regexp_replace(v_base_slug, '(^-+|-+$)', '', 'g');
+
+  if v_base_slug = '' then
+    v_base_slug := 'user-' || left(replace(v_user_id::text, '-', ''), 8);
+  end if;
+
+  if exists (select 1 from public.profiles p where p.id = v_user_id) then
+    select
+      p.slug,
+      exists(select 1 from public.links l where l.profile_id = v_user_id)
+    into v_current_slug, v_has_links
+    from public.profiles p
+    where p.id = v_user_id;
+
+    v_slug := v_current_slug;
+    if nullif(trim(coalesce(p_preferred_slug, '')), '') is not null and not coalesce(v_has_links, false) then
+      v_slug := v_base_slug;
+      v_suffix := 2;
+      while exists (select 1 from public.profiles p where p.slug = v_slug and p.id <> v_user_id) loop
+        v_slug := v_base_slug || '-' || v_suffix::text;
+        v_suffix := v_suffix + 1;
+      end loop;
+    end if;
+
+    update public.profiles p
+    set
+      auth_email = v_email,
+      name = case
+        when v_display_name is null then p.name
+        when p.name is null or p.name = '' or p.name = 'Your name' or p.name = p.auth_email then v_display_name
+        else p.name
+      end,
+      slug = coalesce(v_slug, p.slug)
+    where p.id = v_user_id;
+
+    return query
+    select p.id, p.auth_email, p.name, p.slug
+    from public.profiles p
+    where p.id = v_user_id;
+    return;
+  end if;
+
+  v_slug := v_base_slug;
+  while exists (select 1 from public.profiles p where p.slug = v_slug) loop
+    v_slug := v_base_slug || '-' || v_suffix::text;
+    v_suffix := v_suffix + 1;
+  end loop;
+
+  insert into public.profiles (id, auth_email, name, slug, theme)
+  values (
+    v_user_id,
+    v_email,
+    coalesce(v_display_name, v_email, 'Residue User'),
+    v_slug,
+    'light'
+  );
+
+  return query
+  select p.id, p.auth_email, p.name, p.slug
+  from public.profiles p
+  where p.id = v_user_id;
+end;
+$$;
+
+revoke all on function public.ensure_profile_for_auth_email(text, text, text) from public;
+revoke all on function public.ensure_profile_for_auth_email(text, text, text) from anon;
+revoke all on function public.ensure_profile_for_auth_email(text, text, text) from authenticated;
+grant execute on function public.ensure_profile_for_auth_email(text, text, text) to service_role;

@@ -5,6 +5,10 @@ import {
   normalizeSearchTerm,
   supabase
 } from './admin-access.js';
+import {
+  countSyncedProfileUrls,
+  syncCardholderProfiles
+} from './cardholder-profile-sync.js';
 
 const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
 const ORDER_EMAILS_TABLE = cfg.SUPABASE_ORDER_EMAILS_TABLE || 'order_card_emails';
@@ -22,6 +26,7 @@ const isInvoicingPage = !!invoiceBody && !urlsBody;
 let profileRowsCache = [];
 let invoiceRowsCache = [];
 let orderEmailAssignmentsCache = [];
+let activeSession = null;
 const INVOICE_TABLE_COLSPAN = 15;
 
 function setStatus(message, type = '') {
@@ -433,6 +438,26 @@ function attachOrderEmailsToProfiles(profileRows, assignments) {
   }));
 }
 
+function assignmentsMissingProfiles(profileRows, assignments) {
+  const profileEmails = new Set(profileRows.map(row => normalizeEmail(row.auth_email)).filter(Boolean));
+  return (assignments || []).some(item => {
+    const cardEmail = normalizeEmail(item.card_email);
+    return cardEmail && !profileEmails.has(cardEmail);
+  });
+}
+
+async function backfillMissingProfileUrls() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user?.id) activeSession = session;
+
+  const syncData = await syncCardholderProfiles({
+    cfg,
+    session: activeSession,
+    payload: { source: 'all-missing' }
+  });
+  return countSyncedProfileUrls(syncData);
+}
+
 async function fetchOrderEmailAssignments() {
   const { data: invoices, error: invoiceError } = await supabase
     .from(INVOICE_TABLE)
@@ -594,10 +619,11 @@ async function fetchAllRows() {
 
   try {
     if (isCardUrlsPage) {
-      const profileRows = await fetchProfileRows();
+      let profileRows = await fetchProfileRows();
       const assignmentErrors = [];
       let purchaseAssignments = [];
       let manualAssignments = [];
+      let syncMessage = '';
 
       try {
         purchaseAssignments = await fetchOrderEmailAssignments();
@@ -612,10 +638,23 @@ async function fetchAllRows() {
       }
 
       orderEmailAssignmentsCache = [...purchaseAssignments, ...manualAssignments];
+      if (assignmentsMissingProfiles(profileRows, orderEmailAssignmentsCache)) {
+        try {
+          setStatus('Creating missing profile URLs...', 'loading');
+          const syncedCount = await backfillMissingProfileUrls();
+          profileRows = await fetchProfileRows();
+          if (syncedCount) {
+            syncMessage = `Created or confirmed ${syncedCount} linked profile URL${syncedCount === 1 ? '' : 's'}.`;
+          }
+        } catch (syncError) {
+          assignmentErrors.push(syncError.message || 'Could not create missing profile URLs.');
+        }
+      }
+
       profileRowsCache = attachOrderEmailsToProfiles(profileRows, orderEmailAssignmentsCache);
       applySearchFilter();
       setStatus(
-        assignmentErrors.length ? assignmentErrors.join(' ') : `Loaded ${profileRowsCache.length} URLs.`,
+        assignmentErrors.length ? assignmentErrors.join(' ') : (syncMessage || `Loaded ${profileRowsCache.length} URLs.`),
         assignmentErrors.length ? 'error' : 'success'
       );
     } else if (isInvoicingPage) {
@@ -665,7 +704,7 @@ invoiceRefreshBtn?.addEventListener('click', refreshInvoicesOnly);
 searchInput?.addEventListener('input', applySearchFilter);
 
 (async () => {
-  const session = await guardManagerAccess();
-  if (!session) return;
+  activeSession = await guardManagerAccess();
+  if (!activeSession) return;
   await fetchAllRows();
 })();

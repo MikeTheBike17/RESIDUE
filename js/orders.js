@@ -1,4 +1,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import {
+  countSyncedProfileUrls,
+  syncCardholderProfiles
+} from './cardholder-profile-sync.js';
 
 const cfg = window.env || {};
 const INVOICE_TABLE = cfg.SUPABASE_INVOICES_TABLE || 'purchase_invoices';
@@ -410,6 +414,20 @@ function payloadForOrder(order, article) {
   ));
 }
 
+async function syncProfilesForOrder(order) {
+  const payload = isManualOrder(order)
+    ? { source: 'manual', allocation_id: order.allocation_id }
+    : { source: 'purchase', invoice_no: order.invoice_no };
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user?.id) activeSession = session;
+
+  return syncCardholderProfiles({
+    cfg,
+    session: activeSession,
+    payload
+  });
+}
+
 async function saveOrderEmails(order, article, status, saveButton) {
   try {
     const payload = payloadForOrder(order, article);
@@ -436,7 +454,23 @@ async function saveOrderEmails(order, article, status, saveButton) {
       if (statusCell) statusCell.textContent = normalizeEmail(input.value) ? 'Assigned' : 'Open';
     });
 
-    setCardStatus(status, 'Emails saved.', 'success');
+    try {
+      const syncData = await syncProfilesForOrder(order);
+      const syncedCount = countSyncedProfileUrls(syncData);
+      setCardStatus(
+        status,
+        syncedCount
+          ? `Emails saved. Profile URLs ready for ${syncedCount} card${syncedCount === 1 ? '' : 's'}.`
+          : 'Emails saved.',
+        'success'
+      );
+    } catch (syncError) {
+      setCardStatus(
+        status,
+        `Emails saved, but profile URLs could not be created: ${syncError.message || 'sync failed'}`,
+        'error'
+      );
+    }
   } catch (error) {
     setCardStatus(status, error.message || 'Could not save emails.', 'error');
   } finally {
