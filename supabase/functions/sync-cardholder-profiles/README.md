@@ -2,7 +2,13 @@
 
 Creates or reuses normal `link-profile` URLs for linked cardholder emails saved from `orders.html`.
 
-If the email already has a real `profiles` row, the existing profile slug is reused. If the email does not have a profile yet, the function reserves a URL slug from the first half of the email address, such as `test1@gmail.com` -> `test1`, without creating a hidden Supabase Auth user.
+If the email already has a `profiles` row, the existing profile slug is reused. If
+the email does not have a profile yet, the function creates a Supabase Auth
+identity with an unrecoverable random password and then creates the linked
+`profiles` row. The cardholder can later claim the account through the normal
+password-reset flow. Slugs are based on the first half of the email address,
+such as `test1@gmail.com` -> `test1`, and any previously reserved slug is
+preserved.
 
 Accepted sync sources:
 
@@ -53,3 +59,10 @@ Common causes:
 - `SUPABASE_SERVICE_ROLE_KEY` is missing from Edge Function secrets.
 - The function was deployed without `--no-verify-jwt`.
 - The `cardholder_profile_urls` table has not been created from the SQL helper.
+
+## Backfill existing assignments
+
+After deploying this version, use the manager action on `card-urls.html` that
+syncs all missing URLs. Existing `order_card_emails` and `manual_card_emails`
+rows (including emails that previously had URL reservations only) will receive
+real Auth identities and `profiles` rows.

@@ -641,16 +641,47 @@ async function ensureProfileUrlForEmail(entry: CardholderEntry) {
     return { profile: existingProfile, createdAuthUser: false, reservedProfileUrl: false };
   }
 
-  const profile = await callEnsureProfileRpc(email, displayName, preferredSlug).catch(async error => {
+  let createdAuthUser = false;
+  let profile = await callEnsureProfileRpc(email, displayName, preferredSlug).catch(async error => {
     if (!/No auth user exists/i.test(error.message || "")) throw error;
-    return reserveProfileUrl(email, displayName, preferredSlug);
+
+    createdAuthUser = await createAuthUser(email, displayName);
+    return callEnsureProfileRpc(email, displayName, preferredSlug);
   });
 
-  if (String(profile.id || "").startsWith("reserved:")) {
-    return { profile, createdAuthUser: false, reservedProfileUrl: true };
+  if (!profile?.slug) {
+    profile = await callEnsureProfileRpc(email, displayName, preferredSlug);
   }
 
-  return { profile, createdAuthUser: false, reservedProfileUrl: false };
+  return { profile, createdAuthUser, reservedProfileUrl: false };
+}
+
+async function createAuthUser(email: string, displayName: string) {
+  if (!supabase) throw new Error("Server misconfiguration.");
+
+  // Assigned cardholders need an auth identity because profiles.id references
+  // auth.users.id. A random, unrecoverable password prevents anyone from
+  // guessing it; the cardholder can claim the account through the normal
+  // password-reset flow for their verified email address.
+  const password = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
+  const { error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: displayName,
+      name: displayName,
+      residue_cardholder: true
+    }
+  });
+
+  if (!error) return true;
+
+  // Another request may have created the same account between the profile
+  // lookup and this call. In that case the profile RPC can safely continue.
+  if (/(already|registered|exists)/i.test(error.message || "")) return false;
+
+  throw new Error(`Auth user creation failed for ${email}: ${error.message || "Unknown auth error"}`);
 }
 
 async function callEnsureProfileRpc(email: string, displayName: string, preferredSlug: string) {
