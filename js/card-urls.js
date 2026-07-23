@@ -442,11 +442,14 @@ function attachOrderEmailsToProfiles(profileRows, assignments, reservedUrlsByEma
   }));
 }
 
-function missingProfileAssignments(profileRows, assignments, reservedUrlsByEmail = new Map()) {
+function missingProfileAssignments(profileRows, assignments) {
   const profileEmails = new Set(profileRows.map(row => normalizeEmail(row.auth_email)).filter(Boolean));
   return (assignments || []).filter(item => {
     const cardEmail = normalizeEmail(item.card_email);
-    return cardEmail && !profileEmails.has(cardEmail) && !reservedUrlsByEmail.has(cardEmail);
+    // A reservation supplies a URL for display, but it is not a real profile.
+    // Keep reserved-only cardholders in the backfill so the server creates the
+    // auth.users identity and the linked public.profiles row.
+    return cardEmail && !profileEmails.has(cardEmail);
   });
 }
 
@@ -683,7 +686,7 @@ async function fetchAllRows() {
         assignmentErrors.push(reservationError.message || 'Could not load reserved cardholder URLs.');
       }
 
-      const missingAssignments = missingProfileAssignments(profileRows, orderEmailAssignmentsCache, reservedUrlsByEmail);
+      const missingAssignments = missingProfileAssignments(profileRows, orderEmailAssignmentsCache);
       if (missingAssignments.length) {
         try {
           setStatus('Creating missing profile URLs...', 'loading');
