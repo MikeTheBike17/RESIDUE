@@ -262,3 +262,33 @@ begin
   );
 end;
 $$;
+
+-- Secondary cardholders are created by the sync Edge Function and are followed
+-- immediately by ensure_profile_for_auth_email(). Skip the general signup
+-- bootstrap for those service-created users so a trigger-side profile error
+-- cannot roll back the Auth identity before the dedicated RPC runs.
+create or replace function public.on_auth_user_created()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+begin
+  if coalesce(new.raw_user_meta_data ->> 'residue_cardholder', 'false') = 'true' then
+    return new;
+  end if;
+
+  perform public.ensure_profile_from_auth(
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', null)
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists auth_users_profile_bootstrap on auth.users;
+create trigger auth_users_profile_bootstrap
+after insert on auth.users
+for each row
+execute function public.on_auth_user_created();

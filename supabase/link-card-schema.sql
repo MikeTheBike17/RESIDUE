@@ -507,6 +507,10 @@ security definer
 set search_path = public, auth
 as $$
 begin
+  if coalesce(new.raw_user_meta_data ->> 'residue_cardholder', 'false') = 'true' then
+    return new;
+  end if;
+
   perform public.ensure_profile_from_auth(
     new.id,
     new.email,
