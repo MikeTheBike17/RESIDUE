@@ -645,8 +645,16 @@ async function ensureProfileUrlForEmail(entry: CardholderEntry) {
   let profile = await callEnsureProfileRpc(email, displayName, preferredSlug).catch(async error => {
     if (!/No auth user exists/i.test(error.message || "")) throw error;
 
-    createdAuthUser = await createAuthUser(email, displayName);
-    return callEnsureProfileRpc(email, displayName, preferredSlug);
+    try {
+      createdAuthUser = await createAuthUser(email, displayName);
+      return callEnsureProfileRpc(email, displayName, preferredSlug);
+    } catch (authError) {
+      console.warn("Auth identity creation failed; creating a secondary profile directly.", {
+        email,
+        error: errorMessage(authError)
+      });
+      return callEnsureSecondaryProfileRpc(email, displayName, preferredSlug);
+    }
   });
 
   if (!profile?.slug) {
@@ -654,6 +662,30 @@ async function ensureProfileUrlForEmail(entry: CardholderEntry) {
   }
 
   return { profile, createdAuthUser, reservedProfileUrl: false };
+}
+
+async function callEnsureSecondaryProfileRpc(email: string, displayName: string, preferredSlug: string) {
+  if (!supabase) throw new Error("Server misconfiguration.");
+
+  const { data, error } = await supabase
+    .rpc("ensure_secondary_cardholder_profile", {
+      p_email: email,
+      p_display_name: displayName,
+      p_preferred_slug: preferredSlug
+    });
+
+  if (error) {
+    throw new Error(`Secondary profile helper failed for ${email}: ${error.message || "Unknown RPC error"}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.slug) throw new Error(`Could not create a secondary profile for ${email}.`);
+
+  return {
+    id: row.profile_id,
+    auth_email: row.auth_email,
+    name: row.name,
+    slug: row.slug
+  } as ProfileRow;
 }
 
 async function createAuthUser(email: string, displayName: string) {
